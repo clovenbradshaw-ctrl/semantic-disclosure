@@ -63,6 +63,7 @@
     <button class="test-btn" onclick="location.reload()">Reload Widget</button>
     <button class="test-btn secondary" onclick="console.log(window.ClientGlance)">Log State to Console</button>
     <button class="test-btn secondary" onclick="console.log(window.MOCK_DATA)">Log Mock Data</button>
+    <button class="test-btn" onclick="window.ClientGlance.DebugLogger.toggle(true); document.querySelector('[data-setting=debug]').checked = true;" style="background:#059669">Enable Debug</button>
   </div>
 </div>
 
@@ -536,6 +537,101 @@ window.MOCK_DATA = {
     }
 
     .error-title { font-weight: 600; margin-bottom: 4px; }
+
+    /* Debug Panel Styles */
+    .debug-panel {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      background: #1e293b;
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .debug-panel.visible { display: block; }
+
+    .debug-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .debug-panel-title {
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .debug-clear-btn {
+      padding: 4px 8px;
+      background: #475569;
+      border: none;
+      border-radius: 3px;
+      color: #e2e8f0;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .debug-clear-btn:hover { background: #64748b; }
+
+    .debug-log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #334155;
+      line-height: 1.4;
+    }
+
+    .debug-log-entry:last-child { border-bottom: none; }
+
+    .debug-timestamp {
+      color: #64748b;
+      margin-right: 8px;
+    }
+
+    .debug-level-info { color: #38bdf8; }
+    .debug-level-success { color: #4ade80; }
+    .debug-level-warn { color: #fbbf24; }
+    .debug-level-error { color: #f87171; }
+
+    .debug-message { color: #e2e8f0; }
+
+    .debug-data {
+      display: block;
+      margin-top: 4px;
+      padding: 6px 8px;
+      background: #0f172a;
+      border-radius: 3px;
+      color: #a5b4fc;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .debug-toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .debug-status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+
+    .debug-status-indicator.active {
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+    }
   </style>
 
   <div class="widget-container" id="app">
@@ -552,6 +648,110 @@ window.MOCK_DATA = {
   'use strict';
 
   const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
+
+  // ==========================================================================
+  // DEBUG LOGGER - Toggleable error/info logging for troubleshooting
+  // ==========================================================================
+  const DebugLogger = {
+    enabled: false,
+    logs: [],
+    maxLogs: 100,
+
+    log(level, message, data = null) {
+      const entry = {
+        timestamp: new Date().toISOString().substr(11, 12),
+        level,
+        message,
+        data: data ? this.safeStringify(data) : null
+      };
+
+      this.logs.unshift(entry);
+      if (this.logs.length > this.maxLogs) this.logs.pop();
+
+      // Also log to console when debug is enabled
+      if (this.enabled) {
+        const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+        console[consoleMethod](`[ClientGlance ${level.toUpperCase()}]`, message, data || '');
+      }
+
+      this.updatePanel();
+    },
+
+    info(message, data = null) { this.log('info', message, data); },
+    success(message, data = null) { this.log('success', message, data); },
+    warn(message, data = null) { this.log('warn', message, data); },
+    error(message, data = null) { this.log('error', message, data); },
+
+    safeStringify(obj) {
+      try {
+        if (typeof obj === 'string') return obj;
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'function') return '[Function]';
+          if (value instanceof RegExp) return value.toString();
+          return value;
+        }, 2);
+      } catch (e) {
+        return String(obj);
+      }
+    },
+
+    clear() {
+      this.logs = [];
+      this.updatePanel();
+    },
+
+    toggle(enabled) {
+      this.enabled = enabled;
+      this.updatePanel();
+      if (enabled) {
+        this.info('Debug mode enabled - logging all data flow');
+      }
+    },
+
+    updatePanel() {
+      const panel = document.getElementById('debug-panel');
+      const indicator = document.getElementById('debug-status-indicator');
+      if (!panel) return;
+
+      if (this.enabled) {
+        panel.classList.add('visible');
+        if (indicator) indicator.classList.add('active');
+      } else {
+        panel.classList.remove('visible');
+        if (indicator) indicator.classList.remove('active');
+      }
+
+      const logsContainer = document.getElementById('debug-logs');
+      if (!logsContainer) return;
+
+      logsContainer.innerHTML = this.logs.map(entry => `
+        <div class="debug-log-entry">
+          <span class="debug-timestamp">${entry.timestamp}</span>
+          <span class="debug-level-${entry.level}">[${entry.level.toUpperCase()}]</span>
+          <span class="debug-message">${this.escapeHtml(entry.message)}</span>
+          ${entry.data ? `<code class="debug-data">${this.escapeHtml(entry.data)}</code>` : ''}
+        </div>
+      `).join('') || '<div class="debug-log-entry"><span class="debug-message" style="color: #64748b;">No logs yet...</span></div>';
+    },
+
+    escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    },
+
+    renderPanel() {
+      return `
+        <div class="debug-panel ${this.enabled ? 'visible' : ''}" id="debug-panel">
+          <div class="debug-panel-header">
+            <span class="debug-panel-title">Debug Log</span>
+            <button class="debug-clear-btn" onclick="window.ClientGlance.DebugLogger.clear()">Clear</button>
+          </div>
+          <div id="debug-logs"></div>
+        </div>
+      `;
+    }
+  };
 
   const Utils = {
     getRecordId() {
@@ -775,9 +975,27 @@ window.MOCK_DATA = {
     state: { viewMode: 'structured', showProvenance: false, expandedGroups: new Set(['Court', 'SIJ', 'USCIS']), selectedCase: 'all' },
 
     init(data) {
+      DebugLogger.info('Renderer initializing with data');
       this.data = data;
-      this.processedFields = DataProcessor.processFields(data);
-      this.render();
+
+      try {
+        DebugLogger.info('Processing fields...');
+        this.processedFields = DataProcessor.processFields(data);
+        DebugLogger.success('Fields processed', {
+          totalFields: this.processedFields.length,
+          tier1: this.processedFields.filter(f => f.tier === 1).length,
+          tier2: this.processedFields.filter(f => f.tier === 2).length,
+          tier3: this.processedFields.filter(f => f.tier === 3).length,
+          groups: [...new Set(this.processedFields.map(f => f.group))]
+        });
+
+        DebugLogger.info('Rendering UI...');
+        this.render();
+        DebugLogger.success('Render complete');
+      } catch (error) {
+        DebugLogger.error('Renderer init failed', { message: error.message, stack: error.stack });
+        throw error;
+      }
     },
 
     render() {
@@ -806,9 +1024,16 @@ window.MOCK_DATA = {
           <label class="settings-toggle">
             <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance"> Show sources
           </label>
+          <label class="settings-toggle debug-toggle-container">
+            <input type="checkbox" ${DebugLogger.enabled ? 'checked' : ''} data-setting="debug">
+            <span class="debug-status-indicator ${DebugLogger.enabled ? 'active' : ''}" id="debug-status-indicator"></span>
+            Debug mode
+          </label>
         </div>
+        ${DebugLogger.renderPanel()}
       `;
       this.attachEventListeners();
+      DebugLogger.updatePanel();
     },
 
     renderClientHeader(headerFields, clientName) {
@@ -957,6 +1182,7 @@ window.MOCK_DATA = {
       document.querySelectorAll('[data-setting]').forEach(input => {
         input.addEventListener('change', (e) => {
           if (e.target.dataset.setting === 'provenance') { this.state.showProvenance = e.target.checked; this.render(); }
+          if (e.target.dataset.setting === 'debug') { DebugLogger.toggle(e.target.checked); }
         });
       });
     }
@@ -964,23 +1190,119 @@ window.MOCK_DATA = {
 
   function init() {
     const container = document.getElementById('app');
+    DebugLogger.info('Widget initializing...');
+    DebugLogger.info('URL params', Object.fromEntries(new URLSearchParams(window.location.search)));
+
     try {
-      if (!CONFIG) throw new Error('Configuration not loaded. Make sure config.js is included.');
+      if (!CONFIG) {
+        DebugLogger.error('Configuration not loaded');
+        throw new Error('Configuration not loaded. Make sure config.js is included.');
+      }
+      DebugLogger.success('Config loaded', { semanticRoles: Object.keys(CONFIG.SEMANTIC_ROLES || {}).length + ' fields defined' });
+
+      // Check for data sources
+      DebugLogger.info('Checking data sources...');
+
       if (window.MOCK_DATA) {
+        DebugLogger.success('MOCK_DATA found', {
+          hasClientInfo: !!window.MOCK_DATA.clientInfo,
+          clientFields: window.MOCK_DATA.clientInfo ? Object.keys(window.MOCK_DATA.clientInfo.fields || {}).length : 0,
+          casesCount: Array.isArray(window.MOCK_DATA.cases) ? window.MOCK_DATA.cases.length : 0
+        });
         Renderer.init(window.MOCK_DATA);
+      } else if (window.WEBHOOK_DATA) {
+        DebugLogger.success('WEBHOOK_DATA found', {
+          type: typeof window.WEBHOOK_DATA,
+          keys: Object.keys(window.WEBHOOK_DATA || {})
+        });
+        Renderer.init(window.WEBHOOK_DATA);
       } else {
-        container.innerHTML = `<div class="error"><div class="error-title">No Data</div><div>No mock data loaded and no webhook configured.</div></div>`;
+        DebugLogger.warn('No data source found - checking for postMessage...');
+        // Set up listener for postMessage data from n8n or parent frame
+        window.addEventListener('message', handleMessage);
+        DebugLogger.info('postMessage listener registered');
+        container.innerHTML = `<div class="error"><div class="error-title">No Data</div><div>No data loaded. Waiting for webhook data via postMessage...</div></div>`;
       }
     } catch (error) {
+      DebugLogger.error('Init failed', { message: error.message, stack: error.stack });
       console.error('Client Glance Error:', error);
       container.innerHTML = `<div class="error"><div class="error-title">Error</div><div>${Utils.escapeHtml(error.message)}</div></div>`;
+    }
+  }
+
+  // Handle postMessage data from n8n webhooks or parent frames
+  function handleMessage(event) {
+    DebugLogger.info('postMessage received', {
+      origin: event.origin,
+      dataType: typeof event.data,
+      dataKeys: event.data && typeof event.data === 'object' ? Object.keys(event.data) : 'N/A'
+    });
+
+    try {
+      let data = event.data;
+
+      // Handle string data (might be JSON)
+      if (typeof data === 'string') {
+        DebugLogger.info('Parsing string data as JSON...');
+        try {
+          data = JSON.parse(data);
+          DebugLogger.success('JSON parsed successfully');
+        } catch (e) {
+          DebugLogger.warn('Data is not JSON', data.substring(0, 100));
+          return;
+        }
+      }
+
+      // Validate data structure
+      if (!data || typeof data !== 'object') {
+        DebugLogger.warn('Invalid data format - expected object');
+        return;
+      }
+
+      // Check if this looks like client data
+      if (data.clientInfo || data.cases || data.fields) {
+        DebugLogger.success('Valid client data structure detected', {
+          hasClientInfo: !!data.clientInfo,
+          hasCases: !!data.cases,
+          hasFields: !!data.fields
+        });
+
+        // Normalize data structure
+        const normalizedData = {
+          clientInfo: data.clientInfo || { fields: data.fields || data },
+          cases: data.cases || []
+        };
+
+        DebugLogger.info('Normalized data', {
+          clientFields: Object.keys(normalizedData.clientInfo.fields || normalizedData.clientInfo).length,
+          casesCount: normalizedData.cases.length
+        });
+
+        window.removeEventListener('message', handleMessage);
+        Renderer.init(normalizedData);
+      } else {
+        DebugLogger.warn('Data does not match expected structure', Object.keys(data));
+      }
+    } catch (error) {
+      DebugLogger.error('Error processing message', { message: error.message });
     }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  window.ClientGlance = { Utils, DataProcessor, Renderer };
+  window.ClientGlance = { Utils, DataProcessor, Renderer, DebugLogger };
+
+  // Also expose a global function to manually load data for testing
+  window.loadClientData = function(data) {
+    DebugLogger.info('Manual data load triggered');
+    if (data) {
+      DebugLogger.info('Data provided', { keys: Object.keys(data) });
+      Renderer.init(data);
+    } else {
+      DebugLogger.warn('No data provided to loadClientData()');
+    }
+  };
 })();
 </script>
 
