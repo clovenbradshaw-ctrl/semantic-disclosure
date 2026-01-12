@@ -544,8 +544,14 @@
   const Utils = {
     // Get recordId from URL params (Softr passes this)
     getRecordId() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('recordId') || params.get('record_id') || params.get('id');
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('recordId') || params.get('record_id') || params.get('id');
+      } catch (e) {
+        // Handle cross-origin iframe SecurityError
+        console.warn('[ClientGlance] Cannot access window.location (cross-origin iframe):', e.message);
+        return null;
+      }
     },
 
     // Format date
