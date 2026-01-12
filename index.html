@@ -4,70 +4,533 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Client At-a-Glance - Test Page</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #0f172a;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: #334155;
+      --border-active: #3b82f6;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-amber: #f59e0b;
+      --accent-violet: #8b5cf6;
+      --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      padding: 20px;
-      background: #f0f0f0;
+      font-family: var(--font-sans);
+      background: var(--bg-dark);
+      color: var(--text-primary);
       min-height: 100vh;
     }
-    .test-header {
-      max-width: 800px;
-      margin: 0 auto 20px;
-      padding: 16px;
-      background: #1e293b;
-      color: white;
-      border-radius: 8px;
-      font-family: system-ui, sans-serif;
-    }
-    .test-header h1 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-    .test-header p {
-      margin: 0;
-      font-size: 13px;
-      opacity: 0.8;
-    }
-    .test-controls {
+
+    .page-container {
       display: flex;
-      gap: 12px;
-      margin-top: 12px;
+      flex-direction: column;
+      min-height: 100vh;
     }
-    .test-btn {
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+    }
+
+    .control-panel-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .control-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-title h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .control-title .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: var(--accent-violet);
+      color: white;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Mode Selector */
+    .mode-selector {
+      display: flex;
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .mode-btn {
       padding: 8px 16px;
       border: none;
-      border-radius: 4px;
-      background: #3b82f6;
-      color: white;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .test-btn:hover {
+
+    .mode-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .mode-btn.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .mode-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Control Row */
+    .control-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .input-section {
+      flex: 1;
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrapper input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-wrapper input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-wrapper input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* URL Display */
+    .url-display {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      height: 44px;
+    }
+
+    .url-display .url-icon {
+      color: var(--text-muted);
+    }
+
+    .url-display .url-text {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .url-display .url-text .param {
+      color: var(--accent-green);
+    }
+
+    .url-display .url-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .url-display .url-status.found {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+    }
+
+    .url-display .url-status.not-found {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0 20px;
+      height: 44px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
       background: #2563eb;
     }
-    .test-btn.secondary {
-      background: #475569;
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
-    .test-btn.secondary:hover {
-      background: #334155;
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    .btn-success {
+      background: var(--accent-green);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #16a34a;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .quick-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border-color: var(--accent-blue);
+    }
+
+    /* Status Bar */
+    .status-bar {
+      padding: 10px 24px;
+      background: rgba(59, 130, 246, 0.1);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+      display: none;
+    }
+
+    .status-bar.visible {
+      display: block;
+    }
+
+    .status-bar.success {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .status-bar.error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .status-bar-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .status-bar .status-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .status-bar.success .status-icon { color: var(--accent-green); }
+    .status-bar.error .status-icon { color: #ef4444; }
+    .status-bar:not(.success):not(.error) .status-icon { color: var(--accent-blue); }
+
+    /* Widget Container */
+    .widget-area {
+      flex: 1;
+      padding: 24px;
+      background: #f0f0f0;
+      overflow: auto;
+    }
+
+    .widget-area-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      text-align: center;
+      background: white;
+      border-radius: 12px;
+      border: 2px dashed #d1d5db;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+      stroke: #9ca3af;
+    }
+
+    .empty-state h3 {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      color: #9ca3af;
+    }
+
+    /* Hide sections based on mode */
+    [data-mode="url"] .manual-only { display: none !important; }
+    [data-mode="manual"] .url-only { display: none !important; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .control-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .control-row {
+        flex-direction: column;
+      }
+
+      .input-section {
+        flex-direction: column;
+      }
+
+      .quick-actions {
+        flex-wrap: wrap;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="test-header">
-  <h1>🧪 Client At-a-Glance Test Page</h1>
-  <p>This loads mock data to test the widget without a live webhook.</p>
-  <div class="test-controls">
-    <button class="test-btn" onclick="location.reload()">Reload Widget</button>
-    <button class="test-btn secondary" onclick="console.log(window.ClientGlance)">Log State to Console</button>
-    <button class="test-btn secondary" onclick="console.log(window.MOCK_DATA)">Log Mock Data</button>
-    <button class="test-btn" onclick="window.ClientGlance.DebugLogger.toggle(true); document.querySelector('[data-setting=debug]').checked = true;" style="background:#059669">Enable Debug</button>
+<div class="page-container" id="pageContainer" data-mode="manual">
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <div class="control-panel-inner">
+      <div class="control-header">
+        <div class="control-title">
+          <h1>Client At-a-Glance</h1>
+          <span class="badge">Test Mode</span>
+        </div>
+        <div class="mode-selector">
+          <button class="mode-btn" data-mode="url" onclick="setMode('url')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            URL Mode
+          </button>
+          <button class="mode-btn active" data-mode="manual" onclick="setMode('manual')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Manual Input
+          </button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <!-- URL Mode Display -->
+        <div class="url-display url-only">
+          <svg class="url-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="url-text" id="urlText">Loading...</span>
+          <span class="url-status" id="urlStatus">
+            <span class="status-dot"></span>
+            <span class="status-label">Checking...</span>
+          </span>
+        </div>
+
+        <!-- Manual Input -->
+        <div class="input-section manual-only">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="recordIdInput"
+              placeholder="Enter recordId (e.g., recABC123XYZ)"
+              autocomplete="off"
+              spellcheck="false"
+            >
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="loadBtn" onclick="loadWidget()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Load
+        </button>
+
+        <button class="btn btn-success manual-only" onclick="loadMockData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          Mock Data
+        </button>
+
+        <button class="btn btn-secondary" onclick="reloadWidget()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          Reload
+        </button>
+      </div>
+
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="logState()">Log State</button>
+        <button class="quick-btn" onclick="logMockData()">Log Mock Data</button>
+        <button class="quick-btn" onclick="toggleDebug()">Toggle Debug</button>
+        <button class="quick-btn" onclick="copyUrl()">Copy URL</button>
+        <button class="quick-btn" onclick="openInNewTab()">Open in Tab</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-bar-inner">
+      <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <!-- Widget Area -->
+  <div class="widget-area">
+    <div class="widget-area-inner" id="widgetContainer">
+      <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+        <h3>No Widget Loaded</h3>
+        <p>Select a mode and load data to preview the widget</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Mock Data (loaded first) -->
+<!-- Mock Data -->
 <script>
 window.MOCK_DATA = {
   clientInfo: {
@@ -88,20 +551,20 @@ window.MOCK_DATA = {
       "Case Tags": "SIJ, USCIS Pending, Priority"
     }
   },
-  
+
   cases: [
     {
       recordId: "recCASE001",
       caseIdentifier: "SIJ - Davidson County",
       fields: {
-        "Hearing Date/Time": "2025-02-15T09:00:00",
+        "Hearing Date/Time": "2027-02-15T09:00:00",
         "Court/Office": "Memphis Immigration Court",
         "Judge": "Hon. Patricia Williams",
         "SIJ Case Status": "Pending Custody Order",
         "SIJ County": "Davidson",
-        "Date Custody Filed": "2024-08-20",
+        "Date Custody Filed": "2024-08-19",
         "SIJ Eligible (child)": "Yes",
-        "JDR Ct Date": "2025-01-28",
+        "JDR Ct Date": "2027-01-27",
         "Relief Sought": "Special Immigrant Juvenile Status",
         "File Case Status": "Active",
         "Case Tags": "SIJ, Court",
@@ -110,32 +573,32 @@ window.MOCK_DATA = {
         "FOIA PIN #": "847291",
         "USCIS FOIA Stage": "Received",
         "FBI Record Stage": "Requested",
-        "Pleadings Due Date": "2025-02-01",
-        "NTA Date": "2022-08-15",
+        "Pleadings Due Date": "2027-01-31",
+        "NTA Date": "2022-08-14",
         "Master Hearing Notes": "Client appeared with counsel. Case continued for individual hearing.",
         "ICH Prep Notes": "Review country conditions documentation before hearing.",
         "Some_New_Field_2025": "Value without semantic mapping"
       }
     },
     {
-      recordId: "recCASE002", 
-      caseIdentifier: "USCIS - I-360",
+      recordId: "recCASE002",
+      caseIdentifier: "USCIS - I-360 Appeal - BIA",
       fields: {
-        "USCIS Receipt Date": "2024-11-20",
+        "USCIS Receipt Date": "2024-11-19",
         "USCIS Receipt Number": "SRC2411234567",
         "I-360 Receipt Number": "SRC2411234567",
-        "I-360 Mailed Date": "2024-11-15",
+        "I-360 Mailed Date": "2024-11-14",
         "Current USCIS application": "I-360 (SIJ)",
-        "Priority Date (I-360)": "2024-11-20",
-        "Biometric Notice Date": "2024-12-05",
-        "RFE Due Date": "2025-03-01",
+        "Priority Date (I-360)": "2024-11-19",
+        "Biometric Notice Date": "2024-12-04",
+        "RFE Due Date": "2027-02-28",
         "RFE/RFI (topic)": "Birth Certificate Authentication",
         "Relief Sought": "Special Immigrant Juvenile Status",
         "File Case Status": "Active",
         "USCIS Notes": "Biometrics completed 12/10/2024. Awaiting adjudication.",
         "EAD Stage": "Filed",
-        "EAD Receipt Date": "2024-11-20",
-        "EAD Eligible Date": "2024-11-20",
+        "EAD Receipt Date": "2024-11-19",
+        "EAD Eligible Date": "2024-11-19",
         "Another_Unrecognized_Field": "Random data here",
         "Internal_Tracking_Code": "ABC-XYZ-789"
       }
@@ -145,9 +608,9 @@ window.MOCK_DATA = {
       caseIdentifier: "Appeal - BIA",
       fields: {
         "Appeal Status": "Pending",
-        "Appeal Due Date": "2025-04-15",
-        "Appeal Receipt Date": "2025-01-10",
-        "Brief Due Date": "2025-03-15",
+        "Appeal Due Date": "2027-04-15",
+        "Appeal Receipt Date": "2027-01-10",
+        "Brief Due Date": "2027-03-15",
         "Appeal Forum": "Board of Immigration Appeals",
         "Appeal Notes": "Appealing denial of motion to change venue.",
         "Relief Sought": "Motion to Reopen"
@@ -160,1159 +623,1206 @@ window.MOCK_DATA = {
 <!-- Config -->
 <script src="config.js"></script>
 
-<!-- Widget (inline to avoid cross-origin issues in local testing) -->
-<div id="widget-frame">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-primary: #fafaf9;
-      --bg-secondary: #f5f5f4;
-      --bg-tertiary: #e7e5e4;
-      --bg-card: #ffffff;
-      --text-primary: #1c1917;
-      --text-secondary: #57534e;
-      --text-muted: #a8a29e;
-      --border: #e7e5e4;
-      --border-strong: #d6d3d1;
-      --accent-blue: #0369a1;
-      --accent-green: #15803d;
-      --accent-amber: #b45309;
-      --accent-rose: #be123c;
-      --accent-violet: #7c3aed;
-      --accent-slate: #475569;
-      --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.07);
-      --radius: 6px;
-      --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
-      --font-mono: 'IBM Plex Mono', monospace;
-    }
-
-    #widget-frame * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    .widget-container {
-      max-width: 800px;
-      margin: 0 auto;
-      font-family: var(--font-sans);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 14px;
-      line-height: 1.5;
-      padding: 16px;
-      border-radius: 8px;
-    }
-
-    .widget-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .widget-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .view-toggle {
-      display: flex;
-      gap: 4px;
-      background: var(--bg-secondary);
-      padding: 3px;
-      border-radius: var(--radius);
-    }
-
-    .view-toggle button {
-      padding: 6px 12px;
-      border: none;
-      background: transparent;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.15s ease;
-    }
-
-    .view-toggle button.active {
-      background: var(--bg-card);
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .view-toggle button:hover:not(.active) { color: var(--text-primary); }
-
-    .client-header {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .client-name {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .client-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
-
-    .client-meta-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .client-meta-label {
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .narrative-view {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .narrative-text {
-      font-size: 15px;
-      line-height: 1.7;
-      color: var(--text-primary);
-    }
-
-    .structured-view {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .field-group {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .field-group-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border);
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.15s ease;
-    }
-
-    .field-group-header:hover { background: var(--bg-tertiary); }
-
-    .field-group-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-      font-size: 13px;
-      color: var(--text-primary);
-    }
-
-    .field-group-count {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    .field-group-chevron {
-      color: var(--text-muted);
-      transition: transform 0.2s ease;
-      font-size: 12px;
-    }
-
-    .field-group.collapsed .field-group-chevron { transform: rotate(-90deg); }
-    .field-group.collapsed .field-group-content { display: none; }
-
-    .field-group-content { padding: 12px 16px; }
-
-    .field-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--bg-secondary);
-    }
-
-    .field-item:last-child { border-bottom: none; }
-
-    .field-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-      flex-shrink: 0;
-      max-width: 45%;
-    }
-
-    .field-value {
-      font-size: 13px;
-      color: var(--text-primary);
-      text-align: right;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .field-value a {
-      color: var(--accent-blue);
-      text-decoration: none;
-    }
-
-    .field-value a:hover { text-decoration: underline; }
-
-    .provenance-badge {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      padding: 2px 6px;
-      background: var(--bg-secondary);
-      border-radius: 3px;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .tier-indicator {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: inline-block;
-      margin-right: 6px;
-    }
-
-    .tier-1 { background: var(--accent-green); }
-    .tier-2 { background: var(--accent-blue); }
-    .tier-3 { background: var(--accent-amber); }
-
-    .uncategorized-section { margin-top: 8px; }
-
-    .uncategorized-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      background: var(--bg-secondary);
-      border: 1px dashed var(--border-strong);
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--text-secondary);
-      width: 100%;
-      transition: all 0.15s ease;
-    }
-
-    .uncategorized-toggle:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .uncategorized-content {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-
-    .uncategorized-content.visible { display: block; }
-
-    .triplet {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 8px;
-      padding: 6px 0;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      border-bottom: 1px solid var(--bg-secondary);
-      align-items: center;
-    }
-
-    .triplet:last-child { border-bottom: none; }
-    .triplet-source { color: var(--text-muted); font-size: 11px; }
-    .triplet-field { color: var(--accent-violet); }
-    .triplet-value { color: var(--text-primary); text-align: right; word-break: break-word; }
-
-    .case-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
-      padding: 4px;
-      background: var(--bg-secondary);
-      border-radius: var(--radius);
-      overflow-x: auto;
-    }
-
-    .case-tab {
-      padding: 8px 14px;
-      border: none;
-      background: transparent;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-radius: 4px;
-      white-space: nowrap;
-      transition: all 0.15s ease;
-    }
-
-    .case-tab.active {
-      background: var(--bg-card);
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .case-tab:hover:not(.active) { color: var(--text-primary); }
-    .case-tab .case-count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
-
-    .settings-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-
-    .settings-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .settings-toggle input { cursor: pointer; }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px;
-      color: var(--text-secondary);
-    }
-
-    .loading-spinner {
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent-blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 12px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .error {
-      padding: 24px;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: var(--radius);
-      color: #991b1b;
-    }
-
-    .error-title { font-weight: 600; margin-bottom: 4px; }
-
-    /* Debug Panel Styles */
-    .debug-panel {
-      display: none;
-      margin-top: 12px;
-      padding: 12px;
-      background: #1e293b;
-      border-radius: var(--radius);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .debug-panel.visible { display: block; }
-
-    .debug-panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #334155;
-    }
-
-    .debug-panel-title {
-      color: #94a3b8;
-      font-weight: 500;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .debug-clear-btn {
-      padding: 4px 8px;
-      background: #475569;
-      border: none;
-      border-radius: 3px;
-      color: #e2e8f0;
-      font-size: 10px;
-      cursor: pointer;
-    }
-
-    .debug-clear-btn:hover { background: #64748b; }
-
-    .debug-log-entry {
-      padding: 4px 0;
-      border-bottom: 1px solid #334155;
-      line-height: 1.4;
-    }
-
-    .debug-log-entry:last-child { border-bottom: none; }
-
-    .debug-timestamp {
-      color: #64748b;
-      margin-right: 8px;
-    }
-
-    .debug-level-info { color: #38bdf8; }
-    .debug-level-success { color: #4ade80; }
-    .debug-level-warn { color: #fbbf24; }
-    .debug-level-error { color: #f87171; }
-
-    .debug-message { color: #e2e8f0; }
-
-    .debug-data {
-      display: block;
-      margin-top: 4px;
-      padding: 6px 8px;
-      background: #0f172a;
-      border-radius: 3px;
-      color: #a5b4fc;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-
-    .debug-toggle-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .debug-status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #64748b;
-    }
-
-    .debug-status-indicator.active {
-      background: #4ade80;
-      box-shadow: 0 0 6px #4ade80;
-    }
-  </style>
-
-  <div class="widget-container" id="app">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      <span>Loading client data...</span>
-    </div>
-  </div>
-</div>
-
+<!-- Widget Styles (Light theme for widget area) -->
+<style id="widget-styles">
+  #widget-frame {
+    background: #fafaf9;
+    border-radius: 8px;
+    min-height: 400px;
+  }
+
+  #widget-frame :root {
+    --bg-primary: #fafaf9;
+    --bg-secondary: #f5f5f4;
+    --bg-tertiary: #e7e5e4;
+    --bg-card: #ffffff;
+    --text-primary: #1c1917;
+    --text-secondary: #57534e;
+    --text-muted: #a8a29e;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --accent-blue: #0369a1;
+    --accent-green: #15803d;
+    --accent-amber: #b45309;
+    --accent-rose: #be123c;
+    --accent-violet: #7c3aed;
+    --accent-slate: #475569;
+    --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.07);
+    --radius: 6px;
+    --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  #widget-frame * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #widget-frame .widget-container {
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  #widget-frame .widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #widget-frame .widget-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #widget-frame .view-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-secondary);
+    padding: 3px;
+    border-radius: var(--radius);
+  }
+
+  #widget-frame .view-toggle button {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+
+  #widget-frame .view-toggle button.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  #widget-frame .view-toggle button:hover:not(.active) { color: var(--text-primary); }
+
+  #widget-frame .client-header {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  #widget-frame .client-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  #widget-frame .client-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  #widget-frame .client-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #widget-frame .client-meta-label {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  #widget-frame .narrative-view {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  #widget-frame .narrative-text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  #widget-frame .structured-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #widget-frame .field-group {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  #widget-frame .field-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+  }
+
+  #widget-frame .field-group-header:hover { background: var(--bg-tertiary); }
+
+  #widget-frame .field-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  #widget-frame .field-group-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  #widget-frame .field-group-chevron {
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    font-size: 12px;
+  }
+
+  #widget-frame .field-group.collapsed .field-group-chevron { transform: rotate(-90deg); }
+  #widget-frame .field-group.collapsed .field-group-content { display: none; }
+
+  #widget-frame .field-group-content { padding: 12px 16px; }
+
+  #widget-frame .field-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--bg-secondary);
+  }
+
+  #widget-frame .field-item:last-child { border-bottom: none; }
+
+  #widget-frame .field-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    max-width: 45%;
+  }
+
+  #widget-frame .field-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #widget-frame .field-value a {
+    color: var(--accent-blue);
+    text-decoration: none;
+  }
+
+  #widget-frame .field-value a:hover { text-decoration: underline; }
+
+  #widget-frame .provenance-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 2px 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  #widget-frame .tier-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  #widget-frame .tier-1 { background: var(--accent-green); }
+  #widget-frame .tier-2 { background: var(--accent-blue); }
+  #widget-frame .tier-3 { background: var(--accent-amber); }
+
+  #widget-frame .uncategorized-section { margin-top: 8px; }
+
+  #widget-frame .uncategorized-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    width: 100%;
+    transition: all 0.15s ease;
+  }
+
+  #widget-frame .uncategorized-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  #widget-frame .uncategorized-content {
+    display: none;
+    margin-top: 8px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  #widget-frame .uncategorized-content.visible { display: block; }
+
+  #widget-frame .triplet {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 6px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-bottom: 1px solid var(--bg-secondary);
+    align-items: center;
+  }
+
+  #widget-frame .triplet:last-child { border-bottom: none; }
+  #widget-frame .triplet-source { color: var(--text-muted); font-size: 11px; }
+  #widget-frame .triplet-field { color: var(--accent-violet); }
+  #widget-frame .triplet-value { color: var(--text-primary); text-align: right; word-break: break-word; }
+
+  #widget-frame .case-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 4px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  #widget-frame .case-tab {
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  #widget-frame .case-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  #widget-frame .case-tab:hover:not(.active) { color: var(--text-primary); }
+  #widget-frame .case-tab .case-count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+
+  #widget-frame .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  #widget-frame .settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  #widget-frame .settings-toggle input { cursor: pointer; }
+
+  #widget-frame .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--text-secondary);
+  }
+
+  #widget-frame .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #widget-frame .error {
+    padding: 24px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    color: #991b1b;
+  }
+
+  #widget-frame .error-title { font-weight: 600; margin-bottom: 4px; }
+
+  #widget-frame .debug-panel {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: #1e293b;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  #widget-frame .debug-panel.visible { display: block; }
+
+  #widget-frame .debug-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #334155;
+  }
+
+  #widget-frame .debug-panel-title {
+    color: #94a3b8;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #widget-frame .debug-clear-btn {
+    padding: 4px 8px;
+    background: #475569;
+    border: none;
+    border-radius: 3px;
+    color: #e2e8f0;
+    font-size: 10px;
+    cursor: pointer;
+  }
+
+  #widget-frame .debug-clear-btn:hover { background: #64748b; }
+
+  #widget-frame .debug-log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #334155;
+    line-height: 1.4;
+  }
+
+  #widget-frame .debug-log-entry:last-child { border-bottom: none; }
+
+  #widget-frame .debug-timestamp { color: #64748b; margin-right: 8px; }
+  #widget-frame .debug-level-info { color: #38bdf8; }
+  #widget-frame .debug-level-success { color: #4ade80; }
+  #widget-frame .debug-level-warn { color: #fbbf24; }
+  #widget-frame .debug-level-error { color: #f87171; }
+  #widget-frame .debug-message { color: #e2e8f0; }
+
+  #widget-frame .debug-data {
+    display: block;
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: #0f172a;
+    border-radius: 3px;
+    color: #a5b4fc;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  #widget-frame .debug-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #widget-frame .debug-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+  }
+
+  #widget-frame .debug-status-indicator.active {
+    background: #4ade80;
+    box-shadow: 0 0 6px #4ade80;
+  }
+</style>
+
+<!-- Page Controller Script -->
 <script>
-// Widget code (same as widget.html but inline for testing)
 (function() {
   'use strict';
 
-  const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
+  let currentMode = 'manual';
+  let widgetLoaded = false;
 
-  // ==========================================================================
-  // DEBUG LOGGER - Toggleable error/info logging for troubleshooting
-  // ==========================================================================
-  const DebugLogger = {
-    enabled: false,
-    logs: [],
-    maxLogs: 100,
-
-    log(level, message, data = null) {
-      const entry = {
-        timestamp: new Date().toISOString().substr(11, 12),
-        level,
-        message,
-        data: data ? this.safeStringify(data) : null
-      };
-
-      this.logs.unshift(entry);
-      if (this.logs.length > this.maxLogs) this.logs.pop();
-
-      // Also log to console when debug is enabled
-      if (this.enabled) {
-        const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
-        console[consoleMethod](`[ClientGlance ${level.toUpperCase()}]`, message, data || '');
-      }
-
-      this.updatePanel();
-    },
-
-    info(message, data = null) { this.log('info', message, data); },
-    success(message, data = null) { this.log('success', message, data); },
-    warn(message, data = null) { this.log('warn', message, data); },
-    error(message, data = null) { this.log('error', message, data); },
-
-    safeStringify(obj) {
-      try {
-        if (typeof obj === 'string') return obj;
-        return JSON.stringify(obj, (key, value) => {
-          if (typeof value === 'function') return '[Function]';
-          if (value instanceof RegExp) return value.toString();
-          return value;
-        }, 2);
-      } catch (e) {
-        return String(obj);
-      }
-    },
-
-    clear() {
-      this.logs = [];
-      this.updatePanel();
-    },
-
-    toggle(enabled) {
-      this.enabled = enabled;
-      this.updatePanel();
-      if (enabled) {
-        this.info('Debug mode enabled - logging all data flow');
-      }
-    },
-
-    updatePanel() {
-      const panel = document.getElementById('debug-panel');
-      const indicator = document.getElementById('debug-status-indicator');
-      if (!panel) return;
-
-      if (this.enabled) {
-        panel.classList.add('visible');
-        if (indicator) indicator.classList.add('active');
-      } else {
-        panel.classList.remove('visible');
-        if (indicator) indicator.classList.remove('active');
-      }
-
-      const logsContainer = document.getElementById('debug-logs');
-      if (!logsContainer) return;
-
-      logsContainer.innerHTML = this.logs.map(entry => `
-        <div class="debug-log-entry">
-          <span class="debug-timestamp">${entry.timestamp}</span>
-          <span class="debug-level-${entry.level}">[${entry.level.toUpperCase()}]</span>
-          <span class="debug-message">${this.escapeHtml(entry.message)}</span>
-          ${entry.data ? `<code class="debug-data">${this.escapeHtml(entry.data)}</code>` : ''}
-        </div>
-      `).join('') || '<div class="debug-log-entry"><span class="debug-message" style="color: #64748b;">No logs yet...</span></div>';
-    },
-
-    escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    },
-
-    renderPanel() {
-      return `
-        <div class="debug-panel ${this.enabled ? 'visible' : ''}" id="debug-panel">
-          <div class="debug-panel-header">
-            <span class="debug-panel-title">Debug Log</span>
-            <button class="debug-clear-btn" onclick="window.ClientGlance.DebugLogger.clear()">Clear</button>
-          </div>
-          <div id="debug-logs"></div>
-        </div>
-      `;
-    }
-  };
-
-  const Utils = {
-    getRecordId() {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('recordId') || params.get('record_id') || params.get('id');
-      } catch (e) {
-        // Handle cross-origin iframe SecurityError
-        DebugLogger.warn('Cannot access window.location (cross-origin iframe)', e.message);
-        return null;
-      }
-    },
-
-    formatDate(value, includeTime = false) {
-      try {
-        const date = new Date(value);
-        if (isNaN(date.getTime())) return value;
-        const options = includeTime 
-          ? CONFIG?.DISPLAY?.dateTimeFormat || { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
-          : CONFIG?.DISPLAY?.dateFormat || { year: 'numeric', month: 'short', day: 'numeric' };
-        return date.toLocaleDateString('en-US', options);
-      } catch { return value; }
-    },
-
-    formatPhone(value) {
-      const cleaned = String(value).replace(/\D/g, '');
-      if (cleaned.length === 10) {
-        return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
-      }
-      return value;
-    },
-
-    humanizeFieldName(name) {
-      return name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, s => s.toUpperCase());
-    },
-
-    applyTemplate(template, value, dataType) {
-      let formattedValue = value;
-      if (template.includes('{value:date}')) {
-        formattedValue = this.formatDate(value);
-        return template.replace('{value:date}', formattedValue);
-      }
-      if (template.includes('{value:datetime}')) {
-        formattedValue = this.formatDate(value, true);
-        return template.replace('{value:datetime}', formattedValue);
-      }
-      if (template.includes('{value:phone}')) {
-        formattedValue = this.formatPhone(value);
-        return template.replace('{value:phone}', formattedValue);
-      }
-      if (template.includes('{value:lowercase}')) {
-        formattedValue = String(value).toLowerCase();
-        return template.replace('{value:lowercase}', formattedValue);
-      }
-      return template.replace('{value}', value);
-    },
-
-    inferDataType(value) {
-      if (!value || typeof value !== 'string') return null;
-      const patterns = CONFIG?.DATA_TYPE_PATTERNS || [];
-      for (const { type, pattern, minLength } of patterns) {
-        if (pattern.test(value)) {
-          if (minLength && value.length < minLength) continue;
-          return type;
-        }
-      }
-      return null;
-    },
-
-    formatByType(value, type) {
-      switch (type) {
-        case 'date': return this.formatDate(value);
-        case 'datetime': return this.formatDate(value, true);
-        case 'phone': return this.formatPhone(value);
-        case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
-        default: return value;
-      }
-    },
-
-    isHiddenField(fieldName) {
-      const hiddenPatterns = CONFIG?.DISPLAY?.hiddenFields || [];
-      return hiddenPatterns.some(pattern => {
-        if (pattern instanceof RegExp) return pattern.test(fieldName);
-        return fieldName === pattern;
-      });
-    },
-
-    findGroupByPattern(fieldName) {
-      const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
-      for (const { group, pattern } of patterns) {
-        if (pattern.test(fieldName)) return group;
-      }
-      return null;
-    },
-
-    escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-  };
-
-  const DataProcessor = {
-    processFields(rawData) {
-      const processed = [];
-      if (rawData.clientInfo) {
-        this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
-      }
-      if (rawData.cases && Array.isArray(rawData.cases)) {
-        rawData.cases.forEach((caseRecord, index) => {
-          const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
-          this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
-        });
-      }
-      return processed;
-    },
-
-    processRecord(record, sourceTable, caseLabel, results) {
-      const fields = record.fields || record;
-      Object.entries(fields).forEach(([fieldName, value]) => {
-        if (value === null || value === undefined || value === '') return;
-        if (Array.isArray(value) && value.length === 0) return;
-        if (Utils.isHiddenField(fieldName)) return;
-        if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
-        const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
-        if (processedField) results.push(processedField);
-      });
-    },
-
-    processField(fieldName, value, sourceTable, caseLabel, recordId) {
-      const semanticConfig = CONFIG?.SEMANTIC_ROLES?.[fieldName];
-      let displayValue = value;
-      if (Array.isArray(value)) displayValue = value.join(', ');
-      else if (typeof value === 'object') displayValue = JSON.stringify(value);
-
-      if (semanticConfig) {
-        const rendered = Utils.applyTemplate(semanticConfig.template, displayValue, semanticConfig.dataType);
-        return {
-          tier: 1, fieldName, value: displayValue, rendered,
-          role: semanticConfig.role, group: semanticConfig.group,
-          priority: semanticConfig.priority || 99,
-          narrativePosition: semanticConfig.narrativePosition,
-          dataType: semanticConfig.dataType, sourceTable, caseLabel, recordId
-        };
-      }
-
-      const group = Utils.findGroupByPattern(fieldName);
-      const inferredType = Utils.inferDataType(String(displayValue));
-
-      if (group || inferredType) {
-        const formatted = inferredType ? Utils.formatByType(displayValue, inferredType) : displayValue;
-        return {
-          tier: 2, fieldName, value: displayValue, rendered: formatted,
-          role: null, group: group || 'Other', priority: 50,
-          narrativePosition: null, dataType: inferredType,
-          sourceTable, caseLabel, recordId
-        };
-      }
-
-      return {
-        tier: 3, fieldName, value: displayValue, rendered: String(displayValue),
-        role: null, group: 'Uncategorized', priority: 99,
-        narrativePosition: null, dataType: null, sourceTable, caseLabel, recordId
-      };
-    },
-
-    composeNarrative(fields) {
-      const tier1 = fields.filter(f => f.tier === 1);
-      const templates = CONFIG?.NARRATIVE_TEMPLATES || {};
-      const sentences = [];
-
-      const orderedTemplates = Object.entries(templates).sort(([,a], [,b]) => a.order - b.order);
-      for (const [name, template] of orderedTemplates) {
-        try {
-          const sentence = template.compose(tier1);
-          if (sentence) sentences.push(sentence);
-        } catch (e) { console.warn(`Error composing ${name} narrative:`, e); }
-      }
-
-      const usedRoles = new Set(tier1.filter(f => f.narrativePosition).map(f => f.role));
-      const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && !['client_name', 'a_number', 'date_of_birth', 'country_of_origin'].includes(f.role));
-
-      if (unusedTier1.length > 0) {
-        const grouped = {};
-        unusedTier1.forEach(f => {
-          if (!grouped[f.group]) grouped[f.group] = [];
-          grouped[f.group].push(f);
-        });
-        Object.entries(grouped).forEach(([group, items]) => {
-          const parts = items.slice(0, 3).map(i => i.rendered);
-          if (parts.length) sentences.push(`${group}: ${parts.join(', ')}`);
-        });
-      }
-
-      return sentences.join('. ') + (sentences.length ? '.' : '');
-    },
-
-    groupFields(fields) {
-      const groups = {};
-      fields.forEach(field => {
-        const groupName = field.group || 'Uncategorized';
-        if (!groups[groupName]) groups[groupName] = [];
-        groups[groupName].push(field);
-      });
-
-      Object.values(groups).forEach(groupFields => {
-        groupFields.sort((a, b) => {
-          if (a.tier !== b.tier) return a.tier - b.tier;
-          return a.priority - b.priority;
-        });
-      });
-
-      const groupOrder = CONFIG?.GROUP_ORDER || [];
-      const sortedGroups = {};
-      groupOrder.forEach(groupName => { if (groups[groupName]) sortedGroups[groupName] = groups[groupName]; });
-      Object.keys(groups).forEach(groupName => { if (!sortedGroups[groupName]) sortedGroups[groupName] = groups[groupName]; });
-      return sortedGroups;
-    },
-
-    extractHeaderFields(fields) {
-      const headerRoles = CONFIG?.DISPLAY?.headerFields || ['client_name', 'a_number', 'dob'];
-      return fields.filter(f => headerRoles.includes(f.role));
-    }
-  };
-
-  const Renderer = {
-    state: { viewMode: 'structured', showProvenance: false, expandedGroups: new Set(['Court', 'SIJ', 'USCIS']), selectedCase: 'all' },
-
-    init(data) {
-      DebugLogger.info('Renderer initializing with data');
-      this.data = data;
-
-      try {
-        DebugLogger.info('Processing fields...');
-        this.processedFields = DataProcessor.processFields(data);
-        DebugLogger.success('Fields processed', {
-          totalFields: this.processedFields.length,
-          tier1: this.processedFields.filter(f => f.tier === 1).length,
-          tier2: this.processedFields.filter(f => f.tier === 2).length,
-          tier3: this.processedFields.filter(f => f.tier === 3).length,
-          groups: [...new Set(this.processedFields.map(f => f.group))]
-        });
-
-        DebugLogger.info('Rendering UI...');
-        this.render();
-        DebugLogger.success('Render complete');
-      } catch (error) {
-        DebugLogger.error('Renderer init failed', { message: error.message, stack: error.stack });
-        throw error;
-      }
-    },
-
-    render() {
-      const container = document.getElementById('app');
-      const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
-      const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
-      const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
-
-      let displayFields = this.processedFields;
-      if (this.state.selectedCase !== 'all' && cases.length > 1) {
-        displayFields = this.processedFields.filter(f => !f.caseLabel || f.caseLabel === this.state.selectedCase);
-      }
-
-      container.innerHTML = `
-        <div class="widget-header">
-          <span class="widget-title">Client At-a-Glance</span>
-          <div class="view-toggle">
-            <button class="${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
-            <button class="${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
-          </div>
-        </div>
-        ${this.renderClientHeader(headerFields, clientName)}
-        ${cases.length > 1 ? this.renderCaseTabs(cases) : ''}
-        ${this.state.viewMode === 'narrative' ? this.renderNarrativeView(displayFields) : this.renderStructuredView(displayFields)}
-        <div class="settings-row">
-          <label class="settings-toggle">
-            <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance"> Show sources
-          </label>
-          <label class="settings-toggle debug-toggle-container">
-            <input type="checkbox" ${DebugLogger.enabled ? 'checked' : ''} data-setting="debug">
-            <span class="debug-status-indicator ${DebugLogger.enabled ? 'active' : ''}" id="debug-status-indicator"></span>
-            Debug mode
-          </label>
-        </div>
-        ${DebugLogger.renderPanel()}
-      `;
-      this.attachEventListeners();
-      DebugLogger.updatePanel();
-    },
-
-    renderClientHeader(headerFields, clientName) {
-      const aNum = headerFields.find(f => f.role === 'a_number');
-      const dob = headerFields.find(f => f.role === 'date_of_birth');
-      const country = headerFields.find(f => f.role === 'country_of_origin');
-      return `
-        <div class="client-header">
-          <div class="client-name">${Utils.escapeHtml(clientName)}</div>
-          <div class="client-meta">
-            ${aNum ? `<span class="client-meta-item"><span class="client-meta-label">A#</span> ${Utils.escapeHtml(aNum.value)}</span>` : ''}
-            ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}</span>` : ''}
-            ${country ? `<span class="client-meta-item"><span class="client-meta-label">From</span> ${Utils.escapeHtml(country.value)}</span>` : ''}
-          </div>
-        </div>
-      `;
-    },
-
-    renderCaseTabs(cases) {
-      return `
-        <div class="case-tabs">
-          <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">All Cases<span class="case-count">${cases.length}</span></button>
-          ${cases.map(c => `<button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">${Utils.escapeHtml(c)}</button>`).join('')}
-        </div>
-      `;
-    },
-
-    renderNarrativeView(fields) {
-      const narrative = DataProcessor.composeNarrative(fields);
-      const tier2and3 = fields.filter(f => f.tier > 1);
-      const grouped = DataProcessor.groupFields(tier2and3);
-
-      return `
-        <div class="narrative-view">
-          <div class="narrative-text">${narrative || '<em>No semantic data available for this client.</em>'}</div>
-        </div>
-        ${Object.keys(grouped).length > 0 ? `
-          <div class="uncategorized-section">
-            <button class="uncategorized-toggle" data-action="toggle-extra">
-              <span>▶</span> Also on file (${tier2and3.length} fields not in narrative)
-            </button>
-            <div class="uncategorized-content" id="extra-fields">${this.renderGroupedFields(grouped, true)}</div>
-          </div>
-        ` : ''}
-      `;
-    },
-
-    renderStructuredView(fields) {
-      const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
-      const nonHeaderFields = fields.filter(f => !headerRoles.includes(f.role));
-      const grouped = DataProcessor.groupFields(nonHeaderFields);
-      return `<div class="structured-view">${this.renderGroupedFields(grouped, false)}</div>`;
-    },
-
-    renderGroupedFields(grouped, flat = false) {
-      const groupOrder = CONFIG?.GROUP_ORDER || Object.keys(grouped);
-      return groupOrder
-        .filter(groupName => grouped[groupName] && grouped[groupName].length > 0)
-        .map(groupName => {
-          const groupFields = grouped[groupName];
-          const isUncategorized = groupName === 'Uncategorized';
-          const isExpanded = this.state.expandedGroups.has(groupName) || flat;
-
-          if (flat) return this.renderFlatGroup(groupName, groupFields);
-
-          return `
-            <div class="field-group ${isExpanded ? '' : 'collapsed'}" data-group="${Utils.escapeHtml(groupName)}">
-              <div class="field-group-header">
-                <span class="field-group-title">${Utils.escapeHtml(groupName)}<span class="field-group-count">(${groupFields.length})</span></span>
-                <span class="field-group-chevron">▼</span>
-              </div>
-              <div class="field-group-content">${isUncategorized ? this.renderTriplets(groupFields) : this.renderFieldItems(groupFields)}</div>
-            </div>
-          `;
-        }).join('');
-    },
-
-    renderFlatGroup(groupName, fields) {
-      const isUncategorized = groupName === 'Uncategorized';
-      return `
-        <div style="margin-bottom: 16px;">
-          <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">${Utils.escapeHtml(groupName)}</div>
-          ${isUncategorized ? this.renderTriplets(fields) : this.renderFieldItems(fields)}
-        </div>
-      `;
-    },
-
-    renderFieldItems(fields) {
-      return fields.map(field => `
-        <div class="field-item">
-          <span class="field-label"><span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}</span>
-          <span class="field-value">
-            ${this.renderFieldValue(field)}
-            ${this.state.showProvenance && field.caseLabel ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` : ''}
-          </span>
-        </div>
-      `).join('');
-    },
-
-    renderFieldValue(field) {
-      const value = field.rendered || field.value;
-      if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
-        return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link ↗</a>`;
-      }
-      const strValue = String(value);
-      if (strValue.length > 100) {
-        return `<span title="${Utils.escapeHtml(strValue)}">${Utils.escapeHtml(strValue.slice(0, 100))}…</span>`;
-      }
-      return Utils.escapeHtml(strValue);
-    },
-
-    renderTriplets(fields) {
-      return fields.map(field => `
-        <div class="triplet">
-          <span class="triplet-source">[${Utils.escapeHtml(field.caseLabel || field.sourceTable)}]</span>
-          <span class="triplet-field">${Utils.escapeHtml(field.fieldName)}</span>
-          <span class="triplet-value">${this.renderFieldValue(field)}</span>
-        </div>
-      `).join('');
-    },
-
-    attachEventListeners() {
-      document.querySelectorAll('.view-toggle button').forEach(btn => {
-        btn.addEventListener('click', (e) => { this.state.viewMode = e.target.dataset.view; this.render(); });
-      });
-      document.querySelectorAll('.case-tab').forEach(btn => {
-        btn.addEventListener('click', (e) => { this.state.selectedCase = e.target.dataset.case; this.render(); });
-      });
-      document.querySelectorAll('.field-group-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-          const group = e.currentTarget.parentElement;
-          const groupName = group.dataset.group;
-          if (this.state.expandedGroups.has(groupName)) this.state.expandedGroups.delete(groupName);
-          else this.state.expandedGroups.add(groupName);
-          group.classList.toggle('collapsed');
-        });
-      });
-      const extraToggle = document.querySelector('[data-action="toggle-extra"]');
-      if (extraToggle) {
-        extraToggle.addEventListener('click', () => {
-          const content = document.getElementById('extra-fields');
-          content.classList.toggle('visible');
-          extraToggle.querySelector('span').textContent = content.classList.contains('visible') ? '▼' : '▶';
-        });
-      }
-      document.querySelectorAll('[data-setting]').forEach(input => {
-        input.addEventListener('change', (e) => {
-          if (e.target.dataset.setting === 'provenance') { this.state.showProvenance = e.target.checked; this.render(); }
-          if (e.target.dataset.setting === 'debug') { DebugLogger.toggle(e.target.checked); }
-        });
-      });
-    }
-  };
+  // Initialize on DOM ready
+  document.addEventListener('DOMContentLoaded', init);
 
   function init() {
-    const container = document.getElementById('app');
-    DebugLogger.info('Widget initializing...');
-    try {
-      DebugLogger.info('URL params', Object.fromEntries(new URLSearchParams(window.location.search)));
-    } catch (e) {
-      DebugLogger.warn('Cannot access URL params (cross-origin iframe)');
+    // Check URL for recordId
+    const params = new URLSearchParams(window.location.search);
+    const urlRecordId = params.get('recordId') || params.get('record_id') || params.get('id');
+
+    if (urlRecordId) {
+      // Auto-switch to URL mode if recordId found
+      setMode('url');
+      document.getElementById('recordIdInput').value = urlRecordId;
+      updateUrlDisplay(urlRecordId);
+      // Auto-load after a brief delay
+      setTimeout(() => loadWidgetWithData(window.MOCK_DATA), 100);
+    } else {
+      setMode('manual');
+      updateUrlDisplay(null);
     }
 
+    // Enter key handler
+    document.getElementById('recordIdInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loadWidget();
+    });
+  }
+
+  window.setMode = function(mode) {
+    currentMode = mode;
+    document.getElementById('pageContainer').dataset.mode = mode;
+
+    // Update mode buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    if (mode === 'url') {
+      const params = new URLSearchParams(window.location.search);
+      const urlRecordId = params.get('recordId') || params.get('record_id') || params.get('id');
+      updateUrlDisplay(urlRecordId);
+    }
+  };
+
+  function updateUrlDisplay(recordId) {
+    const urlText = document.getElementById('urlText');
+    const urlStatus = document.getElementById('urlStatus');
+
+    const baseUrl = window.location.origin + window.location.pathname;
+
+    if (recordId) {
+      urlText.innerHTML = `${baseUrl}?recordId=<span class="param">${escapeHtml(recordId)}</span>`;
+      urlStatus.className = 'url-status found';
+      urlStatus.innerHTML = '<span class="status-dot">&#x2713;</span><span class="status-label">Found</span>';
+    } else {
+      urlText.textContent = baseUrl + ' (no recordId parameter)';
+      urlStatus.className = 'url-status not-found';
+      urlStatus.innerHTML = '<span class="status-dot">!</span><span class="status-label">Not found</span>';
+    }
+  }
+
+  window.loadWidget = function() {
+    const recordId = document.getElementById('recordIdInput').value.trim();
+
+    if (currentMode === 'manual' && !recordId) {
+      showStatus('Please enter a recordId or use Mock Data', 'error');
+      return;
+    }
+
+    // Update URL if manual mode
+    if (currentMode === 'manual' && recordId) {
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('recordId', recordId);
+      window.history.pushState({}, '', newUrl);
+    }
+
+    showStatus('Loading widget...', 'info');
+    loadWidgetWithData(window.MOCK_DATA);
+  };
+
+  window.loadMockData = function() {
+    showStatus('Loading mock data...', 'info');
+    loadWidgetWithData(window.MOCK_DATA);
+  };
+
+  function loadWidgetWithData(data) {
+    const container = document.getElementById('widgetContainer');
+    const emptyState = document.getElementById('emptyState');
+
+    // Hide empty state
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Remove existing widget frame
+    const existingFrame = document.getElementById('widget-frame');
+    if (existingFrame) existingFrame.remove();
+
+    // Create widget frame
+    const widgetFrame = document.createElement('div');
+    widgetFrame.id = 'widget-frame';
+    widgetFrame.innerHTML = `
+      <div class="widget-container" id="app">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <span>Loading client data...</span>
+        </div>
+      </div>
+    `;
+    container.appendChild(widgetFrame);
+
+    // Initialize widget after a brief delay
+    setTimeout(() => {
+      initWidget(data);
+      widgetLoaded = true;
+      showStatus('Widget loaded successfully', 'success');
+    }, 100);
+  }
+
+  window.reloadWidget = function() {
+    if (widgetLoaded) {
+      loadWidgetWithData(window.MOCK_DATA);
+    } else {
+      loadWidget();
+    }
+  };
+
+  window.logState = function() {
+    if (window.ClientGlance) {
+      console.log('ClientGlance State:', window.ClientGlance);
+    } else {
+      console.log('Widget not loaded');
+    }
+  };
+
+  window.logMockData = function() {
+    console.log('Mock Data:', window.MOCK_DATA);
+  };
+
+  window.toggleDebug = function() {
+    if (window.ClientGlance && window.ClientGlance.DebugLogger) {
+      const current = window.ClientGlance.DebugLogger.enabled;
+      window.ClientGlance.DebugLogger.toggle(!current);
+      const debugCheckbox = document.querySelector('[data-setting="debug"]');
+      if (debugCheckbox) debugCheckbox.checked = !current;
+      showStatus(`Debug mode ${!current ? 'enabled' : 'disabled'}`, 'success');
+    }
+  };
+
+  window.copyUrl = function() {
+    const recordId = document.getElementById('recordIdInput').value.trim();
+    let url = window.location.origin + window.location.pathname;
+    if (recordId) {
+      url += '?recordId=' + encodeURIComponent(recordId);
+    }
+    navigator.clipboard.writeText(url).then(() => {
+      showStatus('URL copied to clipboard', 'success');
+    });
+  };
+
+  window.openInNewTab = function() {
+    const recordId = document.getElementById('recordIdInput').value.trim();
+    let url = 'widget.html';
+    if (recordId) {
+      url += '?recordId=' + encodeURIComponent(recordId);
+    }
+    window.open(url, '_blank');
+  };
+
+  function showStatus(message, type = 'info') {
+    const statusBar = document.getElementById('statusBar');
+    const statusText = document.getElementById('statusText');
+
+    statusBar.className = 'status-bar visible ' + type;
+    statusText.textContent = message;
+
+    if (type === 'success') {
+      setTimeout(() => {
+        statusBar.classList.remove('visible');
+      }, 3000);
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Widget initialization function (embedded widget code)
+  function initWidget(data) {
+    const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
+
+    const DebugLogger = {
+      enabled: false,
+      logs: [],
+      maxLogs: 100,
+
+      log(level, message, data = null) {
+        const entry = {
+          timestamp: new Date().toISOString().substr(11, 12),
+          level,
+          message,
+          data: data ? this.safeStringify(data) : null
+        };
+        this.logs.unshift(entry);
+        if (this.logs.length > this.maxLogs) this.logs.pop();
+        if (this.enabled) {
+          const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+          console[consoleMethod](`[ClientGlance ${level.toUpperCase()}]`, message, data || '');
+        }
+        this.updatePanel();
+      },
+
+      info(message, data = null) { this.log('info', message, data); },
+      success(message, data = null) { this.log('success', message, data); },
+      warn(message, data = null) { this.log('warn', message, data); },
+      error(message, data = null) { this.log('error', message, data); },
+
+      safeStringify(obj) {
+        try {
+          if (typeof obj === 'string') return obj;
+          return JSON.stringify(obj, (key, value) => {
+            if (typeof value === 'function') return '[Function]';
+            if (value instanceof RegExp) return value.toString();
+            return value;
+          }, 2);
+        } catch (e) { return String(obj); }
+      },
+
+      clear() { this.logs = []; this.updatePanel(); },
+
+      toggle(enabled) {
+        this.enabled = enabled;
+        this.updatePanel();
+        if (enabled) this.info('Debug mode enabled');
+      },
+
+      updatePanel() {
+        const panel = document.getElementById('debug-panel');
+        const indicator = document.getElementById('debug-status-indicator');
+        if (!panel) return;
+        if (this.enabled) {
+          panel.classList.add('visible');
+          if (indicator) indicator.classList.add('active');
+        } else {
+          panel.classList.remove('visible');
+          if (indicator) indicator.classList.remove('active');
+        }
+        const logsContainer = document.getElementById('debug-logs');
+        if (!logsContainer) return;
+        logsContainer.innerHTML = this.logs.map(entry => `
+          <div class="debug-log-entry">
+            <span class="debug-timestamp">${entry.timestamp}</span>
+            <span class="debug-level-${entry.level}">[${entry.level.toUpperCase()}]</span>
+            <span class="debug-message">${this.escapeHtml(entry.message)}</span>
+            ${entry.data ? `<code class="debug-data">${this.escapeHtml(entry.data)}</code>` : ''}
+          </div>
+        `).join('') || '<div class="debug-log-entry"><span class="debug-message" style="color: #64748b;">No logs yet...</span></div>';
+      },
+
+      escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      },
+
+      renderPanel() {
+        return `
+          <div class="debug-panel ${this.enabled ? 'visible' : ''}" id="debug-panel">
+            <div class="debug-panel-header">
+              <span class="debug-panel-title">Debug Log</span>
+              <button class="debug-clear-btn" onclick="window.ClientGlance.DebugLogger.clear()">Clear</button>
+            </div>
+            <div id="debug-logs"></div>
+          </div>
+        `;
+      }
+    };
+
+    const Utils = {
+      formatDate(value, includeTime = false) {
+        try {
+          const date = new Date(value);
+          if (isNaN(date.getTime())) return value;
+          const options = includeTime
+            ? CONFIG?.DISPLAY?.dateTimeFormat || { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+            : CONFIG?.DISPLAY?.dateFormat || { year: 'numeric', month: 'short', day: 'numeric' };
+          return date.toLocaleDateString('en-US', options);
+        } catch { return value; }
+      },
+
+      formatPhone(value) {
+        const cleaned = String(value).replace(/\D/g, '');
+        if (cleaned.length === 10) {
+          return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
+        }
+        return value;
+      },
+
+      humanizeFieldName(name) {
+        return name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, s => s.toUpperCase());
+      },
+
+      applyTemplate(template, value, dataType) {
+        let formattedValue = value;
+        if (template.includes('{value:date}')) {
+          formattedValue = this.formatDate(value);
+          return template.replace('{value:date}', formattedValue);
+        }
+        if (template.includes('{value:datetime}')) {
+          formattedValue = this.formatDate(value, true);
+          return template.replace('{value:datetime}', formattedValue);
+        }
+        if (template.includes('{value:phone}')) {
+          formattedValue = this.formatPhone(value);
+          return template.replace('{value:phone}', formattedValue);
+        }
+        if (template.includes('{value:lowercase}')) {
+          formattedValue = String(value).toLowerCase();
+          return template.replace('{value:lowercase}', formattedValue);
+        }
+        return template.replace('{value}', value);
+      },
+
+      inferDataType(value) {
+        if (!value || typeof value !== 'string') return null;
+        const patterns = CONFIG?.DATA_TYPE_PATTERNS || [];
+        for (const { type, pattern, minLength } of patterns) {
+          if (pattern.test(value)) {
+            if (minLength && value.length < minLength) continue;
+            return type;
+          }
+        }
+        return null;
+      },
+
+      formatByType(value, type) {
+        switch (type) {
+          case 'date': return this.formatDate(value);
+          case 'datetime': return this.formatDate(value, true);
+          case 'phone': return this.formatPhone(value);
+          case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+          default: return value;
+        }
+      },
+
+      isHiddenField(fieldName) {
+        const hiddenPatterns = CONFIG?.DISPLAY?.hiddenFields || [];
+        return hiddenPatterns.some(pattern => {
+          if (pattern instanceof RegExp) return pattern.test(fieldName);
+          return fieldName === pattern;
+        });
+      },
+
+      findGroupByPattern(fieldName) {
+        const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
+        for (const { group, pattern } of patterns) {
+          if (pattern.test(fieldName)) return group;
+        }
+        return null;
+      },
+
+      escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+    };
+
+    const DataProcessor = {
+      processFields(rawData) {
+        const processed = [];
+        if (rawData.clientInfo) {
+          this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
+        }
+        if (rawData.cases && Array.isArray(rawData.cases)) {
+          rawData.cases.forEach((caseRecord, index) => {
+            const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
+            this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
+          });
+        }
+        return processed;
+      },
+
+      processRecord(record, sourceTable, caseLabel, results) {
+        const fields = record.fields || record;
+        Object.entries(fields).forEach(([fieldName, value]) => {
+          if (value === null || value === undefined || value === '') return;
+          if (Array.isArray(value) && value.length === 0) return;
+          if (Utils.isHiddenField(fieldName)) return;
+          if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
+          const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
+          if (processedField) results.push(processedField);
+        });
+      },
+
+      processField(fieldName, value, sourceTable, caseLabel, recordId) {
+        const semanticConfig = CONFIG?.SEMANTIC_ROLES?.[fieldName];
+        let displayValue = value;
+        if (Array.isArray(value)) displayValue = value.join(', ');
+        else if (typeof value === 'object') displayValue = JSON.stringify(value);
+
+        if (semanticConfig) {
+          const rendered = Utils.applyTemplate(semanticConfig.template, displayValue, semanticConfig.dataType);
+          return {
+            tier: 1, fieldName, value: displayValue, rendered,
+            role: semanticConfig.role, group: semanticConfig.group,
+            priority: semanticConfig.priority || 99,
+            narrativePosition: semanticConfig.narrativePosition,
+            dataType: semanticConfig.dataType, sourceTable, caseLabel, recordId
+          };
+        }
+
+        const group = Utils.findGroupByPattern(fieldName);
+        const inferredType = Utils.inferDataType(String(displayValue));
+
+        if (group || inferredType) {
+          const formatted = inferredType ? Utils.formatByType(displayValue, inferredType) : displayValue;
+          return {
+            tier: 2, fieldName, value: displayValue, rendered: formatted,
+            role: null, group: group || 'Other', priority: 50,
+            narrativePosition: null, dataType: inferredType,
+            sourceTable, caseLabel, recordId
+          };
+        }
+
+        return {
+          tier: 3, fieldName, value: displayValue, rendered: String(displayValue),
+          role: null, group: 'Uncategorized', priority: 99,
+          narrativePosition: null, dataType: null, sourceTable, caseLabel, recordId
+        };
+      },
+
+      composeNarrative(fields) {
+        const tier1 = fields.filter(f => f.tier === 1);
+        const templates = CONFIG?.NARRATIVE_TEMPLATES || {};
+        const sentences = [];
+
+        const orderedTemplates = Object.entries(templates).sort(([,a], [,b]) => a.order - b.order);
+        for (const [name, template] of orderedTemplates) {
+          try {
+            const sentence = template.compose(tier1);
+            if (sentence) sentences.push(sentence);
+          } catch (e) { console.warn(`Error composing ${name} narrative:`, e); }
+        }
+
+        const usedRoles = new Set(tier1.filter(f => f.narrativePosition).map(f => f.role));
+        const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && !['client_name', 'a_number', 'date_of_birth', 'country_of_origin'].includes(f.role));
+
+        if (unusedTier1.length > 0) {
+          const grouped = {};
+          unusedTier1.forEach(f => {
+            if (!grouped[f.group]) grouped[f.group] = [];
+            grouped[f.group].push(f);
+          });
+          Object.entries(grouped).forEach(([group, items]) => {
+            const parts = items.slice(0, 3).map(i => i.rendered);
+            if (parts.length) sentences.push(`${group}: ${parts.join(', ')}`);
+          });
+        }
+
+        return sentences.join('. ') + (sentences.length ? '.' : '');
+      },
+
+      groupFields(fields) {
+        const groups = {};
+        fields.forEach(field => {
+          const groupName = field.group || 'Uncategorized';
+          if (!groups[groupName]) groups[groupName] = [];
+          groups[groupName].push(field);
+        });
+
+        Object.values(groups).forEach(groupFields => {
+          groupFields.sort((a, b) => {
+            if (a.tier !== b.tier) return a.tier - b.tier;
+            return a.priority - b.priority;
+          });
+        });
+
+        const groupOrder = CONFIG?.GROUP_ORDER || [];
+        const sortedGroups = {};
+        groupOrder.forEach(groupName => { if (groups[groupName]) sortedGroups[groupName] = groups[groupName]; });
+        Object.keys(groups).forEach(groupName => { if (!sortedGroups[groupName]) sortedGroups[groupName] = groups[groupName]; });
+        return sortedGroups;
+      },
+
+      extractHeaderFields(fields) {
+        const headerRoles = CONFIG?.DISPLAY?.headerFields || ['client_name', 'a_number', 'dob'];
+        return fields.filter(f => headerRoles.includes(f.role));
+      }
+    };
+
+    const Renderer = {
+      state: { viewMode: 'structured', showProvenance: false, expandedGroups: new Set(['Court', 'SIJ', 'USCIS']), selectedCase: 'all' },
+
+      init(data) {
+        DebugLogger.info('Renderer initializing with data');
+        this.data = data;
+        try {
+          DebugLogger.info('Processing fields...');
+          this.processedFields = DataProcessor.processFields(data);
+          DebugLogger.success('Fields processed', {
+            totalFields: this.processedFields.length,
+            tier1: this.processedFields.filter(f => f.tier === 1).length,
+            tier2: this.processedFields.filter(f => f.tier === 2).length,
+            tier3: this.processedFields.filter(f => f.tier === 3).length,
+            groups: [...new Set(this.processedFields.map(f => f.group))]
+          });
+          DebugLogger.info('Rendering UI...');
+          this.render();
+          DebugLogger.success('Render complete');
+        } catch (error) {
+          DebugLogger.error('Renderer init failed', { message: error.message, stack: error.stack });
+          throw error;
+        }
+      },
+
+      render() {
+        const container = document.getElementById('app');
+        const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
+        const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
+        const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
+
+        let displayFields = this.processedFields;
+        if (this.state.selectedCase !== 'all' && cases.length > 1) {
+          displayFields = this.processedFields.filter(f => !f.caseLabel || f.caseLabel === this.state.selectedCase);
+        }
+
+        container.innerHTML = `
+          <div class="widget-header">
+            <span class="widget-title">Client At-a-Glance</span>
+            <div class="view-toggle">
+              <button class="${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
+              <button class="${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
+            </div>
+          </div>
+          ${this.renderClientHeader(headerFields, clientName)}
+          ${cases.length > 1 ? this.renderCaseTabs(cases) : ''}
+          ${this.state.viewMode === 'narrative' ? this.renderNarrativeView(displayFields) : this.renderStructuredView(displayFields)}
+          <div class="settings-row">
+            <label class="settings-toggle">
+              <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance"> Show sources
+            </label>
+            <label class="settings-toggle debug-toggle-container">
+              <input type="checkbox" ${DebugLogger.enabled ? 'checked' : ''} data-setting="debug">
+              <span class="debug-status-indicator ${DebugLogger.enabled ? 'active' : ''}" id="debug-status-indicator"></span>
+              Debug mode
+            </label>
+          </div>
+          ${DebugLogger.renderPanel()}
+        `;
+        this.attachEventListeners();
+        DebugLogger.updatePanel();
+      },
+
+      renderClientHeader(headerFields, clientName) {
+        const aNum = headerFields.find(f => f.role === 'a_number');
+        const dob = headerFields.find(f => f.role === 'date_of_birth');
+        const country = headerFields.find(f => f.role === 'country_of_origin');
+        return `
+          <div class="client-header">
+            <div class="client-name">${Utils.escapeHtml(clientName)}</div>
+            <div class="client-meta">
+              ${aNum ? `<span class="client-meta-item"><span class="client-meta-label">A#</span> ${Utils.escapeHtml(aNum.value)}</span>` : ''}
+              ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}</span>` : ''}
+              ${country ? `<span class="client-meta-item"><span class="client-meta-label">From</span> ${Utils.escapeHtml(country.value)}</span>` : ''}
+            </div>
+          </div>
+        `;
+      },
+
+      renderCaseTabs(cases) {
+        return `
+          <div class="case-tabs">
+            <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">All Cases<span class="case-count">${cases.length}</span></button>
+            ${cases.map(c => `<button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">${Utils.escapeHtml(c)}</button>`).join('')}
+          </div>
+        `;
+      },
+
+      renderNarrativeView(fields) {
+        const narrative = DataProcessor.composeNarrative(fields);
+        const tier2and3 = fields.filter(f => f.tier > 1);
+        const grouped = DataProcessor.groupFields(tier2and3);
+
+        return `
+          <div class="narrative-view">
+            <div class="narrative-text">${narrative || '<em>No semantic data available for this client.</em>'}</div>
+          </div>
+          ${Object.keys(grouped).length > 0 ? `
+            <div class="uncategorized-section">
+              <button class="uncategorized-toggle" data-action="toggle-extra">
+                <span>&#9654;</span> Also on file (${tier2and3.length} fields not in narrative)
+              </button>
+              <div class="uncategorized-content" id="extra-fields">${this.renderGroupedFields(grouped, true)}</div>
+            </div>
+          ` : ''}
+        `;
+      },
+
+      renderStructuredView(fields) {
+        const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
+        const nonHeaderFields = fields.filter(f => !headerRoles.includes(f.role));
+        const grouped = DataProcessor.groupFields(nonHeaderFields);
+        return `<div class="structured-view">${this.renderGroupedFields(grouped, false)}</div>`;
+      },
+
+      renderGroupedFields(grouped, flat = false) {
+        const groupOrder = CONFIG?.GROUP_ORDER || Object.keys(grouped);
+        return groupOrder
+          .filter(groupName => grouped[groupName] && grouped[groupName].length > 0)
+          .map(groupName => {
+            const groupFields = grouped[groupName];
+            const isUncategorized = groupName === 'Uncategorized';
+            const isExpanded = this.state.expandedGroups.has(groupName) || flat;
+
+            if (flat) return this.renderFlatGroup(groupName, groupFields);
+
+            return `
+              <div class="field-group ${isExpanded ? '' : 'collapsed'}" data-group="${Utils.escapeHtml(groupName)}">
+                <div class="field-group-header">
+                  <span class="field-group-title">${Utils.escapeHtml(groupName)}<span class="field-group-count">(${groupFields.length})</span></span>
+                  <span class="field-group-chevron">&#9660;</span>
+                </div>
+                <div class="field-group-content">${isUncategorized ? this.renderTriplets(groupFields) : this.renderFieldItems(groupFields)}</div>
+              </div>
+            `;
+          }).join('');
+      },
+
+      renderFlatGroup(groupName, fields) {
+        const isUncategorized = groupName === 'Uncategorized';
+        return `
+          <div style="margin-bottom: 16px;">
+            <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">${Utils.escapeHtml(groupName)}</div>
+            ${isUncategorized ? this.renderTriplets(fields) : this.renderFieldItems(fields)}
+          </div>
+        `;
+      },
+
+      renderFieldItems(fields) {
+        return fields.map(field => `
+          <div class="field-item">
+            <span class="field-label"><span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}</span>
+            <span class="field-value">
+              ${this.renderFieldValue(field)}
+              ${this.state.showProvenance && field.caseLabel ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` : ''}
+            </span>
+          </div>
+        `).join('');
+      },
+
+      renderFieldValue(field) {
+        const value = field.rendered || field.value;
+        if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
+          return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link &#8599;</a>`;
+        }
+        const strValue = String(value);
+        if (strValue.length > 100) {
+          return `<span title="${Utils.escapeHtml(strValue)}">${Utils.escapeHtml(strValue.slice(0, 100))}&hellip;</span>`;
+        }
+        return Utils.escapeHtml(strValue);
+      },
+
+      renderTriplets(fields) {
+        return fields.map(field => `
+          <div class="triplet">
+            <span class="triplet-source">[${Utils.escapeHtml(field.caseLabel || field.sourceTable)}]</span>
+            <span class="triplet-field">${Utils.escapeHtml(field.fieldName)}</span>
+            <span class="triplet-value">${this.renderFieldValue(field)}</span>
+          </div>
+        `).join('');
+      },
+
+      attachEventListeners() {
+        document.querySelectorAll('#widget-frame .view-toggle button').forEach(btn => {
+          btn.addEventListener('click', (e) => { this.state.viewMode = e.target.dataset.view; this.render(); });
+        });
+        document.querySelectorAll('#widget-frame .case-tab').forEach(btn => {
+          btn.addEventListener('click', (e) => { this.state.selectedCase = e.target.dataset.case; this.render(); });
+        });
+        document.querySelectorAll('#widget-frame .field-group-header').forEach(header => {
+          header.addEventListener('click', (e) => {
+            const group = e.currentTarget.parentElement;
+            const groupName = group.dataset.group;
+            if (this.state.expandedGroups.has(groupName)) this.state.expandedGroups.delete(groupName);
+            else this.state.expandedGroups.add(groupName);
+            group.classList.toggle('collapsed');
+          });
+        });
+        const extraToggle = document.querySelector('#widget-frame [data-action="toggle-extra"]');
+        if (extraToggle) {
+          extraToggle.addEventListener('click', () => {
+            const content = document.getElementById('extra-fields');
+            content.classList.toggle('visible');
+            extraToggle.querySelector('span').innerHTML = content.classList.contains('visible') ? '&#9660;' : '&#9654;';
+          });
+        }
+        document.querySelectorAll('#widget-frame [data-setting]').forEach(input => {
+          input.addEventListener('change', (e) => {
+            if (e.target.dataset.setting === 'provenance') { this.state.showProvenance = e.target.checked; this.render(); }
+            if (e.target.dataset.setting === 'debug') { DebugLogger.toggle(e.target.checked); }
+          });
+        });
+      }
+    };
+
+    // Initialize
     try {
       if (!CONFIG) {
-        DebugLogger.error('Configuration not loaded');
         throw new Error('Configuration not loaded. Make sure config.js is included.');
       }
       DebugLogger.success('Config loaded', { semanticRoles: Object.keys(CONFIG.SEMANTIC_ROLES || {}).length + ' fields defined' });
-
-      // Check for data sources
-      DebugLogger.info('Checking data sources...');
-
-      if (window.MOCK_DATA) {
-        DebugLogger.success('MOCK_DATA found', {
-          hasClientInfo: !!window.MOCK_DATA.clientInfo,
-          clientFields: window.MOCK_DATA.clientInfo ? Object.keys(window.MOCK_DATA.clientInfo.fields || {}).length : 0,
-          casesCount: Array.isArray(window.MOCK_DATA.cases) ? window.MOCK_DATA.cases.length : 0
-        });
-        Renderer.init(window.MOCK_DATA);
-      } else if (window.WEBHOOK_DATA) {
-        DebugLogger.success('WEBHOOK_DATA found', {
-          type: typeof window.WEBHOOK_DATA,
-          keys: Object.keys(window.WEBHOOK_DATA || {})
-        });
-        Renderer.init(window.WEBHOOK_DATA);
-      } else {
-        DebugLogger.warn('No data source found - checking for postMessage...');
-        // Set up listener for postMessage data from n8n or parent frame
-        window.addEventListener('message', handleMessage);
-        DebugLogger.info('postMessage listener registered');
-        container.innerHTML = `<div class="error"><div class="error-title">No Data</div><div>No data loaded. Waiting for webhook data via postMessage...</div></div>`;
-      }
+      Renderer.init(data);
     } catch (error) {
       DebugLogger.error('Init failed', { message: error.message, stack: error.stack });
-      console.error('Client Glance Error:', error);
+      const container = document.getElementById('app');
       container.innerHTML = `<div class="error"><div class="error-title">Error</div><div>${Utils.escapeHtml(error.message)}</div></div>`;
     }
+
+    // Expose globally
+    window.ClientGlance = { Utils, DataProcessor, Renderer, DebugLogger };
   }
-
-  // Handle postMessage data from n8n webhooks or parent frames
-  function handleMessage(event) {
-    DebugLogger.info('postMessage received', {
-      origin: event.origin,
-      dataType: typeof event.data,
-      dataKeys: event.data && typeof event.data === 'object' ? Object.keys(event.data) : 'N/A'
-    });
-
-    try {
-      let data = event.data;
-
-      // Handle string data (might be JSON)
-      if (typeof data === 'string') {
-        DebugLogger.info('Parsing string data as JSON...');
-        try {
-          data = JSON.parse(data);
-          DebugLogger.success('JSON parsed successfully');
-        } catch (e) {
-          DebugLogger.warn('Data is not JSON', data.substring(0, 100));
-          return;
-        }
-      }
-
-      // Validate data structure
-      if (!data || typeof data !== 'object') {
-        DebugLogger.warn('Invalid data format - expected object');
-        return;
-      }
-
-      // Check if this looks like client data
-      if (data.clientInfo || data.cases || data.fields) {
-        DebugLogger.success('Valid client data structure detected', {
-          hasClientInfo: !!data.clientInfo,
-          hasCases: !!data.cases,
-          hasFields: !!data.fields
-        });
-
-        // Normalize data structure
-        const normalizedData = {
-          clientInfo: data.clientInfo || { fields: data.fields || data },
-          cases: data.cases || []
-        };
-
-        DebugLogger.info('Normalized data', {
-          clientFields: Object.keys(normalizedData.clientInfo.fields || normalizedData.clientInfo).length,
-          casesCount: normalizedData.cases.length
-        });
-
-        window.removeEventListener('message', handleMessage);
-        Renderer.init(normalizedData);
-      } else {
-        DebugLogger.warn('Data does not match expected structure', Object.keys(data));
-      }
-    } catch (error) {
-      DebugLogger.error('Error processing message', { message: error.message });
-    }
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-
-  window.ClientGlance = { Utils, DataProcessor, Renderer, DebugLogger };
-
-  // Also expose a global function to manually load data for testing
-  window.loadClientData = function(data) {
-    DebugLogger.info('Manual data load triggered');
-    if (data) {
-      DebugLogger.info('Data provided', { keys: Object.keys(data) });
-      Renderer.init(data);
-    } else {
-      DebugLogger.warn('No data provided to loadClientData()');
-    }
-  };
 })();
 </script>
 
