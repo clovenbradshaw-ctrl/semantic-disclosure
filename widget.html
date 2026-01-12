@@ -3,164 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Client At-a-Glance - Test Page</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #f0f0f0;
-      min-height: 100vh;
-    }
-    .test-header {
-      max-width: 800px;
-      margin: 0 auto 20px;
-      padding: 16px;
-      background: #1e293b;
-      color: white;
-      border-radius: 8px;
-      font-family: system-ui, sans-serif;
-    }
-    .test-header h1 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-    .test-header p {
-      margin: 0;
-      font-size: 13px;
-      opacity: 0.8;
-    }
-    .test-controls {
-      display: flex;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .test-btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      background: #3b82f6;
-      color: white;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .test-btn:hover {
-      background: #2563eb;
-    }
-    .test-btn.secondary {
-      background: #475569;
-    }
-    .test-btn.secondary:hover {
-      background: #334155;
-    }
-  </style>
-</head>
-<body>
-
-<div class="test-header">
-  <h1>🧪 Client At-a-Glance Test Page</h1>
-  <p>This loads mock data to test the widget without a live webhook.</p>
-  <div class="test-controls">
-    <button class="test-btn" onclick="location.reload()">Reload Widget</button>
-    <button class="test-btn secondary" onclick="console.log(window.ClientGlance)">Log State to Console</button>
-    <button class="test-btn secondary" onclick="console.log(window.MOCK_DATA)">Log Mock Data</button>
-  </div>
-</div>
-
-<!-- Mock Data (loaded first) -->
-<script>
-window.MOCK_DATA = {
-  clientInfo: {
-    recordId: "recCLIENT123",
-    fields: {
-      "Client Name": "Maria Elena Rodriguez Garcia",
-      "A#": "234-567-890",
-      "DOB": "1995-03-22",
-      "Country": "Guatemala",
-      "Age": "29",
-      "Phone Number": "6155551234",
-      "Client Email": "maria.rodriguez@email.com",
-      "Address": "123 Main Street, Nashville, TN 37203",
-      "Entry Date": "2022-06-15",
-      "Entry Status": "EWI",
-      "Case Manager": "Sarah Johnson",
-      "MCH Attny": "David Chen",
-      "Case Tags": "SIJ, USCIS Pending, Priority"
-    }
-  },
-  
-  cases: [
-    {
-      recordId: "recCASE001",
-      caseIdentifier: "SIJ - Davidson County",
-      fields: {
-        "Hearing Date/Time": "2025-02-15T09:00:00",
-        "Court/Office": "Memphis Immigration Court",
-        "Judge": "Hon. Patricia Williams",
-        "SIJ Case Status": "Pending Custody Order",
-        "SIJ County": "Davidson",
-        "Date Custody Filed": "2024-08-20",
-        "SIJ Eligible (child)": "Yes",
-        "JDR Ct Date": "2025-01-28",
-        "Relief Sought": "Special Immigrant Juvenile Status",
-        "File Case Status": "Active",
-        "Case Tags": "SIJ, Court",
-        "FOIA Receipt": "2024-09-15",
-        "FOIA #": "2024-FOI-12345",
-        "FOIA PIN #": "847291",
-        "USCIS FOIA Stage": "Received",
-        "FBI Record Stage": "Requested",
-        "Pleadings Due Date": "2025-02-01",
-        "NTA Date": "2022-08-15",
-        "Master Hearing Notes": "Client appeared with counsel. Case continued for individual hearing.",
-        "ICH Prep Notes": "Review country conditions documentation before hearing.",
-        "Some_New_Field_2025": "Value without semantic mapping"
-      }
-    },
-    {
-      recordId: "recCASE002", 
-      caseIdentifier: "USCIS - I-360",
-      fields: {
-        "USCIS Receipt Date": "2024-11-20",
-        "USCIS Receipt Number": "SRC2411234567",
-        "I-360 Receipt Number": "SRC2411234567",
-        "I-360 Mailed Date": "2024-11-15",
-        "Current USCIS application": "I-360 (SIJ)",
-        "Priority Date (I-360)": "2024-11-20",
-        "Biometric Notice Date": "2024-12-05",
-        "RFE Due Date": "2025-03-01",
-        "RFE/RFI (topic)": "Birth Certificate Authentication",
-        "Relief Sought": "Special Immigrant Juvenile Status",
-        "File Case Status": "Active",
-        "USCIS Notes": "Biometrics completed 12/10/2024. Awaiting adjudication.",
-        "EAD Stage": "Filed",
-        "EAD Receipt Date": "2024-11-20",
-        "EAD Eligible Date": "2024-11-20",
-        "Another_Unrecognized_Field": "Random data here",
-        "Internal_Tracking_Code": "ABC-XYZ-789"
-      }
-    },
-    {
-      recordId: "recCASE003",
-      caseIdentifier: "Appeal - BIA",
-      fields: {
-        "Appeal Status": "Pending",
-        "Appeal Due Date": "2025-04-15",
-        "Appeal Receipt Date": "2025-01-10",
-        "Brief Due Date": "2025-03-15",
-        "Appeal Forum": "Board of Immigration Appeals",
-        "Appeal Notes": "Appealing denial of motion to change venue.",
-        "Relief Sought": "Motion to Reopen"
-      }
-    }
-  ]
-};
-</script>
-
-<!-- Config -->
-<script src="config.js"></script>
-
-<!-- Widget (inline to avoid cross-origin issues in local testing) -->
-<div id="widget-frame">
+  <title>Client At-a-Glance</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -186,20 +29,27 @@ window.MOCK_DATA = {
       --font-mono: 'IBM Plex Mono', monospace;
     }
 
-    #widget-frame * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    .widget-container {
-      max-width: 800px;
-      margin: 0 auto;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
       font-family: var(--font-sans);
       background: var(--bg-primary);
       color: var(--text-primary);
       font-size: 14px;
       line-height: 1.5;
       padding: 16px;
-      border-radius: 8px;
     }
 
+    .widget-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Header Controls */
     .widget-header {
       display: flex;
       justify-content: space-between;
@@ -243,8 +93,11 @@ window.MOCK_DATA = {
       box-shadow: var(--shadow-sm);
     }
 
-    .view-toggle button:hover:not(.active) { color: var(--text-primary); }
+    .view-toggle button:hover:not(.active) {
+      color: var(--text-primary);
+    }
 
+    /* Client Header Card */
     .client-header {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -280,6 +133,7 @@ window.MOCK_DATA = {
       font-size: 12px;
     }
 
+    /* Narrative View */
     .narrative-view {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -295,6 +149,15 @@ window.MOCK_DATA = {
       color: var(--text-primary);
     }
 
+    .narrative-text .provenance {
+      font-size: 11px;
+      color: var(--text-muted);
+      vertical-align: super;
+      margin-left: 2px;
+      cursor: help;
+    }
+
+    /* Structured View */
     .structured-view {
       display: flex;
       flex-direction: column;
@@ -321,7 +184,9 @@ window.MOCK_DATA = {
       transition: background 0.15s ease;
     }
 
-    .field-group-header:hover { background: var(--bg-tertiary); }
+    .field-group-header:hover {
+      background: var(--bg-tertiary);
+    }
 
     .field-group-title {
       display: flex;
@@ -344,11 +209,19 @@ window.MOCK_DATA = {
       font-size: 12px;
     }
 
-    .field-group.collapsed .field-group-chevron { transform: rotate(-90deg); }
-    .field-group.collapsed .field-group-content { display: none; }
+    .field-group.collapsed .field-group-chevron {
+      transform: rotate(-90deg);
+    }
 
-    .field-group-content { padding: 12px 16px; }
+    .field-group.collapsed .field-group-content {
+      display: none;
+    }
 
+    .field-group-content {
+      padding: 12px 16px;
+    }
+
+    /* Field Items */
     .field-item {
       display: flex;
       justify-content: space-between;
@@ -357,7 +230,9 @@ window.MOCK_DATA = {
       border-bottom: 1px solid var(--bg-secondary);
     }
 
-    .field-item:last-child { border-bottom: none; }
+    .field-item:last-child {
+      border-bottom: none;
+    }
 
     .field-label {
       font-size: 13px;
@@ -380,8 +255,11 @@ window.MOCK_DATA = {
       text-decoration: none;
     }
 
-    .field-value a:hover { text-decoration: underline; }
+    .field-value a:hover {
+      text-decoration: underline;
+    }
 
+    /* Provenance Badge */
     .provenance-badge {
       font-size: 10px;
       font-family: var(--font-mono);
@@ -392,20 +270,22 @@ window.MOCK_DATA = {
       white-space: nowrap;
     }
 
+    /* Tier Indicators */
     .tier-indicator {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
-      display: inline-block;
-      margin-right: 6px;
     }
 
     .tier-1 { background: var(--accent-green); }
     .tier-2 { background: var(--accent-blue); }
     .tier-3 { background: var(--accent-amber); }
 
-    .uncategorized-section { margin-top: 8px; }
+    /* Uncategorized Section */
+    .uncategorized-section {
+      margin-top: 8px;
+    }
 
     .uncategorized-toggle {
       display: flex;
@@ -436,8 +316,11 @@ window.MOCK_DATA = {
       border-radius: var(--radius);
     }
 
-    .uncategorized-content.visible { display: block; }
+    .uncategorized-content.visible {
+      display: block;
+    }
 
+    /* Raw Triplet Display */
     .triplet {
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -449,11 +332,30 @@ window.MOCK_DATA = {
       align-items: center;
     }
 
-    .triplet:last-child { border-bottom: none; }
-    .triplet-source { color: var(--text-muted); font-size: 11px; }
-    .triplet-field { color: var(--accent-violet); }
-    .triplet-value { color: var(--text-primary); text-align: right; word-break: break-word; }
+    .triplet:last-child {
+      border-bottom: none;
+    }
 
+    .triplet-source {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .triplet-field {
+      color: var(--accent-violet);
+    }
+
+    .triplet-arrow {
+      color: var(--text-muted);
+    }
+
+    .triplet-value {
+      color: var(--text-primary);
+      text-align: right;
+      word-break: break-word;
+    }
+
+    /* Case Tabs */
     .case-tabs {
       display: flex;
       gap: 4px;
@@ -483,29 +385,17 @@ window.MOCK_DATA = {
       box-shadow: var(--shadow-sm);
     }
 
-    .case-tab:hover:not(.active) { color: var(--text-primary); }
-    .case-tab .case-count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
-
-    .settings-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+    .case-tab:hover:not(.active) {
+      color: var(--text-primary);
     }
 
-    .settings-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
+    .case-tab .case-count {
+      font-size: 11px;
       color: var(--text-muted);
-      cursor: pointer;
+      margin-left: 6px;
     }
 
-    .settings-toggle input { cursor: pointer; }
-
+    /* Loading State */
     .loading {
       display: flex;
       flex-direction: column;
@@ -525,8 +415,11 @@ window.MOCK_DATA = {
       margin-bottom: 12px;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
+    /* Error State */
     .error {
       padding: 24px;
       background: #fef2f2;
@@ -535,41 +428,143 @@ window.MOCK_DATA = {
       color: #991b1b;
     }
 
-    .error-title { font-weight: 600; margin-bottom: 4px; }
-  </style>
+    .error-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
 
-  <div class="widget-container" id="app">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      <span>Loading client data...</span>
-    </div>
+    /* Provenance Tooltip */
+    .provenance-tooltip {
+      position: absolute;
+      background: var(--text-primary);
+      color: white;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      max-width: 250px;
+      z-index: 1000;
+      box-shadow: var(--shadow-md);
+      pointer-events: none;
+    }
+
+    .provenance-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 6px solid var(--text-primary);
+    }
+
+    /* Settings Toggle */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .settings-toggle input {
+      cursor: pointer;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 32px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .field-item {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .field-label {
+        max-width: 100%;
+      }
+
+      .field-value {
+        text-align: left;
+      }
+
+      .client-meta {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="widget-container" id="app">
+  <div class="loading">
+    <div class="loading-spinner"></div>
+    <span>Loading client data...</span>
   </div>
 </div>
 
+<!-- Config loaded separately for easy updates -->
+<script src="config.js"></script>
+
 <script>
-// Widget code (same as widget.html but inline for testing)
 (function() {
   'use strict';
 
+  // ==========================================================================
+  // CONFIGURATION
+  // ==========================================================================
+
+  const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
   const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
 
+  // ==========================================================================
+  // UTILITIES
+  // ==========================================================================
+
   const Utils = {
+    // Get recordId from URL params (Softr passes this)
     getRecordId() {
       const params = new URLSearchParams(window.location.search);
       return params.get('recordId') || params.get('record_id') || params.get('id');
     },
 
+    // Format date
     formatDate(value, includeTime = false) {
       try {
         const date = new Date(value);
         if (isNaN(date.getTime())) return value;
+        
         const options = includeTime 
           ? CONFIG?.DISPLAY?.dateTimeFormat || { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
           : CONFIG?.DISPLAY?.dateFormat || { year: 'numeric', month: 'short', day: 'numeric' };
+        
         return date.toLocaleDateString('en-US', options);
-      } catch { return value; }
+      } catch {
+        return value;
+      }
     },
 
+    // Format phone
     formatPhone(value) {
       const cleaned = String(value).replace(/\D/g, '');
       if (cleaned.length === 10) {
@@ -578,12 +573,21 @@ window.MOCK_DATA = {
       return value;
     },
 
+    // Humanize field name
     humanizeFieldName(name) {
-      return name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, s => s.toUpperCase());
+      return name
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^./, s => s.toUpperCase());
     },
 
+    // Apply template with value
     applyTemplate(template, value, dataType) {
       let formattedValue = value;
+      
+      // Handle template format specifiers
       if (template.includes('{value:date}')) {
         formattedValue = this.formatDate(value);
         return template.replace('{value:date}', formattedValue);
@@ -600,11 +604,14 @@ window.MOCK_DATA = {
         formattedValue = String(value).toLowerCase();
         return template.replace('{value:lowercase}', formattedValue);
       }
+      
       return template.replace('{value}', value);
     },
 
+    // Infer data type from value
     inferDataType(value) {
       if (!value || typeof value !== 'string') return null;
+      
       const patterns = CONFIG?.DATA_TYPE_PATTERNS || [];
       for (const { type, pattern, minLength } of patterns) {
         if (pattern.test(value)) {
@@ -615,16 +622,19 @@ window.MOCK_DATA = {
       return null;
     },
 
+    // Format value by inferred type
     formatByType(value, type) {
       switch (type) {
         case 'date': return this.formatDate(value);
         case 'datetime': return this.formatDate(value, true);
         case 'phone': return this.formatPhone(value);
         case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+        case 'url': return value;
         default: return value;
       }
     },
 
+    // Check if field should be hidden
     isHiddenField(fieldName) {
       const hiddenPatterns = CONFIG?.DISPLAY?.hiddenFields || [];
       return hiddenPatterns.some(pattern => {
@@ -633,6 +643,7 @@ window.MOCK_DATA = {
       });
     },
 
+    // Find group by pattern matching
     findGroupByPattern(fieldName) {
       const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
       for (const { group, pattern } of patterns) {
@@ -641,6 +652,7 @@ window.MOCK_DATA = {
       return null;
     },
 
+    // Escape HTML
     escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
@@ -648,131 +660,223 @@ window.MOCK_DATA = {
     }
   };
 
+  // ==========================================================================
+  // DATA PROCESSOR
+  // ==========================================================================
+
   const DataProcessor = {
+    // Process raw webhook response into tiered fields
     processFields(rawData) {
       const processed = [];
+      
+      // Process client info fields
       if (rawData.clientInfo) {
         this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
       }
+      
+      // Process case master view records
       if (rawData.cases && Array.isArray(rawData.cases)) {
         rawData.cases.forEach((caseRecord, index) => {
           const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
           this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
         });
       }
+      
       return processed;
     },
 
     processRecord(record, sourceTable, caseLabel, results) {
       const fields = record.fields || record;
+      
       Object.entries(fields).forEach(([fieldName, value]) => {
+        // Skip empty values
         if (value === null || value === undefined || value === '') return;
         if (Array.isArray(value) && value.length === 0) return;
+        
+        // Skip hidden fields
         if (Utils.isHiddenField(fieldName)) return;
+        
+        // Skip record metadata
         if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
+        
         const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
-        if (processedField) results.push(processedField);
+        if (processedField) {
+          results.push(processedField);
+        }
       });
     },
 
     processField(fieldName, value, sourceTable, caseLabel, recordId) {
       const semanticConfig = CONFIG?.SEMANTIC_ROLES?.[fieldName];
+      
+      // Stringify complex values
       let displayValue = value;
-      if (Array.isArray(value)) displayValue = value.join(', ');
-      else if (typeof value === 'object') displayValue = JSON.stringify(value);
-
+      if (Array.isArray(value)) {
+        displayValue = value.join(', ');
+      } else if (typeof value === 'object') {
+        displayValue = JSON.stringify(value);
+      }
+      
+      // Tier 1: Semantic role defined
       if (semanticConfig) {
         const rendered = Utils.applyTemplate(semanticConfig.template, displayValue, semanticConfig.dataType);
         return {
-          tier: 1, fieldName, value: displayValue, rendered,
-          role: semanticConfig.role, group: semanticConfig.group,
+          tier: 1,
+          fieldName,
+          value: displayValue,
+          rendered,
+          role: semanticConfig.role,
+          group: semanticConfig.group,
           priority: semanticConfig.priority || 99,
           narrativePosition: semanticConfig.narrativePosition,
-          dataType: semanticConfig.dataType, sourceTable, caseLabel, recordId
+          dataType: semanticConfig.dataType,
+          sourceTable,
+          caseLabel,
+          recordId
         };
       }
-
+      
+      // Tier 2: Pattern-matched group
       const group = Utils.findGroupByPattern(fieldName);
       const inferredType = Utils.inferDataType(String(displayValue));
-
+      
       if (group || inferredType) {
         const formatted = inferredType ? Utils.formatByType(displayValue, inferredType) : displayValue;
         return {
-          tier: 2, fieldName, value: displayValue, rendered: formatted,
-          role: null, group: group || 'Other', priority: 50,
-          narrativePosition: null, dataType: inferredType,
-          sourceTable, caseLabel, recordId
+          tier: 2,
+          fieldName,
+          value: displayValue,
+          rendered: formatted,
+          role: null,
+          group: group || 'Other',
+          priority: 50,
+          narrativePosition: null,
+          dataType: inferredType,
+          sourceTable,
+          caseLabel,
+          recordId
         };
       }
-
+      
+      // Tier 3: Raw triplet
       return {
-        tier: 3, fieldName, value: displayValue, rendered: String(displayValue),
-        role: null, group: 'Uncategorized', priority: 99,
-        narrativePosition: null, dataType: null, sourceTable, caseLabel, recordId
+        tier: 3,
+        fieldName,
+        value: displayValue,
+        rendered: String(displayValue),
+        role: null,
+        group: 'Uncategorized',
+        priority: 99,
+        narrativePosition: null,
+        dataType: null,
+        sourceTable,
+        caseLabel,
+        recordId
       };
     },
 
+    // Compose narrative from Tier 1 fields
     composeNarrative(fields) {
       const tier1 = fields.filter(f => f.tier === 1);
       const templates = CONFIG?.NARRATIVE_TEMPLATES || {};
+      
       const sentences = [];
-
-      const orderedTemplates = Object.entries(templates).sort(([,a], [,b]) => a.order - b.order);
+      
+      // Sort templates by order
+      const orderedTemplates = Object.entries(templates)
+        .sort(([,a], [,b]) => a.order - b.order);
+      
       for (const [name, template] of orderedTemplates) {
         try {
           const sentence = template.compose(tier1);
-          if (sentence) sentences.push(sentence);
-        } catch (e) { console.warn(`Error composing ${name} narrative:`, e); }
+          if (sentence) {
+            sentences.push(sentence);
+          }
+        } catch (e) {
+          console.warn(`Error composing ${name} narrative:`, e);
+        }
       }
-
+      
+      // Add remaining Tier 1 fields not in narrative templates
       const usedRoles = new Set(tier1.filter(f => f.narrativePosition).map(f => f.role));
-      const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && !['client_name', 'a_number', 'date_of_birth', 'country_of_origin'].includes(f.role));
-
+      const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && f.role !== 'client_name' && f.role !== 'a_number' && f.role !== 'date_of_birth' && f.role !== 'country_of_origin');
+      
       if (unusedTier1.length > 0) {
         const grouped = {};
         unusedTier1.forEach(f => {
           if (!grouped[f.group]) grouped[f.group] = [];
           grouped[f.group].push(f);
         });
+        
         Object.entries(grouped).forEach(([group, items]) => {
           const parts = items.slice(0, 3).map(i => i.rendered);
-          if (parts.length) sentences.push(`${group}: ${parts.join(', ')}`);
+          if (parts.length) {
+            sentences.push(`${group}: ${parts.join(', ')}`);
+          }
         });
       }
-
+      
       return sentences.join('. ') + (sentences.length ? '.' : '');
     },
 
+    // Group fields for structured view
     groupFields(fields) {
       const groups = {};
+      
       fields.forEach(field => {
         const groupName = field.group || 'Uncategorized';
-        if (!groups[groupName]) groups[groupName] = [];
+        if (!groups[groupName]) {
+          groups[groupName] = [];
+        }
         groups[groupName].push(field);
       });
-
+      
+      // Sort fields within each group
       Object.values(groups).forEach(groupFields => {
         groupFields.sort((a, b) => {
           if (a.tier !== b.tier) return a.tier - b.tier;
           return a.priority - b.priority;
         });
       });
-
+      
+      // Sort groups by configured order
       const groupOrder = CONFIG?.GROUP_ORDER || [];
       const sortedGroups = {};
-      groupOrder.forEach(groupName => { if (groups[groupName]) sortedGroups[groupName] = groups[groupName]; });
-      Object.keys(groups).forEach(groupName => { if (!sortedGroups[groupName]) sortedGroups[groupName] = groups[groupName]; });
+      
+      groupOrder.forEach(groupName => {
+        if (groups[groupName]) {
+          sortedGroups[groupName] = groups[groupName];
+        }
+      });
+      
+      // Add any remaining groups not in order
+      Object.keys(groups).forEach(groupName => {
+        if (!sortedGroups[groupName]) {
+          sortedGroups[groupName] = groups[groupName];
+        }
+      });
+      
       return sortedGroups;
     },
 
+    // Extract header fields
     extractHeaderFields(fields) {
       const headerRoles = CONFIG?.DISPLAY?.headerFields || ['client_name', 'a_number', 'dob'];
       return fields.filter(f => headerRoles.includes(f.role));
     }
   };
 
+  // ==========================================================================
+  // RENDERER
+  // ==========================================================================
+
   const Renderer = {
-    state: { viewMode: 'structured', showProvenance: false, expandedGroups: new Set(['Court', 'SIJ', 'USCIS']), selectedCase: 'all' },
+    state: {
+      viewMode: 'structured', // 'structured' or 'narrative'
+      showProvenance: false,
+      expandedGroups: new Set(),
+      selectedCase: 'all'
+    },
 
     init(data) {
       this.data = data;
@@ -782,32 +886,50 @@ window.MOCK_DATA = {
 
     render() {
       const container = document.getElementById('app');
+      
       const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
       const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
+      
+      // Get unique cases
       const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
-
+      
+      // Filter fields by selected case
       let displayFields = this.processedFields;
       if (this.state.selectedCase !== 'all' && cases.length > 1) {
-        displayFields = this.processedFields.filter(f => !f.caseLabel || f.caseLabel === this.state.selectedCase);
+        displayFields = this.processedFields.filter(f => 
+          !f.caseLabel || f.caseLabel === this.state.selectedCase
+        );
       }
-
+      
       container.innerHTML = `
         <div class="widget-header">
           <span class="widget-title">Client At-a-Glance</span>
           <div class="view-toggle">
-            <button class="${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
-            <button class="${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
+            <button class="${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">
+              Structured
+            </button>
+            <button class="${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">
+              Narrative
+            </button>
           </div>
         </div>
+        
         ${this.renderClientHeader(headerFields, clientName)}
+        
         ${cases.length > 1 ? this.renderCaseTabs(cases) : ''}
-        ${this.state.viewMode === 'narrative' ? this.renderNarrativeView(displayFields) : this.renderStructuredView(displayFields)}
+        
+        ${this.state.viewMode === 'narrative' 
+          ? this.renderNarrativeView(displayFields)
+          : this.renderStructuredView(displayFields)}
+        
         <div class="settings-row">
           <label class="settings-toggle">
-            <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance"> Show sources
+            <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance">
+            Show sources
           </label>
         </div>
       `;
+      
       this.attachEventListeners();
     },
 
@@ -815,6 +937,7 @@ window.MOCK_DATA = {
       const aNum = headerFields.find(f => f.role === 'a_number');
       const dob = headerFields.find(f => f.role === 'date_of_birth');
       const country = headerFields.find(f => f.role === 'country_of_origin');
+      
       return `
         <div class="client-header">
           <div class="client-name">${Utils.escapeHtml(clientName)}</div>
@@ -830,8 +953,14 @@ window.MOCK_DATA = {
     renderCaseTabs(cases) {
       return `
         <div class="case-tabs">
-          <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">All Cases<span class="case-count">${cases.length}</span></button>
-          ${cases.map(c => `<button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">${Utils.escapeHtml(c)}</button>`).join('')}
+          <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">
+            All Cases<span class="case-count">${cases.length}</span>
+          </button>
+          ${cases.map(c => `
+            <button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">
+              ${Utils.escapeHtml(c)}
+            </button>
+          `).join('')}
         </div>
       `;
     },
@@ -840,47 +969,72 @@ window.MOCK_DATA = {
       const narrative = DataProcessor.composeNarrative(fields);
       const tier2and3 = fields.filter(f => f.tier > 1);
       const grouped = DataProcessor.groupFields(tier2and3);
-
+      
+      // Remove header fields from "also on file"
+      const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
+      
       return `
         <div class="narrative-view">
-          <div class="narrative-text">${narrative || '<em>No semantic data available for this client.</em>'}</div>
+          <div class="narrative-text">
+            ${narrative || '<em>No semantic data available for this client.</em>'}
+          </div>
         </div>
+        
         ${Object.keys(grouped).length > 0 ? `
           <div class="uncategorized-section">
             <button class="uncategorized-toggle" data-action="toggle-extra">
-              <span>▶</span> Also on file (${tier2and3.length} fields not in narrative)
+              <span>▶</span>
+              Also on file (${tier2and3.length} fields not in narrative)
             </button>
-            <div class="uncategorized-content" id="extra-fields">${this.renderGroupedFields(grouped, true)}</div>
+            <div class="uncategorized-content" id="extra-fields">
+              ${this.renderGroupedFields(grouped, true)}
+            </div>
           </div>
         ` : ''}
       `;
     },
 
     renderStructuredView(fields) {
+      // Exclude header fields from groups
       const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
       const nonHeaderFields = fields.filter(f => !headerRoles.includes(f.role));
       const grouped = DataProcessor.groupFields(nonHeaderFields);
-      return `<div class="structured-view">${this.renderGroupedFields(grouped, false)}</div>`;
+      
+      return `
+        <div class="structured-view">
+          ${this.renderGroupedFields(grouped, false)}
+        </div>
+      `;
     },
 
     renderGroupedFields(grouped, flat = false) {
       const groupOrder = CONFIG?.GROUP_ORDER || Object.keys(grouped);
+      
       return groupOrder
         .filter(groupName => grouped[groupName] && grouped[groupName].length > 0)
         .map(groupName => {
           const groupFields = grouped[groupName];
           const isUncategorized = groupName === 'Uncategorized';
           const isExpanded = this.state.expandedGroups.has(groupName) || flat;
-
-          if (flat) return this.renderFlatGroup(groupName, groupFields);
-
+          
+          if (flat) {
+            return this.renderFlatGroup(groupName, groupFields);
+          }
+          
           return `
             <div class="field-group ${isExpanded ? '' : 'collapsed'}" data-group="${Utils.escapeHtml(groupName)}">
               <div class="field-group-header">
-                <span class="field-group-title">${Utils.escapeHtml(groupName)}<span class="field-group-count">(${groupFields.length})</span></span>
+                <span class="field-group-title">
+                  ${Utils.escapeHtml(groupName)}
+                  <span class="field-group-count">(${groupFields.length})</span>
+                </span>
                 <span class="field-group-chevron">▼</span>
               </div>
-              <div class="field-group-content">${isUncategorized ? this.renderTriplets(groupFields) : this.renderFieldItems(groupFields)}</div>
+              <div class="field-group-content">
+                ${isUncategorized 
+                  ? this.renderTriplets(groupFields)
+                  : this.renderFieldItems(groupFields)}
+              </div>
             </div>
           `;
         }).join('');
@@ -888,10 +1042,15 @@ window.MOCK_DATA = {
 
     renderFlatGroup(groupName, fields) {
       const isUncategorized = groupName === 'Uncategorized';
+      
       return `
         <div style="margin-bottom: 16px;">
-          <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">${Utils.escapeHtml(groupName)}</div>
-          ${isUncategorized ? this.renderTriplets(fields) : this.renderFieldItems(fields)}
+          <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+            ${Utils.escapeHtml(groupName)}
+          </div>
+          ${isUncategorized 
+            ? this.renderTriplets(fields)
+            : this.renderFieldItems(fields)}
         </div>
       `;
     },
@@ -899,10 +1058,15 @@ window.MOCK_DATA = {
     renderFieldItems(fields) {
       return fields.map(field => `
         <div class="field-item">
-          <span class="field-label"><span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}</span>
+          <span class="field-label">
+            <span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>
+            ${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}
+          </span>
           <span class="field-value">
             ${this.renderFieldValue(field)}
-            ${this.state.showProvenance && field.caseLabel ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` : ''}
+            ${this.state.showProvenance && field.caseLabel 
+              ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` 
+              : ''}
           </span>
         </div>
       `).join('');
@@ -910,13 +1074,18 @@ window.MOCK_DATA = {
 
     renderFieldValue(field) {
       const value = field.rendered || field.value;
+      
+      // Check if it's a URL
       if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
         return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link ↗</a>`;
       }
+      
+      // Truncate long values
       const strValue = String(value);
       if (strValue.length > 100) {
         return `<span title="${Utils.escapeHtml(strValue)}">${Utils.escapeHtml(strValue.slice(0, 100))}…</span>`;
       }
+      
       return Utils.escapeHtml(strValue);
     },
 
@@ -931,21 +1100,39 @@ window.MOCK_DATA = {
     },
 
     attachEventListeners() {
+      // View toggle
       document.querySelectorAll('.view-toggle button').forEach(btn => {
-        btn.addEventListener('click', (e) => { this.state.viewMode = e.target.dataset.view; this.render(); });
+        btn.addEventListener('click', (e) => {
+          this.state.viewMode = e.target.dataset.view;
+          this.render();
+        });
       });
+      
+      // Case tabs
       document.querySelectorAll('.case-tab').forEach(btn => {
-        btn.addEventListener('click', (e) => { this.state.selectedCase = e.target.dataset.case; this.render(); });
+        btn.addEventListener('click', (e) => {
+          this.state.selectedCase = e.target.dataset.case;
+          this.render();
+        });
       });
+      
+      // Group expand/collapse
       document.querySelectorAll('.field-group-header').forEach(header => {
         header.addEventListener('click', (e) => {
           const group = e.currentTarget.parentElement;
           const groupName = group.dataset.group;
-          if (this.state.expandedGroups.has(groupName)) this.state.expandedGroups.delete(groupName);
-          else this.state.expandedGroups.add(groupName);
+          
+          if (this.state.expandedGroups.has(groupName)) {
+            this.state.expandedGroups.delete(groupName);
+          } else {
+            this.state.expandedGroups.add(groupName);
+          }
+          
           group.classList.toggle('collapsed');
         });
       });
+      
+      // Extra fields toggle
       const extraToggle = document.querySelector('[data-action="toggle-extra"]');
       if (extraToggle) {
         extraToggle.addEventListener('click', () => {
@@ -954,33 +1141,104 @@ window.MOCK_DATA = {
           extraToggle.querySelector('span').textContent = content.classList.contains('visible') ? '▼' : '▶';
         });
       }
+      
+      // Settings toggles
       document.querySelectorAll('[data-setting]').forEach(input => {
         input.addEventListener('change', (e) => {
-          if (e.target.dataset.setting === 'provenance') { this.state.showProvenance = e.target.checked; this.render(); }
+          if (e.target.dataset.setting === 'provenance') {
+            this.state.showProvenance = e.target.checked;
+            this.render();
+          }
         });
       });
     }
   };
 
-  function init() {
-    const container = document.getElementById('app');
-    try {
-      if (!CONFIG) throw new Error('Configuration not loaded. Make sure config.js is included.');
+  // ==========================================================================
+  // DATA FETCHER
+  // ==========================================================================
+
+  const DataFetcher = {
+    async fetchClientData(recordId) {
+      // For development/demo, check for mock data
       if (window.MOCK_DATA) {
-        Renderer.init(window.MOCK_DATA);
-      } else {
-        container.innerHTML = `<div class="error"><div class="error-title">No Data</div><div>No mock data loaded and no webhook configured.</div></div>`;
+        return window.MOCK_DATA;
       }
+      
+      const url = `${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    }
+  };
+
+  // ==========================================================================
+  // INITIALIZATION
+  // ==========================================================================
+
+  async function init() {
+    const container = document.getElementById('app');
+    
+    try {
+      // Check for config
+      if (!CONFIG) {
+        throw new Error('Configuration not loaded. Make sure config.js is included.');
+      }
+      
+      // Get record ID
+      const recordId = Utils.getRecordId();
+      
+      if (!recordId && !window.MOCK_DATA) {
+        container.innerHTML = `
+          <div class="error">
+            <div class="error-title">No Record ID</div>
+            <div>Please provide a recordId parameter in the URL.</div>
+          </div>
+        `;
+        return;
+      }
+      
+      // Fetch data
+      const data = await DataFetcher.fetchClientData(recordId);
+      
+      // Initialize renderer
+      Renderer.init(data);
+      
     } catch (error) {
       console.error('Client Glance Error:', error);
-      container.innerHTML = `<div class="error"><div class="error-title">Error</div><div>${Utils.escapeHtml(error.message)}</div></div>`;
+      container.innerHTML = `
+        <div class="error">
+          <div class="error-title">Error Loading Data</div>
+          <div>${Utils.escapeHtml(error.message)}</div>
+        </div>
+      `;
     }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  // Auto-expand first few groups
+  Renderer.state.expandedGroups.add('Court');
+  Renderer.state.expandedGroups.add('SIJ');
+  Renderer.state.expandedGroups.add('USCIS');
 
-  window.ClientGlance = { Utils, DataProcessor, Renderer };
+  // Initialize when DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Expose for debugging
+  window.ClientGlance = { Utils, DataProcessor, Renderer, DataFetcher };
+
 })();
 </script>
 
