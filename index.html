@@ -755,8 +755,14 @@ window.MOCK_DATA = {
 
   const Utils = {
     getRecordId() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('recordId') || params.get('record_id') || params.get('id');
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('recordId') || params.get('record_id') || params.get('id');
+      } catch (e) {
+        // Handle cross-origin iframe SecurityError
+        DebugLogger.warn('Cannot access window.location (cross-origin iframe)', e.message);
+        return null;
+      }
     },
 
     formatDate(value, includeTime = false) {
@@ -1191,7 +1197,11 @@ window.MOCK_DATA = {
   function init() {
     const container = document.getElementById('app');
     DebugLogger.info('Widget initializing...');
-    DebugLogger.info('URL params', Object.fromEntries(new URLSearchParams(window.location.search)));
+    try {
+      DebugLogger.info('URL params', Object.fromEntries(new URLSearchParams(window.location.search)));
+    } catch (e) {
+      DebugLogger.warn('Cannot access URL params (cross-origin iframe)');
+    }
 
     try {
       if (!CONFIG) {
