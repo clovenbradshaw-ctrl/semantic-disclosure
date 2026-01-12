@@ -436,6 +436,12 @@
       to { transform: rotate(360deg); }
     }
 
+    .loading-detail {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
     /* Error State */
     .error {
       padding: 24px;
@@ -555,6 +561,314 @@
   const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
 
   // ==========================================================================
+  // SCHEMA PROCESSOR
+  // Dynamically analyzes Airtable schema to determine field types and groupings
+  // ==========================================================================
+
+  const SchemaProcessor = {
+    schema: null,
+    fieldMap: new Map(),      // fieldName -> { type, options, tableName }
+    tableMap: new Map(),      // tableName -> { fields: [] }
+
+    /**
+     * Initialize with schema data from API
+     * @param {Array} schemaData - Array of table definitions with fields
+     */
+    init(schemaData) {
+      if (!schemaData || !Array.isArray(schemaData)) {
+        console.log('[SchemaProcessor] No schema provided, using fallback mode');
+        return false;
+      }
+
+      this.schema = schemaData;
+      this.fieldMap.clear();
+      this.tableMap.clear();
+
+      // Build field map from schema
+      for (const table of schemaData) {
+        const tableName = table.name;
+        this.tableMap.set(tableName, {
+          id: table.id,
+          fields: table.fields,
+          primaryFieldId: table.primaryFieldId
+        });
+
+        for (const field of table.fields || []) {
+          // Store field with table context
+          this.fieldMap.set(field.name, {
+            type: field.type,
+            options: field.options || {},
+            id: field.id,
+            tableName
+          });
+
+          // Also store with table prefix for disambiguation
+          this.fieldMap.set(`${tableName}::${field.name}`, {
+            type: field.type,
+            options: field.options || {},
+            id: field.id,
+            tableName
+          });
+        }
+      }
+
+      console.log(`[SchemaProcessor] Loaded ${this.fieldMap.size} fields from ${this.tableMap.size} tables`);
+      return true;
+    },
+
+    /**
+     * Get field metadata from schema
+     */
+    getFieldMeta(fieldName) {
+      return this.fieldMap.get(fieldName) || null;
+    },
+
+    /**
+     * Get Airtable field type (not our display type)
+     */
+    getFieldType(fieldName) {
+      const meta = this.getFieldMeta(fieldName);
+      return meta?.type || null;
+    },
+
+    /**
+     * Map Airtable field type to display format
+     */
+    getDisplayType(fieldName, value) {
+      const airtableType = this.getFieldType(fieldName);
+
+      // Map Airtable types to display types
+      const typeMap = {
+        'date': 'date',
+        'dateTime': 'datetime',
+        'createdTime': 'datetime',
+        'lastModifiedTime': 'datetime',
+        'email': 'email',
+        'url': 'url',
+        'phone': 'phone',  // Airtable doesn't have phone type, but we handle it
+        'phoneNumber': 'phone',
+        'checkbox': 'boolean',
+        'number': 'number',
+        'currency': 'currency',
+        'percent': 'percent',
+        'rating': 'rating',
+        'duration': 'duration',
+        'singleSelect': 'select',
+        'multipleSelects': 'multiselect',
+        'multipleRecordLinks': 'linked_records',
+        'multipleLookupValues': 'lookup',
+        'rollup': 'rollup',
+        'formula': this.inferFormulaType.bind(this),
+        'button': 'button',
+        'multipleAttachments': 'attachment',
+        'richText': 'richtext',
+        'multilineText': 'text',
+        'singleLineText': 'text',
+        'autoNumber': 'number',
+        'barcode': 'text',
+        'lastModifiedBy': 'user',
+        'createdBy': 'user'
+      };
+
+      const mapped = typeMap[airtableType];
+      if (typeof mapped === 'function') {
+        return mapped(fieldName, value);
+      }
+      return mapped || null;
+    },
+
+    /**
+     * Infer type from formula result
+     */
+    inferFormulaType(fieldName, value) {
+      const meta = this.getFieldMeta(fieldName);
+      const resultType = meta?.options?.result?.type;
+
+      if (resultType) {
+        // Map the result type
+        if (resultType === 'dateTime' || resultType === 'date') return 'date';
+        if (resultType === 'number') return 'number';
+        if (resultType === 'checkbox') return 'boolean';
+      }
+
+      // Fall back to value inference
+      return null;
+    },
+
+    /**
+     * Infer group from field name and type
+     */
+    inferGroup(fieldName, fieldType) {
+      // First check schema-based grouping patterns
+      const schemaGroups = this.getSchemaBasedGroup(fieldName);
+      if (schemaGroups) return schemaGroups;
+
+      // Immigration domain-specific patterns
+      const fieldLower = fieldName.toLowerCase();
+
+      // Court/Hearing related
+      if (/hearing|court|judge|eoir|ich|merits|pleading|nta|calendar/.test(fieldLower)) {
+        return 'Court';
+      }
+
+      // SIJ related
+      if (/\bsij|custody|jdr|juvenile|child/.test(fieldLower)) {
+        return 'SIJ';
+      }
+
+      // USCIS related
+      if (/uscis|i-\d{3}|receipt|biometric|rfe|rfi|filing/.test(fieldLower)) {
+        return 'USCIS';
+      }
+
+      // EAD related
+      if (/\bead\b|work.*auth|employment.*auth/.test(fieldLower)) {
+        return 'EAD';
+      }
+
+      // FOIA/Records
+      if (/foia|fbi|obim|ice.*record|cbp.*record/.test(fieldLower)) {
+        return 'Records';
+      }
+
+      // Appeals
+      if (/appeal|brief|bia|circuit/.test(fieldLower)) {
+        return 'Appeals';
+      }
+
+      // U-Visa
+      if (/u-visa|u visa|uvisa|certification.*status/.test(fieldLower)) {
+        return 'U-Visa';
+      }
+
+      // Asylum
+      if (/asylum|i-589|credible.*fear|fear.*interview/.test(fieldLower)) {
+        return 'Asylum';
+      }
+
+      // Bond
+      if (/bond|detention|ice.*custody/.test(fieldLower)) {
+        return 'Bond';
+      }
+
+      // Contact Info
+      if (/phone|email|address|city|state|zip|contact/.test(fieldLower)) {
+        return 'Contact';
+      }
+
+      // Identity
+      if (/\bname\b|dob|birth|age|country|a#|a-number|gender|pronoun/.test(fieldLower)) {
+        return 'Identity';
+      }
+
+      // Management
+      if (/manager|attorney|atty|assigned|status|tag|case.*manager/.test(fieldLower)) {
+        return 'Management';
+      }
+
+      // Documents/Links
+      if (/document|file|box|link|url|scan|attachment/.test(fieldLower)) {
+        return 'Documents';
+      }
+
+      // Notes
+      if (/note|comment|memo/.test(fieldLower)) {
+        return 'Notes';
+      }
+
+      // Financial
+      if (/contract|payment|invoice|fee|retainer|\$|amount|price/.test(fieldLower)) {
+        return 'Financial';
+      }
+
+      // Dates (generic)
+      if (/date|time|deadline|due/.test(fieldLower) && fieldType === 'date') {
+        return 'Dates';
+      }
+
+      return null;
+    },
+
+    /**
+     * Use schema relationships to infer grouping
+     */
+    getSchemaBasedGroup(fieldName) {
+      const meta = this.getFieldMeta(fieldName);
+      if (!meta) return null;
+
+      // If it's a lookup or rollup, try to get group from the linked table
+      if (meta.type === 'multipleLookupValues' || meta.type === 'rollup') {
+        const linkedFieldId = meta.options?.recordLinkFieldId;
+        // Could trace back to linked table for grouping, but keep simple for now
+      }
+
+      return null;
+    },
+
+    /**
+     * Get select options for a field
+     */
+    getSelectOptions(fieldName) {
+      const meta = this.getFieldMeta(fieldName);
+      if (!meta?.options?.choices) return null;
+      return meta.options.choices.map(c => ({ id: c.id, name: c.name, color: c.color }));
+    },
+
+    /**
+     * Check if field should be hidden based on schema
+     */
+    shouldHideField(fieldName) {
+      const meta = this.getFieldMeta(fieldName);
+      if (!meta) return false;
+
+      // Hide internal/system fields
+      const hiddenTypes = ['lastModifiedBy', 'createdBy', 'autoNumber'];
+      if (hiddenTypes.includes(meta.type)) return true;
+
+      // Hide fields that are purely internal
+      const hiddenPatterns = [
+        /^record.*id$/i,
+        /^airtable.*id$/i,
+        /_id$/i,
+        /^id$/i,
+        /sync|push|calc|internal/i
+      ];
+
+      return hiddenPatterns.some(p => p.test(fieldName));
+    },
+
+    /**
+     * Generate a smart display label for a field
+     */
+    getDisplayLabel(fieldName) {
+      // Remove common suffixes
+      let label = fieldName
+        .replace(/\s*\(from.*\)$/i, '')  // Remove "(from Table)" lookups
+        .replace(/_/g, ' ')
+        .replace(/([A-Z])/g, ' $1')
+        .trim();
+
+      // Capitalize first letter
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    },
+
+    /**
+     * Get all fields for a table
+     */
+    getTableFields(tableName) {
+      const table = this.tableMap.get(tableName);
+      return table?.fields || [];
+    },
+
+    /**
+     * Check if schema is loaded
+     */
+    hasSchema() {
+      return this.schema !== null && this.fieldMap.size > 0;
+    }
+  };
+
+  // ==========================================================================
   // DATA TRANSFORMER
   // Converts flat API array format to normalized clientInfo/cases structure
   // ==========================================================================
@@ -566,8 +880,19 @@
      * @returns {Object} Normalized { clientInfo, cases } structure
      */
     transform(rawData) {
-      // Handle already-normalized data
+      // Handle response with schema included: { schema: [...], data: [...] }
+      if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
+        console.log('[DataTransformer] Schema detected in response');
+        SchemaProcessor.init(rawData.schema);
+        rawData = rawData.data || rawData.records || [];
+      }
+
+      // Handle already-normalized data with potential schema
       if (rawData && rawData.clientInfo) {
+        // Check if schema is embedded
+        if (rawData.schema) {
+          SchemaProcessor.init(rawData.schema);
+        }
         return rawData;
       }
 
@@ -853,10 +1178,17 @@
       return template.replace('{value}', value);
     },
 
-    // Infer data type from value
-    inferDataType(value) {
+    // Infer data type from value and optionally schema
+    inferDataType(value, fieldName = null) {
+      // First, try schema-based detection
+      if (fieldName && SchemaProcessor.hasSchema()) {
+        const schemaType = SchemaProcessor.getDisplayType(fieldName, value);
+        if (schemaType) return schemaType;
+      }
+
+      // Fall back to pattern-based detection
       if (!value || typeof value !== 'string') return null;
-      
+
       const patterns = CONFIG?.DATA_TYPE_PATTERNS || [];
       for (const { type, pattern, minLength } of patterns) {
         if (pattern.test(value)) {
@@ -881,6 +1213,11 @@
 
     // Check if field should be hidden
     isHiddenField(fieldName) {
+      // Check schema-based hiding first
+      if (SchemaProcessor.hasSchema() && SchemaProcessor.shouldHideField(fieldName)) {
+        return true;
+      }
+
       const hiddenPatterns = CONFIG?.DISPLAY?.hiddenFields || [];
       return hiddenPatterns.some(pattern => {
         if (pattern instanceof RegExp) return pattern.test(fieldName);
@@ -888,8 +1225,16 @@
       });
     },
 
-    // Find group by pattern matching
+    // Find group by pattern matching (with schema support)
     findGroupByPattern(fieldName) {
+      // First, try schema-based grouping
+      if (SchemaProcessor.hasSchema()) {
+        const fieldType = SchemaProcessor.getFieldType(fieldName);
+        const schemaGroup = SchemaProcessor.inferGroup(fieldName, fieldType);
+        if (schemaGroup) return schemaGroup;
+      }
+
+      // Fall back to config patterns
       const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
       for (const { group, pattern } of patterns) {
         if (pattern.test(fieldName)) return group;
@@ -1070,32 +1415,44 @@
         };
       }
       
-      // Tier 2: Pattern-matched group
+      // Tier 2: Schema-informed or pattern-matched processing
+      // Use schema type first, then fall back to pattern matching
+      const schemaType = SchemaProcessor.hasSchema()
+        ? SchemaProcessor.getDisplayType(fieldName, displayValue)
+        : null;
+      const inferredType = schemaType || Utils.inferDataType(String(displayValue), fieldName);
       const group = Utils.findGroupByPattern(fieldName);
-      const inferredType = Utils.inferDataType(String(displayValue));
-      
-      if (group || inferredType) {
+
+      // If we have schema info OR can match patterns, use Tier 2
+      if (group || inferredType || SchemaProcessor.hasSchema()) {
         const formatted = inferredType ? Utils.formatByType(displayValue, inferredType) : displayValue;
+        const displayLabel = SchemaProcessor.hasSchema()
+          ? SchemaProcessor.getDisplayLabel(fieldName)
+          : Utils.humanizeFieldName(fieldName);
+
         return {
           tier: 2,
           fieldName,
+          displayLabel,
           value: displayValue,
           rendered: formatted,
           role: null,
-          group: group || 'Other',
-          priority: 50,
+          group: group || (SchemaProcessor.hasSchema() ? 'Other' : 'Other'),
+          priority: this.calculatePriority(fieldName, inferredType),
           narrativePosition: null,
           dataType: inferredType,
+          schemaType: SchemaProcessor.getFieldType(fieldName),
           sourceTable,
           caseLabel,
           recordId
         };
       }
-      
-      // Tier 3: Raw triplet
+
+      // Tier 3: Raw triplet (fallback when no schema and no pattern match)
       return {
         tier: 3,
         fieldName,
+        displayLabel: Utils.humanizeFieldName(fieldName),
         value: displayValue,
         rendered: String(displayValue),
         role: null,
@@ -1103,10 +1460,39 @@
         priority: 99,
         narrativePosition: null,
         dataType: null,
+        schemaType: null,
         sourceTable,
         caseLabel,
         recordId
       };
+    },
+
+    /**
+     * Calculate field priority for display ordering
+     * Lower numbers = higher priority (shown first)
+     */
+    calculatePriority(fieldName, dataType) {
+      const fieldLower = fieldName.toLowerCase();
+
+      // Dates are important - show early
+      if (dataType === 'date' || dataType === 'datetime') {
+        // Upcoming/due dates first
+        if (/due|upcoming|next|hearing|deadline/.test(fieldLower)) return 10;
+        // Other dates
+        return 30;
+      }
+
+      // Status fields are important
+      if (/status|stage|decision/.test(fieldLower)) return 20;
+
+      // Receipt numbers and IDs
+      if (/receipt|number|#/.test(fieldLower)) return 40;
+
+      // Notes and comments go later
+      if (/note|comment|memo/.test(fieldLower)) return 80;
+
+      // Default priority
+      return 50;
     },
 
     // Compose narrative from Tier 1 fields
@@ -1391,20 +1777,29 @@
     },
 
     renderFieldItems(fields) {
-      return fields.map(field => `
-        <div class="field-item">
-          <span class="field-label">
-            <span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>
-            ${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}
-          </span>
-          <span class="field-value">
-            ${this.renderFieldValue(field)}
-            ${this.state.showProvenance && field.caseLabel 
-              ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` 
-              : ''}
-          </span>
-        </div>
-      `).join('');
+      return fields.map(field => {
+        // Use displayLabel from schema processing, or fall back to humanized field name
+        const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
+        // Show schema type indicator if available
+        const schemaIndicator = field.schemaType
+          ? `<span class="schema-type" title="Airtable type: ${field.schemaType}"></span>`
+          : '';
+
+        return `
+          <div class="field-item">
+            <span class="field-label">
+              <span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}${field.schemaType ? ' | ' + field.schemaType : ''}"></span>
+              ${Utils.escapeHtml(label)}
+            </span>
+            <span class="field-value">
+              ${this.renderFieldValue(field)}
+              ${this.state.showProvenance && field.caseLabel
+                ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>`
+                : ''}
+            </span>
+          </div>
+        `;
+      }).join('');
     },
 
     renderFieldValue(field) {
@@ -1508,9 +1903,13 @@
     async fetchClientData(recordId) {
       // For development/demo, check for mock data
       if (window.MOCK_DATA) {
+        // Initialize schema if provided separately
+        if (window.MOCK_SCHEMA && !SchemaProcessor.hasSchema()) {
+          SchemaProcessor.init(window.MOCK_SCHEMA);
+        }
         return window.MOCK_DATA;
       }
-      
+
       const url = `${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`;
       const response = await fetch(url, {
         method: 'GET',
@@ -1518,11 +1917,11 @@
           'Accept': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       return response.json();
     }
   };
@@ -1533,16 +1932,22 @@
 
   async function init() {
     const container = document.getElementById('app');
-    
+
     try {
       // Check for config
       if (!CONFIG) {
         throw new Error('Configuration not loaded. Make sure config.js is included.');
       }
-      
+
+      // Initialize schema if provided globally (for testing/development)
+      if (window.MOCK_SCHEMA && !SchemaProcessor.hasSchema()) {
+        console.log('[init] Initializing schema from MOCK_SCHEMA');
+        SchemaProcessor.init(window.MOCK_SCHEMA);
+      }
+
       // Get record ID
       const recordId = Utils.getRecordId();
-      
+
       if (!recordId && !window.MOCK_DATA) {
         container.innerHTML = `
           <div class="error">
@@ -1552,13 +1957,24 @@
         `;
         return;
       }
-      
+
+      // Show loading state
+      container.innerHTML = `
+        <div class="loading">
+          <div>Loading client data...</div>
+          ${SchemaProcessor.hasSchema() ? '<div class="loading-detail">Schema loaded</div>' : ''}
+        </div>
+      `;
+
       // Fetch data
       const data = await DataFetcher.fetchClientData(recordId);
-      
+
+      // Log schema status
+      console.log('[init] Schema status:', SchemaProcessor.hasSchema() ? 'loaded' : 'not loaded');
+
       // Initialize renderer
       Renderer.init(data);
-      
+
     } catch (error) {
       console.error('Client Glance Error:', error);
       container.innerHTML = `
@@ -1583,7 +1999,7 @@
   }
 
   // Expose for debugging
-  window.ClientGlance = { Utils, DataProcessor, Renderer, DataFetcher };
+  window.ClientGlance = { Utils, DataProcessor, Renderer, DataFetcher, SchemaProcessor, DataTransformer };
 
 })();
 </script>

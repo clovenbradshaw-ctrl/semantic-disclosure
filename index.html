@@ -299,6 +299,21 @@
       border-color: var(--accent-blue);
     }
 
+    .schema-status {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      background: var(--bg-input);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .schema-status.loaded {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
     /* Status Bar */
     .status-bar {
       padding: 10px 24px;
@@ -495,9 +510,11 @@
       <div class="quick-actions">
         <button class="quick-btn" onclick="logState()">Log State</button>
         <button class="quick-btn" onclick="logMockData()">Log Mock Data</button>
+        <button class="quick-btn" onclick="logSchema()">Log Schema</button>
         <button class="quick-btn" onclick="toggleDebug()">Toggle Debug</button>
         <button class="quick-btn" onclick="copyUrl()">Copy URL</button>
         <button class="quick-btn" onclick="openInNewTab()">Open in Tab</button>
+        <span id="schemaStatus" class="schema-status">Schema: <span id="schemaStatusText">Ready</span></span>
       </div>
     </div>
   </div>
@@ -618,6 +635,73 @@ window.MOCK_DATA = {
     }
   ]
 };
+
+// Schema for testing schema-driven display
+window.MOCK_SCHEMA = [
+  {
+    "id": "tbl0uHmtLkGyDnSP9",
+    "name": "Client Info",
+    "fields": [
+      { "type": "formula", "id": "fld001", "name": "Client Name" },
+      { "type": "singleLineText", "id": "fld002", "name": "A#" },
+      { "type": "date", "id": "fld003", "name": "DOB" },
+      { "type": "singleSelect", "id": "fld004", "name": "Country" },
+      { "type": "formula", "id": "fld005", "name": "Age" },
+      { "type": "singleLineText", "id": "fld006", "name": "Phone Number" },
+      { "type": "email", "id": "fld007", "name": "Client Email" },
+      { "type": "singleLineText", "id": "fld008", "name": "Address" },
+      { "type": "date", "id": "fld009", "name": "Entry Date" },
+      { "type": "singleLineText", "id": "fld010", "name": "Entry Status" },
+      { "type": "multipleRecordLinks", "id": "fld011", "name": "Case Manager" }
+    ]
+  },
+  {
+    "id": "tblgynOzESGvAXAsK",
+    "name": "Case Master View",
+    "fields": [
+      { "type": "dateTime", "id": "fld101", "name": "Hearing Date/Time" },
+      { "type": "singleLineText", "id": "fld102", "name": "Court/Office" },
+      { "type": "singleLineText", "id": "fld103", "name": "Judge" },
+      { "type": "singleSelect", "id": "fld104", "name": "SIJ Case Status" },
+      { "type": "singleLineText", "id": "fld105", "name": "SIJ County" },
+      { "type": "date", "id": "fld106", "name": "Date Custody Filed" },
+      { "type": "checkbox", "id": "fld107", "name": "SIJ Eligible (child)" },
+      { "type": "date", "id": "fld108", "name": "JDR Ct Date" },
+      { "type": "singleLineText", "id": "fld109", "name": "Relief Sought" },
+      { "type": "singleSelect", "id": "fld110", "name": "File Case Status" },
+      { "type": "multipleSelects", "id": "fld111", "name": "Case Tags" },
+      { "type": "date", "id": "fld112", "name": "FOIA Receipt" },
+      { "type": "singleLineText", "id": "fld113", "name": "FOIA #" },
+      { "type": "singleLineText", "id": "fld114", "name": "FOIA PIN #" },
+      { "type": "singleSelect", "id": "fld115", "name": "USCIS FOIA Stage" },
+      { "type": "singleSelect", "id": "fld116", "name": "FBI Record Stage" },
+      { "type": "date", "id": "fld117", "name": "Pleadings Due Date" },
+      { "type": "date", "id": "fld118", "name": "NTA Date" },
+      { "type": "richText", "id": "fld119", "name": "Master Hearing Notes" },
+      { "type": "richText", "id": "fld120", "name": "ICH Prep Notes" },
+      { "type": "date", "id": "fld121", "name": "USCIS Receipt Date" },
+      { "type": "singleLineText", "id": "fld122", "name": "USCIS Receipt Number" },
+      { "type": "singleLineText", "id": "fld123", "name": "I-360 Receipt Number" },
+      { "type": "date", "id": "fld124", "name": "I-360 Mailed Date" },
+      { "type": "singleLineText", "id": "fld125", "name": "Current USCIS application" },
+      { "type": "date", "id": "fld126", "name": "Priority Date (I-360)" },
+      { "type": "date", "id": "fld127", "name": "Biometric Notice Date" },
+      { "type": "date", "id": "fld128", "name": "RFE Due Date" },
+      { "type": "singleLineText", "id": "fld129", "name": "RFE/RFI (topic)" },
+      { "type": "richText", "id": "fld130", "name": "USCIS Notes" },
+      { "type": "singleSelect", "id": "fld131", "name": "EAD Stage" },
+      { "type": "date", "id": "fld132", "name": "EAD Receipt Date" },
+      { "type": "date", "id": "fld133", "name": "EAD Eligible Date" },
+      { "type": "singleSelect", "id": "fld134", "name": "Appeal Status" },
+      { "type": "date", "id": "fld135", "name": "Appeal Due Date" },
+      { "type": "date", "id": "fld136", "name": "Appeal Receipt Date" },
+      { "type": "date", "id": "fld137", "name": "Brief Due Date" },
+      { "type": "singleLineText", "id": "fld138", "name": "Appeal Forum" },
+      { "type": "richText", "id": "fld139", "name": "Appeal Notes" }
+    ]
+  }
+];
+console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables');
 </script>
 
 <!-- Config -->
@@ -1215,7 +1299,21 @@ window.MOCK_DATA = {
       initWidget(data);
       widgetLoaded = true;
       showStatus('Widget loaded successfully', 'success');
+      updateSchemaStatus();
     }, 100);
+  }
+
+  function updateSchemaStatus() {
+    const schemaStatus = document.getElementById('schemaStatus');
+    const schemaStatusText = document.getElementById('schemaStatusText');
+    if (window.ClientGlance && window.ClientGlance.SchemaProcessor && window.ClientGlance.SchemaProcessor.hasSchema()) {
+      const fieldCount = window.ClientGlance.SchemaProcessor.fieldMap.size;
+      schemaStatus.classList.add('loaded');
+      schemaStatusText.textContent = `Loaded (${fieldCount} fields)`;
+    } else {
+      schemaStatus.classList.remove('loaded');
+      schemaStatusText.textContent = 'Not loaded';
+    }
   }
 
   window.reloadWidget = function() {
@@ -1236,6 +1334,14 @@ window.MOCK_DATA = {
 
   window.logMockData = function() {
     console.log('Mock Data:', window.MOCK_DATA);
+  };
+
+  window.logSchema = function() {
+    console.log('Mock Schema:', window.MOCK_SCHEMA);
+    if (window.ClientGlance && window.ClientGlance.SchemaProcessor) {
+      console.log('SchemaProcessor hasSchema:', window.ClientGlance.SchemaProcessor.hasSchema());
+      console.log('SchemaProcessor fieldMap:', window.ClientGlance.SchemaProcessor.fieldMap);
+    }
   };
 
   window.toggleDebug = function() {
