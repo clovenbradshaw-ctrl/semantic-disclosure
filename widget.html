@@ -259,6 +259,23 @@
       text-decoration: underline;
     }
 
+    .field-value a.button-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background 0.15s ease;
+    }
+
+    .field-value a.button-link:hover {
+      background: var(--bg-tertiary);
+      text-decoration: none;
+    }
+
     /* Provenance Badge */
     .provenance-badge {
       font-size: 10px;
@@ -538,6 +555,228 @@
   const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
 
   // ==========================================================================
+  // DATA TRANSFORMER
+  // Converts flat API array format to normalized clientInfo/cases structure
+  // ==========================================================================
+
+  const DataTransformer = {
+    /**
+     * Transform raw API response (flat array of case records) into normalized format
+     * @param {Array|Object} rawData - Raw webhook response
+     * @returns {Object} Normalized { clientInfo, cases } structure
+     */
+    transform(rawData) {
+      // Handle already-normalized data
+      if (rawData && rawData.clientInfo) {
+        return rawData;
+      }
+
+      // Handle flat array of records (actual Airtable format)
+      if (!Array.isArray(rawData) || rawData.length === 0) {
+        console.warn('[DataTransformer] Empty or invalid data received');
+        return { clientInfo: { fields: {} }, cases: [] };
+      }
+
+      // Extract client info from first record (client fields are repeated)
+      const firstRecord = rawData[0];
+      const clientFields = this.extractClientFields(firstRecord);
+
+      // Transform each record into a case
+      const cases = rawData.map((record, index) => this.transformCase(record, index));
+
+      return {
+        clientInfo: {
+          recordId: this.unwrapValue(firstRecord['Client_ID_Airtable']) || firstRecord.id,
+          fields: clientFields
+        },
+        cases
+      };
+    },
+
+    /**
+     * Extract client-level fields from a record
+     */
+    extractClientFields(record) {
+      const clientFieldNames = [
+        'Client Name', 'First Name', 'Family Name', 'Middle Name',
+        'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+        'Address', 'Gender', 'Pronouns'
+      ];
+
+      const fields = {};
+      for (const fieldName of clientFieldNames) {
+        if (record[fieldName] !== undefined) {
+          const value = this.normalizeValue(record[fieldName], fieldName);
+          if (value !== null) {
+            fields[fieldName] = value;
+          }
+        }
+      }
+      return fields;
+    },
+
+    /**
+     * Transform a single case record
+     */
+    transformCase(record, index) {
+      const caseIdentifier = this.deriveCaseIdentifier(record, index);
+      const fields = {};
+
+      // Client fields to exclude from case
+      const clientOnlyFields = new Set([
+        'Client Name', 'First Name', 'Family Name', 'Middle Name',
+        'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+        'Address', 'Client_ID_Airtable', 'Edit Client Info', 'Gender', 'Pronouns'
+      ]);
+
+      for (const [fieldName, rawValue] of Object.entries(record)) {
+        // Skip client-only fields (they go in clientInfo)
+        if (clientOnlyFields.has(fieldName)) continue;
+
+        // Skip metadata fields
+        if (fieldName === 'id' || fieldName === 'createdTime') continue;
+
+        const value = this.normalizeValue(rawValue, fieldName);
+        if (value !== null) {
+          fields[fieldName] = value;
+        }
+      }
+
+      return {
+        recordId: record.id || record['Case Master View Record ID'] || `case-${index}`,
+        caseIdentifier,
+        fields
+      };
+    },
+
+    /**
+     * Derive a human-readable case identifier
+     */
+    deriveCaseIdentifier(record, index) {
+      // Try Description field first (e.g., "EAD (0)", "Defensive Asylum (1000)")
+      if (record.Description) {
+        return this.cleanCaseDescription(record.Description);
+      }
+
+      // Try Matter_Flatpack JSON
+      if (record.Matter_Flatpack) {
+        try {
+          const matter = typeof record.Matter_Flatpack === 'string'
+            ? JSON.parse(record.Matter_Flatpack)
+            : record.Matter_Flatpack;
+          if (matter.description) {
+            return this.cleanCaseDescription(matter.description);
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+
+      // Fallback to generic label
+      return `Case ${index + 1}`;
+    },
+
+    /**
+     * Clean up case description for display
+     */
+    cleanCaseDescription(desc) {
+      // Remove parenthetical numbers like "(0)", "(1000)"
+      return desc.replace(/\s*\(\d+\)\s*$/, '').trim() || desc;
+    },
+
+    /**
+     * Normalize a field value - unwrap arrays, filter errors, extract buttons
+     */
+    normalizeValue(rawValue, fieldName) {
+      // Handle null/undefined
+      if (rawValue === null || rawValue === undefined || rawValue === '') {
+        return null;
+      }
+
+      // Handle booleans
+      if (typeof rawValue === 'boolean') {
+        return rawValue ? 'Yes' : 'No';
+      }
+
+      // Handle error objects
+      if (typeof rawValue === 'object' && rawValue !== null && !Array.isArray(rawValue)) {
+        if (rawValue.error || rawValue.specialValue === 'NaN') {
+          return null; // Filter out errors and NaN
+        }
+
+        // Handle button objects { label, url }
+        if (rawValue.label !== undefined && rawValue.url !== undefined) {
+          // Only keep buttons with actual URLs
+          if (rawValue.url && rawValue.url.trim()) {
+            return { type: 'button', label: rawValue.label, url: rawValue.url };
+          }
+          return null;
+        }
+
+        // Handle user objects { id, email, name }
+        if (rawValue.id && rawValue.name && rawValue.email) {
+          return rawValue.name;
+        }
+
+        // Handle attachment objects { id, url, filename, type }
+        if (rawValue.url && rawValue.filename) {
+          return {
+            type: 'attachment',
+            label: rawValue.filename,
+            url: rawValue.url,
+            fileType: rawValue.type || 'file'
+          };
+        }
+      }
+
+      // Handle arrays
+      if (Array.isArray(rawValue)) {
+        // Filter out null, undefined, empty strings
+        const filtered = rawValue.filter(v => v !== null && v !== undefined && v !== '');
+        if (filtered.length === 0) return null;
+
+        // Check if it's an array of attachments
+        if (filtered[0] && typeof filtered[0] === 'object' && filtered[0].url && filtered[0].filename) {
+          // Return first attachment as button-like object
+          return {
+            type: 'attachment',
+            label: filtered[0].filename,
+            url: filtered[0].url,
+            fileType: filtered[0].type || 'file'
+          };
+        }
+
+        // Single element - recursively normalize
+        if (filtered.length === 1) {
+          return this.normalizeValue(filtered[0], fieldName);
+        }
+
+        // Multi-element arrays: join if all strings/numbers (excluding record IDs)
+        if (filtered.every(v => typeof v === 'string' || typeof v === 'number')) {
+          // Skip if they look like record IDs
+          if (filtered.every(v => /^rec[a-zA-Z0-9]+$/.test(String(v)))) {
+            return null; // Don't display raw record IDs
+          }
+          return filtered.join(', ');
+        }
+
+        // Otherwise return as-is for complex arrays
+        return filtered;
+      }
+
+      return rawValue;
+    },
+
+    /**
+     * Unwrap a value that might be array-wrapped
+     */
+    unwrapValue(value) {
+      if (Array.isArray(value) && value.length > 0) {
+        return value[0];
+      }
+      return value;
+    }
+  };
+
+  // ==========================================================================
   // UTILITIES
   // ==========================================================================
 
@@ -671,23 +910,67 @@
   // ==========================================================================
 
   const DataProcessor = {
+    // Pronoun context for narrative composition
+    pronounContext: {
+      subject: 'They',      // He/She/They
+      object: 'them',       // him/her/them
+      possessive: 'their',  // his/her/their
+      reflexive: 'themselves' // himself/herself/themselves
+    },
+
+    /**
+     * Set pronouns based on client data
+     */
+    setPronouns(clientFields) {
+      const gender = clientFields?.Gender?.toLowerCase?.();
+      const pronounsField = clientFields?.Pronouns?.toLowerCase?.();
+
+      // Check explicit pronouns field first
+      if (pronounsField) {
+        if (pronounsField.includes('she') || pronounsField.includes('her')) {
+          this.pronounContext = { subject: 'She', object: 'her', possessive: 'her', reflexive: 'herself' };
+        } else if (pronounsField.includes('he') || pronounsField.includes('him')) {
+          this.pronounContext = { subject: 'He', object: 'him', possessive: 'his', reflexive: 'himself' };
+        } else {
+          // Default to They for they/them or unknown
+          this.pronounContext = { subject: 'They', object: 'them', possessive: 'their', reflexive: 'themselves' };
+        }
+        return;
+      }
+
+      // Fall back to gender field
+      if (gender === 'female' || gender === 'f') {
+        this.pronounContext = { subject: 'She', object: 'her', possessive: 'her', reflexive: 'herself' };
+      } else if (gender === 'male' || gender === 'm') {
+        this.pronounContext = { subject: 'He', object: 'him', possessive: 'his', reflexive: 'himself' };
+      } else {
+        // Default to gender-neutral
+        this.pronounContext = { subject: 'They', object: 'them', possessive: 'their', reflexive: 'themselves' };
+      }
+    },
+
     // Process raw webhook response into tiered fields
     processFields(rawData) {
+      // Transform flat array format to normalized structure
+      const normalizedData = DataTransformer.transform(rawData);
       const processed = [];
-      
+
+      // Set pronouns from client data
+      this.setPronouns(normalizedData.clientInfo?.fields);
+
       // Process client info fields
-      if (rawData.clientInfo) {
-        this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
+      if (normalizedData.clientInfo) {
+        this.processRecord(normalizedData.clientInfo, 'Client Info', null, processed);
       }
-      
+
       // Process case master view records
-      if (rawData.cases && Array.isArray(rawData.cases)) {
-        rawData.cases.forEach((caseRecord, index) => {
+      if (normalizedData.cases && Array.isArray(normalizedData.cases)) {
+        normalizedData.cases.forEach((caseRecord, index) => {
           const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
           this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
         });
       }
-      
+
       return processed;
     },
 
@@ -714,12 +997,57 @@
 
     processField(fieldName, value, sourceTable, caseLabel, recordId) {
       const semanticConfig = CONFIG?.SEMANTIC_ROLES?.[fieldName];
-      
+
+      // Handle button objects specially
+      if (value && typeof value === 'object' && value.type === 'button') {
+        return {
+          tier: 2,
+          fieldName,
+          value: value.url,
+          rendered: value.label || fieldName,
+          role: null,
+          group: Utils.findGroupByPattern(fieldName) || 'Documents',
+          priority: 50,
+          narrativePosition: null,
+          dataType: 'button',
+          buttonLabel: value.label,
+          buttonUrl: value.url,
+          sourceTable,
+          caseLabel,
+          recordId
+        };
+      }
+
+      // Handle attachment objects specially
+      if (value && typeof value === 'object' && value.type === 'attachment') {
+        return {
+          tier: 2,
+          fieldName,
+          value: value.url,
+          rendered: value.label || 'Download',
+          role: null,
+          group: Utils.findGroupByPattern(fieldName) || 'Documents',
+          priority: 50,
+          narrativePosition: null,
+          dataType: 'attachment',
+          buttonLabel: value.label,
+          buttonUrl: value.url,
+          fileType: value.fileType,
+          sourceTable,
+          caseLabel,
+          recordId
+        };
+      }
+
       // Stringify complex values
       let displayValue = value;
       if (Array.isArray(value)) {
         displayValue = value.join(', ');
-      } else if (typeof value === 'object') {
+      } else if (typeof value === 'object' && value !== null) {
+        // Skip error/NaN objects that slipped through
+        if (value.error || value.specialValue) {
+          return null;
+        }
         displayValue = JSON.stringify(value);
       }
       
@@ -785,16 +1113,17 @@
     composeNarrative(fields) {
       const tier1 = fields.filter(f => f.tier === 1);
       const templates = CONFIG?.NARRATIVE_TEMPLATES || {};
-      
+      const pronouns = this.pronounContext;
+
       const sentences = [];
-      
+
       // Sort templates by order
       const orderedTemplates = Object.entries(templates)
         .sort(([,a], [,b]) => a.order - b.order);
-      
+
       for (const [name, template] of orderedTemplates) {
         try {
-          const sentence = template.compose(tier1);
+          const sentence = template.compose(tier1, pronouns);
           if (sentence) {
             sentences.push(sentence);
           }
@@ -802,18 +1131,18 @@
           console.warn(`Error composing ${name} narrative:`, e);
         }
       }
-      
+
       // Add remaining Tier 1 fields not in narrative templates
       const usedRoles = new Set(tier1.filter(f => f.narrativePosition).map(f => f.role));
       const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && f.role !== 'client_name' && f.role !== 'a_number' && f.role !== 'date_of_birth' && f.role !== 'country_of_origin');
-      
+
       if (unusedTier1.length > 0) {
         const grouped = {};
         unusedTier1.forEach(f => {
           if (!grouped[f.group]) grouped[f.group] = [];
           grouped[f.group].push(f);
         });
-        
+
         Object.entries(grouped).forEach(([group, items]) => {
           const parts = items.slice(0, 3).map(i => i.rendered);
           if (parts.length) {
@@ -821,7 +1150,7 @@
           }
         });
       }
-      
+
       return sentences.join('. ') + (sentences.length ? '.' : '');
     },
 
@@ -1079,19 +1408,30 @@
     },
 
     renderFieldValue(field) {
+      // Handle button fields
+      if (field.dataType === 'button' && field.buttonUrl) {
+        return `<a href="${Utils.escapeHtml(field.buttonUrl)}" target="_blank" rel="noopener" class="button-link">${Utils.escapeHtml(field.buttonLabel || 'Open')} ↗</a>`;
+      }
+
+      // Handle attachment fields
+      if (field.dataType === 'attachment' && field.buttonUrl) {
+        const icon = field.fileType?.includes('pdf') ? '📄' : '📎';
+        return `<a href="${Utils.escapeHtml(field.buttonUrl)}" target="_blank" rel="noopener" class="button-link">${icon} ${Utils.escapeHtml(field.buttonLabel || 'Download')}</a>`;
+      }
+
       const value = field.rendered || field.value;
-      
+
       // Check if it's a URL
       if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
         return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link ↗</a>`;
       }
-      
+
       // Truncate long values
       const strValue = String(value);
       if (strValue.length > 100) {
         return `<span title="${Utils.escapeHtml(strValue)}">${Utils.escapeHtml(strValue.slice(0, 100))}…</span>`;
       }
-      
+
       return Utils.escapeHtml(strValue);
     },
 
