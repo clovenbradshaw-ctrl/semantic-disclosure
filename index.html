@@ -1103,6 +1103,20 @@ window.MOCK_DATA = {
   let currentMode = 'manual';
   let widgetLoaded = false;
 
+  const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
+
+  async function fetchFromWebhook(recordId) {
+    const url = `${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
   // Initialize on DOM ready
   document.addEventListener('DOMContentLoaded', init);
 
@@ -1116,8 +1130,17 @@ window.MOCK_DATA = {
       setMode('url');
       document.getElementById('recordIdInput').value = urlRecordId;
       updateUrlDisplay(urlRecordId);
-      // Auto-load after a brief delay
-      setTimeout(() => loadWidgetWithData(window.MOCK_DATA), 100);
+      // Auto-load from webhook after a brief delay
+      setTimeout(async () => {
+        showStatus('Fetching data from webhook...', 'info');
+        try {
+          const data = await fetchFromWebhook(urlRecordId);
+          loadWidgetWithData(data);
+        } catch (error) {
+          console.error('Webhook fetch error:', error);
+          showStatus(`Error fetching data: ${error.message}`, 'error');
+        }
+      }, 100);
     } else {
       setMode('manual');
       updateUrlDisplay(null);
@@ -1162,7 +1185,7 @@ window.MOCK_DATA = {
     }
   }
 
-  window.loadWidget = function() {
+  window.loadWidget = async function() {
     const recordId = document.getElementById('recordIdInput').value.trim();
 
     if (currentMode === 'manual' && !recordId) {
@@ -1177,8 +1200,15 @@ window.MOCK_DATA = {
       window.history.pushState({}, '', newUrl);
     }
 
-    showStatus('Loading widget...', 'info');
-    loadWidgetWithData(window.MOCK_DATA);
+    showStatus('Fetching data from webhook...', 'info');
+
+    try {
+      const data = await fetchFromWebhook(recordId);
+      loadWidgetWithData(data);
+    } catch (error) {
+      console.error('Webhook fetch error:', error);
+      showStatus(`Error fetching data: ${error.message}`, 'error');
+    }
   };
 
   window.loadMockData = function() {
@@ -1218,8 +1248,18 @@ window.MOCK_DATA = {
     }, 100);
   }
 
-  window.reloadWidget = function() {
-    if (widgetLoaded) {
+  window.reloadWidget = async function() {
+    const recordId = document.getElementById('recordIdInput').value.trim();
+    if (recordId) {
+      showStatus('Reloading from webhook...', 'info');
+      try {
+        const data = await fetchFromWebhook(recordId);
+        loadWidgetWithData(data);
+      } catch (error) {
+        console.error('Webhook fetch error:', error);
+        showStatus(`Error fetching data: ${error.message}`, 'error');
+      }
+    } else if (widgetLoaded) {
       loadWidgetWithData(window.MOCK_DATA);
     } else {
       loadWidget();
