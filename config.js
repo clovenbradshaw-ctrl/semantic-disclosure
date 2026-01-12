@@ -295,29 +295,56 @@ const ClientGlanceConfig = {
       template: "PIN {value}",
       priority: 3
     },
+    "FOIA CD Date": {
+      role: "foia_cd_date",
+      group: "FOIA",
+      template: "FOIA CD {value:date}",
+      dataType: "date",
+      priority: 4
+    },
     "USCIS FOIA Stage": {
       role: "uscis_foia_stage",
       group: "FOIA",
       template: "USCIS FOIA {value:lowercase}",
-      priority: 4
+      priority: 5
     },
     "ICE FOIA Stage": {
       role: "ice_foia_stage",
       group: "FOIA",
       template: "ICE FOIA {value:lowercase}",
-      priority: 5
+      priority: 6
     },
     "FBI Record Stage": {
       role: "fbi_stage",
       group: "FOIA",
-      template: "FBI records {value:lowercase}",
-      priority: 6
+      template: "FBI {value:lowercase}",
+      priority: 7
+    },
+    "FBI Record Date": {
+      role: "fbi_date",
+      group: "FOIA",
+      template: "FBI records {value:date}",
+      dataType: "date",
+      priority: 8
+    },
+    "FBI Print Record Sent": {
+      role: "fbi_sent",
+      group: "FOIA",
+      template: "FBI sent {value:date}",
+      dataType: "date",
+      priority: 9
+    },
+    "FBI Req Type": {
+      role: "fbi_req_type",
+      group: "FOIA",
+      template: "FBI {value}",
+      priority: 10
     },
     "OBIM Record Status": {
       role: "obim_status",
       group: "FOIA",
       template: "OBIM {value:lowercase}",
-      priority: 7
+      priority: 11
     },
 
     // --- Appeals ---
@@ -425,7 +452,8 @@ const ClientGlanceConfig = {
       role: "asylum_status",
       group: "Asylum",
       template: "asylum {value:lowercase}",
-      priority: 1
+      priority: 1,
+      narrativePosition: "status"
     },
     "I-589 Filed/Receipt Date": {
       role: "i589_filed",
@@ -439,13 +467,47 @@ const ClientGlanceConfig = {
       group: "Asylum",
       template: "interview {value:date}",
       dataType: "date",
-      priority: 3
+      priority: 3,
+      narrativePosition: "temporal"
     },
     "I589 Filing Strategy": {
       role: "i589_strategy",
       group: "Asylum",
       template: "strategy: {value}",
       priority: 4
+    },
+    "I589 Biom Status": {
+      role: "i589_biom_status",
+      group: "Asylum",
+      template: "biometrics {value:lowercase}",
+      priority: 5
+    },
+    "Asylum Intake Status": {
+      role: "asylum_intake_status",
+      group: "Asylum",
+      template: "intake: {value}",
+      priority: 6
+    },
+    "Aff. I589 Receipt #": {
+      role: "i589_aff_receipt",
+      group: "Asylum",
+      template: "I-589 receipt {value}",
+      priority: 7
+    },
+
+    // --- Case Outcomes ---
+    "Final IM Case Status": {
+      role: "final_case_status",
+      group: "Court",
+      template: "{value}",
+      priority: 12,
+      narrativePosition: "status"
+    },
+    "Verified Inventory Case": {
+      role: "inventory_status",
+      group: "Court",
+      template: "inventory: {value}",
+      priority: 13
     },
 
     // --- Bond ---
@@ -526,6 +588,124 @@ const ClientGlanceConfig = {
       group: "Management",
       template: "file {value:lowercase}",
       priority: 5
+    },
+    "Intake Manager": {
+      role: "intake_manager",
+      group: "Management",
+      template: "intake: {value}",
+      priority: 6
+    },
+    "Matter": {
+      role: "matter_description",
+      group: "Management",
+      template: "{value}",
+      priority: 7
+    },
+    "Description": {
+      role: "case_description",
+      group: "Management",
+      template: "{value}",
+      priority: 8
+    },
+
+    // --- Entry/Immigration Status ---
+    "Entry Date": {
+      role: "entry_date",
+      group: "Identity",
+      template: "entered {value:date}",
+      dataType: "date",
+      priority: 6
+    },
+    "Entry Status": {
+      role: "entry_status",
+      group: "Identity",
+      template: "entry: {value}",
+      priority: 7
+    },
+    "Place of Entry": {
+      role: "place_of_entry",
+      group: "Identity",
+      template: "at {value}",
+      priority: 8
+    },
+
+    // --- Asylum (additional fields) ---
+    "I589 Filing Strategy": {
+      role: "i589_strategy",
+      group: "Asylum",
+      template: "strategy: {value}",
+      priority: 4
+    },
+    "I-589 Venue": {
+      role: "i589_venue",
+      group: "Asylum",
+      template: "venue: {value}",
+      priority: 5
+    },
+    "I589 Sent in Mail Date": {
+      role: "i589_sent",
+      group: "Asylum",
+      template: "I-589 mailed {value:date}",
+      dataType: "date",
+      priority: 6
+    },
+    "I589 Mail Status": {
+      role: "i589_mail_status",
+      group: "Asylum",
+      template: "mail {value:lowercase}",
+      priority: 7
+    },
+
+    // --- Court (additional fields) ---
+    "Judge text": {
+      role: "judge_name",
+      group: "Court",
+      template: "before {value}",
+      priority: 3
+    },
+    "Hearing Type": {
+      role: "hearing_type",
+      group: "Court",
+      template: "{value} hearing",
+      priority: 4
+    },
+    "Court File Type": {
+      role: "court_file_type",
+      group: "Court",
+      template: "{value}",
+      priority: 9
+    },
+    "City Court In": {
+      role: "court_city",
+      group: "Court",
+      template: "in {value}",
+      priority: 10
+    },
+    "Days to Next Hearing": {
+      role: "days_to_hearing",
+      group: "Court",
+      template: "{value} days until hearing",
+      priority: 11
+    },
+
+    // --- Financial ---
+    "Initial Retainer $": {
+      role: "initial_retainer",
+      group: "Financial",
+      template: "retainer: ${value}",
+      priority: 1
+    },
+    "Monthly Pmt $": {
+      role: "monthly_payment",
+      group: "Financial",
+      template: "monthly: ${value}",
+      priority: 2
+    },
+    "Total Contract $": {
+      role: "total_contract",
+      group: "Financial",
+      template: "total: ${value}",
+      priority: 3
     }
   },
 
@@ -580,19 +760,20 @@ const ClientGlanceConfig = {
     // Identity sentence - always first
     identity: {
       order: 1,
-      compose: (fields) => {
+      compose: (fields, pronouns) => {
         const name = fields.find(f => f.role === 'client_name');
         const aNum = fields.find(f => f.role === 'a_number');
         const dob = fields.find(f => f.role === 'date_of_birth');
         const country = fields.find(f => f.role === 'country_of_origin');
-        
+        const age = fields.find(f => f.role === 'age');
+
         if (!name) return null;
-        
+
         let parts = [name.rendered];
         if (aNum) parts.push(`(${aNum.rendered})`);
         if (dob) parts.push(dob.rendered);
         if (country) parts.push(country.rendered);
-        
+
         return parts.join(' ');
       }
     },
@@ -600,28 +781,32 @@ const ClientGlanceConfig = {
     // Upcoming events - temporal urgency
     temporal: {
       order: 2,
-      compose: (fields) => {
+      compose: (fields, pronouns = { subject: 'They' }) => {
         const temporalFields = fields
           .filter(f => f.narrativePosition === 'temporal')
           .filter(f => {
             if (f.dataType === 'date' || f.dataType === 'datetime') {
-              return new Date(f.value) >= new Date();
+              try {
+                return new Date(f.value) >= new Date();
+              } catch { return true; }
             }
             return true;
           })
           .sort((a, b) => new Date(a.value) - new Date(b.value));
-        
+
         if (temporalFields.length === 0) return null;
-        
+
         const next = temporalFields[0];
-        let sentence = `has ${next.rendered}`;
-        
+        // Use "has" for They (plural agreement in formal usage) or singular
+        const verb = pronouns.subject === 'They' ? 'have' : 'has';
+        let sentence = `${pronouns.subject} ${verb} ${next.rendered}`;
+
         // Add location if available
         const location = fields.find(f => f.narrativePosition === 'spatial');
         if (location && next.group === location.group) {
           sentence += ` ${location.rendered}`;
         }
-        
+
         return sentence;
       }
     },
@@ -629,23 +814,23 @@ const ClientGlanceConfig = {
     // Case statuses
     status: {
       order: 3,
-      compose: (fields) => {
+      compose: (fields, pronouns) => {
         const statusFields = fields.filter(f => f.narrativePosition === 'status');
         if (statusFields.length === 0) return null;
-        
+
         const grouped = {};
         statusFields.forEach(f => {
           if (!grouped[f.group]) grouped[f.group] = [];
           grouped[f.group].push(f);
         });
-        
+
         const sentences = Object.entries(grouped).map(([group, items]) => {
           if (items.length === 1) {
             return items[0].rendered;
           }
           return `${group}: ${items.map(i => i.rendered).join(', ')}`;
         });
-        
+
         return sentences.join('. ');
       }
     }
@@ -684,24 +869,75 @@ const ClientGlanceConfig = {
 
   DISPLAY: {
     // Fields to always show in header regardless of tier
-    headerFields: ["client_name", "a_number", "dob"],
-    
+    headerFields: ["client_name", "a_number", "date_of_birth", "country_of_origin"],
+
     // Fields to hide from display (internal/computed)
     hiddenFields: [
+      // Record metadata
       "Record ID",
+      "Case Master View Record ID",
       "Created At",
+      "Created date",
+      "Created Airtable Record",
+      "createdTime",
       "Last Modified",
+      "Last Modified By",
       "Airtable_Last_Modified",
+
+      // Internal IDs and references
+      /^.*_ID.*$/i,
+      /_id$/,
+      /^Edit Client Info/,
+      /^Client_ID/,
+      /^PP ID/,
+      /^Hearing Event ID/,
+      /^Event Ids/,
+      /^Case Events$/,
+      /^Data Test/,
+      /^Table \d+/,
+
+      // Computed/formula fields
       /^Calculation/,
       /^Field \d+$/,
-      /_id$/,
       /^Push/,
-      /^Sync/
+      /^Sync/,
+      /Calculator$/,
+      /^Est\./,
+      /calc$/i,
+
+      // Internal URLs and generators
+      /Gen$/,
+      /Track Link$/,
+      /Email Writer$/,
+
+      // Rollup/lookup duplicates
+      /\(from.*\)$/,
+
+      // Error-prone computed fields
+      "Family Name (Pretty)",
+      "Client Name (Pretty)",
+      "Good Date Field",
+
+      // Search/internal fields
+      "Name Search Options",
+
+      // Timestamps that duplicate other fields
+      "Today Date",
+      "Update Tracker EADs",
+      "Update Tracker EAD Pers",
+      "engagementNoteLastModified",
+      "Compiled Notes",
+      "Soonest Event",
+      "Recent Hearing",
+
+      // Tester fields
+      /^TESTER/,
+      /^Audit/
     ],
-    
+
     // Maximum fields to show per group before collapsing
     maxFieldsPerGroup: 8,
-    
+
     // Date format
     dateFormat: { year: 'numeric', month: 'short', day: 'numeric' },
     dateTimeFormat: { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
