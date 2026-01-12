@@ -177,3 +177,183 @@ window.MOCK_DATA = [
 ];
 
 console.log('[MockData] Loaded mock data in real API format (flat array with', window.MOCK_DATA.length, 'case records)');
+
+/**
+ * MOCK SCHEMA for testing schema-driven display
+ * This simulates the Airtable schema structure that would come from the API.
+ */
+window.MOCK_SCHEMA = [
+  {
+    "id": "tbl0uHmtLkGyDnSP9",
+    "name": "Client Info",
+    "primaryFieldId": "fldbxM9rf4oyjaF1L",
+    "fields": [
+      { "type": "formula", "id": "fldbxM9rf4oyjaF1L", "name": "Client Name", "options": { "result": { "type": "singleLineText" } } },
+      { "type": "singleLineText", "id": "fldDX51SGmqWies0q", "name": "A#" },
+      { "type": "singleLineText", "id": "fldx4sNMO72i7xHf5", "name": "First Name" },
+      { "type": "singleLineText", "id": "fldlf5jBOykNJB6Ua", "name": "Family Name" },
+      { "type": "singleLineText", "id": "fldqfL0TSX0PG6ryK", "name": "Middle Name" },
+      { "type": "date", "id": "fldPOZneyibSaPvJs", "name": "DOB", "options": { "dateFormat": { "name": "local" } } },
+      { "type": "formula", "id": "fldjyMymORa2eZUo5", "name": "Age", "options": { "result": { "type": "number" } } },
+      { "type": "singleSelect", "id": "fldF6Qo9nPOwsNf8L", "name": "Country", "options": { "choices": [
+        { "id": "selgnUDpv11nS8tut", "name": "Guatemala" },
+        { "id": "selohV3CuLGHhvNi6", "name": "El Salvador" },
+        { "id": "selukwMldRBJUEhvB", "name": "Honduras" },
+        { "id": "selDr4ZxFQxoPwQ0u", "name": "Mexico" }
+      ]}},
+      { "type": "singleLineText", "id": "fldi5aJiKvggzjN7U", "name": "Phone Number" },
+      { "type": "email", "id": "fldMeCBF6VPqzTMnu", "name": "Client Email" },
+      { "type": "singleLineText", "id": "fldw4LBZtGs7BlLHb", "name": "Address" },
+      { "type": "date", "id": "fldvwCdlfHd7VuKIR", "name": "Entry Date" },
+      { "type": "singleLineText", "id": "fldz1PMJuDditJbKD", "name": "Entry Status" },
+      { "type": "multipleRecordLinks", "id": "fld8ugFfxlFa4QBNm", "name": "Case Manager" },
+      { "type": "multipleRecordLinks", "id": "fldmE0jojh4NJ3VZ9", "name": "Case Master View // Activities" },
+      { "type": "button", "id": "fldwu1dhsD7EaJON6", "name": "AMINO" },
+      { "type": "button", "id": "fld8b6Wme484ytNNV", "name": "Kenect Thread" },
+      { "type": "multilineText", "id": "fldlwOebIlds9BvCm", "name": "bahr_import_flatpack_data" },
+      { "type": "richText", "id": "fldMetadata001", "name": "Metadata" },
+      { "type": "richText", "id": "fldClientNotes001", "name": "Client Notes" },
+      { "type": "url", "id": "fldInvoicedUrl001", "name": "Invoiced URL" },
+      { "type": "lastModifiedTime", "id": "fld5EzazEikyJlvwU", "name": "Airtable_Last_Modified" },
+      { "type": "autoNumber", "id": "fldAutoNum001", "name": "ID" }
+    ]
+  },
+  {
+    "id": "tblgynOzESGvAXAsK",
+    "name": "Case Master View",
+    "primaryFieldId": "fldDesc001",
+    "fields": [
+      { "type": "singleLineText", "id": "fldDesc001", "name": "Description" },
+      { "type": "singleLineText", "id": "fldMatter001", "name": "Matter" },
+      { "type": "multipleSelects", "id": "fldReliefSought001", "name": "Relief Sought", "options": { "choices": [
+        { "id": "selSIJ001", "name": "SIJ" },
+        { "id": "selAsylum001", "name": "Asylum" },
+        { "id": "selU-Visa001", "name": "U-Visa" }
+      ]}},
+      { "type": "singleLineText", "id": "fldFileStatus001", "name": "File Case Status" },
+      { "type": "multipleSelects", "id": "fldCaseTags001", "name": "Case Tags", "options": { "choices": [] }},
+
+      // Court fields
+      { "type": "dateTime", "id": "fldHearingDateTime001", "name": "Hearing Date/Time", "options": { "dateFormat": { "name": "local" }, "timeFormat": { "name": "12hour" } } },
+      { "type": "singleLineText", "id": "fldCourtOffice001", "name": "Court/Office" },
+      { "type": "singleLineText", "id": "fldJudgeText001", "name": "Judge text" },
+      { "type": "multipleRecordLinks", "id": "fldJudge001", "name": "Judge" },
+      { "type": "singleSelect", "id": "fldHearingType001", "name": "Hearing Type", "options": { "choices": [
+        { "id": "selInd001", "name": "Individual" },
+        { "id": "selMaster001", "name": "Master Calendar" }
+      ]}},
+      { "type": "singleLineText", "id": "fldCityCourtIn001", "name": "City Court In" },
+      { "type": "formula", "id": "fldDaysToHearing001", "name": "Days to Next Hearing", "options": { "result": { "type": "number" } } },
+      { "type": "date", "id": "fldPleadingsDue001", "name": "Pleadings Due Date" },
+      { "type": "date", "id": "fldNTADate001", "name": "NTA Date" },
+
+      // SIJ fields
+      { "type": "singleSelect", "id": "fldSIJStatus001", "name": "SIJ Case Status", "options": { "choices": [
+        { "id": "selPending001", "name": "Pending Custody Order" },
+        { "id": "selGranted001", "name": "Granted" },
+        { "id": "selFiled001", "name": "I-360 Filed" }
+      ]}},
+      { "type": "singleLineText", "id": "fldSIJCounty001", "name": "SIJ County" },
+      { "type": "date", "id": "fldCustodyFiled001", "name": "Date Custody Filed" },
+      { "type": "checkbox", "id": "fldSIJEligible001", "name": "SIJ Eligible (child)" },
+      { "type": "date", "id": "fldJDRDate001", "name": "JDR Ct Date" },
+      { "type": "multilineText", "id": "fldSIJNotes001", "name": "SIJS Notes" },
+
+      // USCIS fields
+      { "type": "date", "id": "fldUSCISReceipt001", "name": "USCIS Receipt Date" },
+      { "type": "singleLineText", "id": "fldUSCISReceiptNum001", "name": "USCIS Receipt Number" },
+      { "type": "singleLineText", "id": "fldI360Receipt001", "name": "I-360 Receipt Number" },
+      { "type": "date", "id": "fldI360Mailed001", "name": "I-360 Mailed Date" },
+      { "type": "date", "id": "fldI360Approval001", "name": "I-360 Approval Date" },
+      { "type": "date", "id": "fldPriorityDate001", "name": "Priority Date (I-360)" },
+      { "type": "singleLineText", "id": "fldCurrentUSCISApp001", "name": "Current USCIS application" },
+      { "type": "date", "id": "fldBiometricDate001", "name": "Biometric Notice Date" },
+      { "type": "date", "id": "fldRFEDue001", "name": "RFE Due Date" },
+      { "type": "singleLineText", "id": "fldRFETopic001", "name": "RFE/RFI (topic)" },
+
+      // EAD fields
+      { "type": "singleSelect", "id": "fldEADStage001", "name": "EAD Stage", "options": { "choices": [
+        { "id": "selFiled001", "name": "Filed" },
+        { "id": "selApproved001", "name": "Approved" },
+        { "id": "selPending001", "name": "Pending" }
+      ]}},
+      { "type": "date", "id": "fldEADReceipt001", "name": "EAD Receipt Date" },
+      { "type": "date", "id": "fldEADApproval001", "name": "EAD Approval Date" },
+      { "type": "date", "id": "fldEADEligible001", "name": "EAD Eligible Date" },
+      { "type": "date", "id": "fldEADSent001", "name": "EAD Sent Date" },
+      { "type": "multilineText", "id": "fldEADComments001", "name": "EAD Comments" },
+
+      // FOIA fields
+      { "type": "date", "id": "fldFOIAReceipt001", "name": "FOIA Receipt" },
+      { "type": "singleLineText", "id": "fldFOIANum001", "name": "FOIA #" },
+      { "type": "singleLineText", "id": "fldFOIAPIN001", "name": "FOIA PIN #" },
+      { "type": "date", "id": "fldFOIACDDate001", "name": "FOIA CD Date" },
+      { "type": "singleSelect", "id": "fldUSCISFOIA001", "name": "USCIS FOIA Stage", "options": { "choices": [
+        { "id": "selReceived001", "name": "Received" },
+        { "id": "selRequested001", "name": "Requested" },
+        { "id": "selComplete001", "name": "Complete" }
+      ]}},
+      { "type": "singleSelect", "id": "fldICEFOIA001", "name": "ICE FOIA Stage" },
+      { "type": "singleSelect", "id": "fldFBIStage001", "name": "FBI Record Stage" },
+      { "type": "date", "id": "fldFBIDate001", "name": "FBI Record Date" },
+      { "type": "url", "id": "fldFBILink001", "name": "FBI Hyperlink" },
+      { "type": "url", "id": "fldUSCISFOIALink001", "name": "USCIS FOIA Link" },
+      { "type": "multilineText", "id": "fldFOIANotes001", "name": "FOIA Notes" },
+
+      // Appeal fields
+      { "type": "singleSelect", "id": "fldAppealStatus001", "name": "Appeal Status", "options": { "choices": [
+        { "id": "selPending001", "name": "Pending" },
+        { "id": "selFiled001", "name": "Filed" },
+        { "id": "selDecided001", "name": "Decided" }
+      ]}},
+      { "type": "date", "id": "fldAppealDue001", "name": "Appeal Due Date" },
+      { "type": "date", "id": "fldAppealReceipt001", "name": "Appeal Receipt Date" },
+      { "type": "date", "id": "fldBriefDue001", "name": "Brief Due Date" },
+      { "type": "date", "id": "fldBriefFiled001", "name": "Brief Filed Date" },
+      { "type": "singleLineText", "id": "fldAppealForum001", "name": "Appeal Forum" },
+      { "type": "singleSelect", "id": "fldAppealDecision001", "name": "Appeal Decision" },
+      { "type": "date", "id": "fldAppealDecisionDate001", "name": "Appeal Decision Date" },
+      { "type": "richText", "id": "fldAppealNotes001", "name": "Appeal Notes" },
+
+      // Bond fields
+      { "type": "singleSelect", "id": "fldBondStage001", "name": "Bond Stage" },
+      { "type": "singleLineText", "id": "fldBondAmount001", "name": "Amount of Bond" },
+      { "type": "date", "id": "fldBondGranted001", "name": "Date Bond Granted" },
+
+      // U-Visa fields
+      { "type": "singleSelect", "id": "fldUVisaStatus001", "name": "U-Visa Status" },
+      { "type": "date", "id": "fldUVisaCert001", "name": "U-Visa Cert Date" },
+      { "type": "date", "id": "fldUVisaReceipt001", "name": "U-Visa Receipt Date" },
+      { "type": "singleLineText", "id": "fldUVisaReceiptNum001", "name": "U-Visa Receipt #" },
+
+      // Asylum fields
+      { "type": "singleSelect", "id": "fldAsylumStatus001", "name": "Asylum Case Status" },
+      { "type": "date", "id": "fldI589Filed001", "name": "I-589 Filed/Receipt Date" },
+      { "type": "date", "id": "fldAsylumInterview001", "name": "Asylum Interview Date" },
+      { "type": "singleLineText", "id": "fldI589Strategy001", "name": "I589 Filing Strategy" },
+
+      // Notes fields
+      { "type": "richText", "id": "fldCaseNotes001", "name": "Case Notes" },
+      { "type": "multilineText", "id": "fldEngagementNotes001", "name": "Engagement Notes" },
+
+      // Button fields
+      { "type": "button", "id": "fldInvoiced001", "name": "Invoiced" },
+      { "type": "button", "id": "fldBoxLink001", "name": "box link" },
+      { "type": "button", "id": "fldFOIAButton001", "name": "FOIA Button" },
+      { "type": "button", "id": "fldActivityDetails001", "name": "Activity Details" },
+      { "type": "button", "id": "fldAMINO001", "name": "AMINO" },
+      { "type": "button", "id": "fldUSCISK001", "name": "USCIS K Button" },
+      { "type": "button", "id": "fldCourtK001", "name": "Court K Button" },
+      { "type": "button", "id": "fldAppealContract001", "name": "Appeal Contract Button" },
+
+      // Internal/System fields
+      { "type": "lastModifiedTime", "id": "fldLastMod001", "name": "Last Modified" },
+      { "type": "lastModifiedBy", "id": "fldLastModBy001", "name": "Last Modified By" },
+      { "type": "createdTime", "id": "fldCreated001", "name": "Created At" },
+      { "type": "formula", "id": "fldRecordId001", "name": "Record ID", "options": { "result": { "type": "singleLineText" } } },
+      { "type": "formula", "id": "fldCMVRecordId001", "name": "Case Master View Record ID", "options": { "result": { "type": "singleLineText" } } }
+    ]
+  }
+];
+
+console.log('[MockData] Loaded mock schema with', window.MOCK_SCHEMA.length, 'tables');
