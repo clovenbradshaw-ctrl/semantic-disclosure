@@ -511,6 +511,177 @@
       color: var(--text-muted);
     }
 
+    /* Main Tabs - Top-level navigation */
+    .main-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .main-tab {
+      padding: 10px 18px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.15s ease;
+    }
+
+    .main-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .main-tab.active {
+      color: var(--accent-blue);
+    }
+
+    .main-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-blue);
+    }
+
+    .main-tab .tab-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 4px;
+      font-weight: 400;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .settings-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .settings-panel-header:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .settings-panel-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .settings-panel-content {
+      display: none;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .settings-panel.open .settings-panel-content {
+      display: block;
+    }
+
+    .field-checkbox-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .field-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .field-checkbox-item:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .field-checkbox-item input {
+      cursor: pointer;
+    }
+
+    .field-checkbox-item .field-type {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .settings-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .settings-btn:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .settings-btn.primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: white;
+    }
+
+    .settings-btn.primary:hover {
+      background: #0284c7;
+    }
+
+    /* No Data State */
+    .no-data {
+      padding: 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
       body {
@@ -533,6 +704,20 @@
       .client-meta {
         flex-direction: column;
         gap: 8px;
+      }
+
+      .main-tabs {
+        overflow-x: auto;
+      }
+
+      .main-tab {
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .field-checkbox-list {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -865,6 +1050,151 @@
      */
     hasSchema() {
       return this.schema !== null && this.fieldMap.size > 0;
+    }
+  };
+
+  // ==========================================================================
+  // FIELD PREFERENCES
+  // Manages user preferences for which fields to show in each tab
+  // Stored in localStorage
+  // ==========================================================================
+
+  const FieldPreferences = {
+    storageKey: CONFIG?.STORAGE_KEY || 'clientGlance_fieldPrefs',
+    preferences: null,
+
+    /**
+     * Load preferences from localStorage or use defaults
+     */
+    load() {
+      try {
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) {
+          this.preferences = JSON.parse(stored);
+          console.log('[FieldPreferences] Loaded from localStorage');
+        } else {
+          this.preferences = this.getDefaults();
+          console.log('[FieldPreferences] Using defaults');
+        }
+      } catch (e) {
+        console.warn('[FieldPreferences] Error loading preferences:', e.message);
+        this.preferences = this.getDefaults();
+      }
+      return this.preferences;
+    },
+
+    /**
+     * Get default field visibility from config
+     */
+    getDefaults() {
+      const defaults = {};
+      const tabs = CONFIG?.MAIN_TABS || {};
+
+      for (const [tabId, tabConfig] of Object.entries(tabs)) {
+        defaults[tabId] = {
+          visibleFields: [...(tabConfig.defaultFields || [])],
+          hiddenFields: [...(tabConfig.alwaysHidden || [])]
+        };
+      }
+
+      return defaults;
+    },
+
+    /**
+     * Save preferences to localStorage
+     */
+    save() {
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.preferences));
+        console.log('[FieldPreferences] Saved to localStorage');
+      } catch (e) {
+        console.warn('[FieldPreferences] Error saving preferences:', e.message);
+      }
+    },
+
+    /**
+     * Reset to defaults
+     */
+    reset() {
+      this.preferences = this.getDefaults();
+      this.save();
+      return this.preferences;
+    },
+
+    /**
+     * Check if a field should be visible in a tab
+     */
+    isFieldVisible(tabId, fieldName) {
+      if (!this.preferences) this.load();
+
+      const tabPrefs = this.preferences[tabId];
+      if (!tabPrefs) return true;
+
+      // Always hidden fields are never shown
+      if (tabPrefs.hiddenFields?.includes(fieldName)) return false;
+
+      // Check if in visible list
+      return tabPrefs.visibleFields?.includes(fieldName) ?? false;
+    },
+
+    /**
+     * Toggle field visibility
+     */
+    toggleField(tabId, fieldName, visible) {
+      if (!this.preferences) this.load();
+
+      if (!this.preferences[tabId]) {
+        this.preferences[tabId] = { visibleFields: [], hiddenFields: [] };
+      }
+
+      const visibleFields = this.preferences[tabId].visibleFields || [];
+
+      if (visible && !visibleFields.includes(fieldName)) {
+        visibleFields.push(fieldName);
+      } else if (!visible) {
+        const idx = visibleFields.indexOf(fieldName);
+        if (idx > -1) visibleFields.splice(idx, 1);
+      }
+
+      this.preferences[tabId].visibleFields = visibleFields;
+      this.save();
+    },
+
+    /**
+     * Get all visible fields for a tab
+     */
+    getVisibleFields(tabId) {
+      if (!this.preferences) this.load();
+      return this.preferences[tabId]?.visibleFields || [];
+    },
+
+    /**
+     * Set visible fields for a tab (batch update)
+     */
+    setVisibleFields(tabId, fieldNames) {
+      if (!this.preferences) this.load();
+
+      if (!this.preferences[tabId]) {
+        this.preferences[tabId] = { visibleFields: [], hiddenFields: [] };
+      }
+
+      this.preferences[tabId].visibleFields = [...fieldNames];
+      this.save();
+    },
+
+    /**
+     * Check if a field should always be hidden (internal fields)
+     */
+    isAlwaysHidden(tabId, fieldName) {
+      const tabConfig = CONFIG?.MAIN_TABS?.[tabId];
+      if (!tabConfig) return false;
+
+      return tabConfig.alwaysHidden?.some(pattern => {
+        if (pattern instanceof RegExp) {
+          return pattern.test(fieldName);
+        }
+        return pattern === fieldName;
+      }) ?? false;
     }
   };
 
@@ -1728,32 +2058,58 @@
       viewMode: 'structured', // 'structured' or 'narrative'
       showProvenance: false,
       expandedGroups: new Set(),
-      selectedCase: 'all'
+      selectedCase: 'all',
+      activeMainTab: 'client', // Main tab: client, cases, events, applications
+      settingsOpen: false
     },
 
     init(data) {
       this.data = data;
       this.processedFields = DataProcessor.processFields(data);
+      // Load user preferences
+      FieldPreferences.load();
+      // Organize fields by source table for tabs
+      this.organizeFieldsByTab();
       this.render();
+    },
+
+    /**
+     * Organize processed fields by their source table for tab display
+     */
+    organizeFieldsByTab() {
+      const tabs = CONFIG?.MAIN_TABS || {};
+      this.tabData = {};
+
+      for (const [tabId, tabConfig] of Object.entries(tabs)) {
+        const sourceTables = tabConfig.sourceTables || [];
+        this.tabData[tabId] = {
+          config: tabConfig,
+          fields: this.processedFields.filter(f => {
+            // Match by source table
+            if (sourceTables.includes(f.sourceTable)) return true;
+            // For client tab, include fields without sourceTable (from client info)
+            if (tabId === 'client' && !f.sourceTable) return true;
+            return false;
+          }),
+          allFieldNames: new Set()
+        };
+
+        // Collect all unique field names for settings
+        this.tabData[tabId].fields.forEach(f => {
+          this.tabData[tabId].allFieldNames.add(f.fieldName);
+        });
+      }
     },
 
     render() {
       const container = document.getElementById('app');
-      
+
       const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
       const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
-      
-      // Get unique cases
+
+      // Get unique cases for the case filter (within Cases tab)
       const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
-      
-      // Filter fields by selected case
-      let displayFields = this.processedFields;
-      if (this.state.selectedCase !== 'all' && cases.length > 1) {
-        displayFields = this.processedFields.filter(f => 
-          !f.caseLabel || f.caseLabel === this.state.selectedCase
-        );
-      }
-      
+
       container.innerHTML = `
         <div class="widget-header">
           <span class="widget-title">Client At-a-Glance</span>
@@ -1766,15 +2122,13 @@
             </button>
           </div>
         </div>
-        
+
         ${this.renderClientHeader(headerFields, clientName)}
-        
-        ${cases.length > 1 ? this.renderCaseTabs(cases) : ''}
-        
-        ${this.state.viewMode === 'narrative' 
-          ? this.renderNarrativeView(displayFields)
-          : this.renderStructuredView(displayFields)}
-        
+
+        ${this.renderMainTabs()}
+
+        ${this.renderTabContent(cases)}
+
         <div class="settings-row">
           <label class="settings-toggle">
             <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance">
@@ -1782,7 +2136,7 @@
           </label>
         </div>
       `;
-      
+
       this.attachEventListeners();
     },
 
@@ -1790,7 +2144,7 @@
       const aNum = headerFields.find(f => f.role === 'a_number');
       const dob = headerFields.find(f => f.role === 'date_of_birth');
       const country = headerFields.find(f => f.role === 'country_of_origin');
-      
+
       return `
         <div class="client-header">
           <div class="client-name">${Utils.escapeHtml(clientName)}</div>
@@ -1798,6 +2152,122 @@
             ${aNum ? `<span class="client-meta-item"><span class="client-meta-label">A#</span> ${Utils.escapeHtml(aNum.value)}</span>` : ''}
             ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}</span>` : ''}
             ${country ? `<span class="client-meta-item"><span class="client-meta-label">From</span> ${Utils.escapeHtml(country.value)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render the main navigation tabs
+     */
+    renderMainTabs() {
+      const tabs = CONFIG?.MAIN_TABS || {};
+
+      return `
+        <div class="main-tabs">
+          ${Object.entries(tabs).map(([tabId, tabConfig]) => {
+            const fieldCount = this.tabData[tabId]?.fields.length || 0;
+            return `
+              <button class="main-tab ${this.state.activeMainTab === tabId ? 'active' : ''}"
+                      data-main-tab="${tabId}">
+                ${tabConfig.label}
+                <span class="tab-count">${fieldCount}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `;
+    },
+
+    /**
+     * Render content for the active tab
+     */
+    renderTabContent(cases) {
+      const activeTab = this.state.activeMainTab;
+      const tabData = this.tabData[activeTab];
+
+      if (!tabData || tabData.fields.length === 0) {
+        return `<div class="no-data">No data available for this section.</div>`;
+      }
+
+      // Filter fields based on user preferences
+      const visibleFieldNames = FieldPreferences.getVisibleFields(activeTab);
+      let displayFields = tabData.fields;
+
+      // If user has configured visible fields, filter by them
+      if (visibleFieldNames.length > 0) {
+        displayFields = tabData.fields.filter(f =>
+          visibleFieldNames.includes(f.fieldName) &&
+          !FieldPreferences.isAlwaysHidden(activeTab, f.fieldName)
+        );
+      } else {
+        // Filter out always-hidden fields
+        displayFields = tabData.fields.filter(f =>
+          !FieldPreferences.isAlwaysHidden(activeTab, f.fieldName)
+        );
+      }
+
+      // For Cases tab, show case filter
+      const showCaseFilter = activeTab === 'cases' && cases.length > 1;
+      if (showCaseFilter && this.state.selectedCase !== 'all') {
+        displayFields = displayFields.filter(f =>
+          !f.caseLabel || f.caseLabel === this.state.selectedCase
+        );
+      }
+
+      return `
+        ${this.renderSettingsPanel(activeTab, tabData)}
+
+        ${showCaseFilter ? this.renderCaseTabs(cases) : ''}
+
+        ${this.state.viewMode === 'narrative'
+          ? this.renderNarrativeView(displayFields)
+          : this.renderStructuredView(displayFields)}
+      `;
+    },
+
+    /**
+     * Render the field customization settings panel
+     */
+    renderSettingsPanel(tabId, tabData) {
+      const allFieldNames = [...tabData.allFieldNames].sort();
+      const visibleFields = FieldPreferences.getVisibleFields(tabId);
+      const hasCustomization = visibleFields.length > 0;
+
+      return `
+        <div class="settings-panel ${this.state.settingsOpen ? 'open' : ''}">
+          <div class="settings-panel-header" data-action="toggle-settings">
+            <span class="settings-panel-title">
+              Customize Fields ${hasCustomization ? `(${visibleFields.length} selected)` : ''}
+            </span>
+            <span>${this.state.settingsOpen ? '▼' : '▶'}</span>
+          </div>
+          <div class="settings-panel-content">
+            <div class="field-checkbox-list">
+              ${allFieldNames.map(fieldName => {
+                const isAlwaysHidden = FieldPreferences.isAlwaysHidden(tabId, fieldName);
+                if (isAlwaysHidden) return '';
+
+                const isChecked = visibleFields.length === 0 || visibleFields.includes(fieldName);
+                const schemaType = SchemaProcessor.getFieldType(fieldName);
+
+                return `
+                  <label class="field-checkbox-item">
+                    <input type="checkbox"
+                           data-field="${Utils.escapeHtml(fieldName)}"
+                           data-tab="${tabId}"
+                           ${isChecked ? 'checked' : ''}>
+                    <span>${Utils.escapeHtml(fieldName)}</span>
+                    ${schemaType ? `<span class="field-type">${schemaType}</span>` : ''}
+                  </label>
+                `;
+              }).join('')}
+            </div>
+            <div class="settings-actions">
+              <button class="settings-btn" data-action="select-all" data-tab="${tabId}">Select All</button>
+              <button class="settings-btn" data-action="select-none" data-tab="${tabId}">Select None</button>
+              <button class="settings-btn" data-action="reset-defaults" data-tab="${tabId}">Reset to Defaults</button>
+            </div>
           </div>
         </div>
       `;
@@ -1822,22 +2292,19 @@
       const narrative = DataProcessor.composeNarrative(fields);
       const tier2and3 = fields.filter(f => f.tier > 1);
       const grouped = DataProcessor.groupFields(tier2and3);
-      
-      // Remove header fields from "also on file"
-      const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
-      
+
       return `
         <div class="narrative-view">
           <div class="narrative-text">
-            ${narrative || '<em>No semantic data available for this client.</em>'}
+            ${narrative || '<em>No semantic data available for this section.</em>'}
           </div>
         </div>
-        
+
         ${Object.keys(grouped).length > 0 ? `
           <div class="uncategorized-section">
             <button class="uncategorized-toggle" data-action="toggle-extra">
               <span>▶</span>
-              Also on file (${tier2and3.length} fields not in narrative)
+              Additional fields (${tier2and3.length})
             </button>
             <div class="uncategorized-content" id="extra-fields">
               ${this.renderGroupedFields(grouped, true)}
@@ -1852,7 +2319,11 @@
       const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
       const nonHeaderFields = fields.filter(f => !headerRoles.includes(f.role));
       const grouped = DataProcessor.groupFields(nonHeaderFields);
-      
+
+      if (Object.keys(grouped).length === 0) {
+        return `<div class="no-data">No fields to display. Use the settings panel above to select fields.</div>`;
+      }
+
       return `
         <div class="structured-view">
           ${this.renderGroupedFields(grouped, false)}
@@ -1862,18 +2333,18 @@
 
     renderGroupedFields(grouped, flat = false) {
       const groupOrder = CONFIG?.GROUP_ORDER || Object.keys(grouped);
-      
+
       return groupOrder
         .filter(groupName => grouped[groupName] && grouped[groupName].length > 0)
         .map(groupName => {
           const groupFields = grouped[groupName];
           const isUncategorized = groupName === 'Uncategorized';
           const isExpanded = this.state.expandedGroups.has(groupName) || flat;
-          
+
           if (flat) {
             return this.renderFlatGroup(groupName, groupFields);
           }
-          
+
           return `
             <div class="field-group ${isExpanded ? '' : 'collapsed'}" data-group="${Utils.escapeHtml(groupName)}">
               <div class="field-group-header">
@@ -1884,7 +2355,7 @@
                 <span class="field-group-chevron">▼</span>
               </div>
               <div class="field-group-content">
-                ${isUncategorized 
+                ${isUncategorized
                   ? this.renderTriplets(groupFields)
                   : this.renderFieldItems(groupFields)}
               </div>
@@ -1895,13 +2366,13 @@
 
     renderFlatGroup(groupName, fields) {
       const isUncategorized = groupName === 'Uncategorized';
-      
+
       return `
         <div style="margin-bottom: 16px;">
           <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
             ${Utils.escapeHtml(groupName)}
           </div>
-          ${isUncategorized 
+          ${isUncategorized
             ? this.renderTriplets(fields)
             : this.renderFieldItems(fields)}
         </div>
@@ -1912,10 +2383,6 @@
       return fields.map(field => {
         // Use displayLabel from schema processing, or fall back to humanized field name
         const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
-        // Show schema type indicator if available
-        const schemaIndicator = field.schemaType
-          ? `<span class="schema-type" title="Airtable type: ${field.schemaType}"></span>`
-          : '';
 
         return `
           <div class="field-item">
@@ -1980,31 +2447,111 @@
           this.render();
         });
       });
-      
-      // Case tabs
+
+      // Main tabs
+      document.querySelectorAll('.main-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          this.state.activeMainTab = e.target.dataset.mainTab;
+          this.state.settingsOpen = false; // Close settings when switching tabs
+          this.render();
+        });
+      });
+
+      // Case tabs (within Cases tab)
       document.querySelectorAll('.case-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
           this.state.selectedCase = e.target.dataset.case;
           this.render();
         });
       });
-      
+
+      // Settings panel toggle
+      const settingsToggle = document.querySelector('[data-action="toggle-settings"]');
+      if (settingsToggle) {
+        settingsToggle.addEventListener('click', () => {
+          this.state.settingsOpen = !this.state.settingsOpen;
+          this.render();
+        });
+      }
+
+      // Field checkboxes
+      document.querySelectorAll('.field-checkbox-item input').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const fieldName = e.target.dataset.field;
+          const tabId = e.target.dataset.tab;
+          const checked = e.target.checked;
+
+          // Get current visible fields
+          const currentVisible = FieldPreferences.getVisibleFields(tabId);
+
+          // If no customization yet, start with all fields
+          if (currentVisible.length === 0) {
+            const allFields = [...this.tabData[tabId].allFieldNames].filter(
+              f => !FieldPreferences.isAlwaysHidden(tabId, f)
+            );
+            if (checked) {
+              // Already showing all, nothing to do
+            } else {
+              // Remove this field from all
+              const newVisible = allFields.filter(f => f !== fieldName);
+              FieldPreferences.setVisibleFields(tabId, newVisible);
+            }
+          } else {
+            // Toggle the field
+            FieldPreferences.toggleField(tabId, fieldName, checked);
+          }
+
+          this.render();
+        });
+      });
+
+      // Select All button
+      document.querySelectorAll('[data-action="select-all"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tabId = e.target.dataset.tab;
+          const allFields = [...this.tabData[tabId].allFieldNames].filter(
+            f => !FieldPreferences.isAlwaysHidden(tabId, f)
+          );
+          FieldPreferences.setVisibleFields(tabId, allFields);
+          this.render();
+        });
+      });
+
+      // Select None button
+      document.querySelectorAll('[data-action="select-none"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tabId = e.target.dataset.tab;
+          FieldPreferences.setVisibleFields(tabId, []);
+          this.render();
+        });
+      });
+
+      // Reset to Defaults button
+      document.querySelectorAll('[data-action="reset-defaults"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tabId = e.target.dataset.tab;
+          const defaults = CONFIG?.MAIN_TABS?.[tabId]?.defaultFields || [];
+          FieldPreferences.setVisibleFields(tabId, defaults);
+          this.render();
+        });
+      });
+
       // Group expand/collapse
       document.querySelectorAll('.field-group-header').forEach(header => {
         header.addEventListener('click', (e) => {
           const group = e.currentTarget.parentElement;
           const groupName = group.dataset.group;
-          
+
           if (this.state.expandedGroups.has(groupName)) {
             this.state.expandedGroups.delete(groupName);
           } else {
             this.state.expandedGroups.add(groupName);
           }
-          
+
           group.classList.toggle('collapsed');
         });
       });
-      
+
       // Extra fields toggle
       const extraToggle = document.querySelector('[data-action="toggle-extra"]');
       if (extraToggle) {
@@ -2014,8 +2561,8 @@
           extraToggle.querySelector('span').textContent = content.classList.contains('visible') ? '▼' : '▶';
         });
       }
-      
-      // Settings toggles
+
+      // Settings toggles (provenance)
       document.querySelectorAll('[data-setting]').forEach(input => {
         input.addEventListener('change', (e) => {
           if (e.target.dataset.setting === 'provenance') {
