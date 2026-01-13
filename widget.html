@@ -3038,16 +3038,19 @@
       // Create event objects from grouped records
       for (const [recordId, record] of Object.entries(eventsByRecord)) {
         const fields = record.fields;
-        // Look for date field
-        const dateValue = fields['Hearing Date/Time'] || fields['Event Date'] ||
-                          fields['Date'] || fields['Start Date'] || fields['JDR Ct Date'];
-        // Look for event name/type
-        const eventName = fields['Event Name'] || fields['Hearing Type'] ||
+        // Look for date field (Events table uses Created At, Created date, or Hearing Date/Time)
+        const dateValue = fields['Hearing Date/Time'] || fields['Created At'] ||
+                          fields['Created date'] || fields['Event Date'] || fields['Date'];
+        // Look for event title (Activity field is primary in Events table)
+        const eventName = fields['Activity'] || fields['Event Name'] || fields['Hearing Type'] ||
                           fields['Event Hearing Type'] || fields['Description'] || 'Event';
+        // Details provide additional context
+        const details = fields['Details'] || fields['Case Notes'] || '';
 
         events.push({
           date: dateValue,
           title: eventName,
+          details: details,
           recordId,
           fields: fields,
           caseLabel: record.caseLabel,
