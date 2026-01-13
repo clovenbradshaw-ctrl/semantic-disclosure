@@ -2164,10 +2164,10 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
       attachEventListeners() {
         document.querySelectorAll('#widget-frame .view-toggle button').forEach(btn => {
-          btn.addEventListener('click', (e) => { this.state.viewMode = e.target.dataset.view; this.render(); });
+          btn.addEventListener('click', (e) => { this.state.viewMode = e.currentTarget.dataset.view; this.render(); });
         });
         document.querySelectorAll('#widget-frame .case-tab').forEach(btn => {
-          btn.addEventListener('click', (e) => { this.state.selectedCase = e.target.dataset.case; this.render(); });
+          btn.addEventListener('click', (e) => { this.state.selectedCase = e.currentTarget.dataset.case; this.render(); });
         });
         document.querySelectorAll('#widget-frame .field-group-header').forEach(header => {
           header.addEventListener('click', (e) => {
