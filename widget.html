@@ -1214,9 +1214,32 @@
   // UTILITIES
   // ==========================================================================
 
+  // Store recordId received via postMessage (for iframe embedding)
+  let postMessageRecordId = null;
+
+  // Listen for postMessage from parent window (for iframe embedding)
+  window.addEventListener('message', (event) => {
+    // Accept messages with recordId
+    if (event.data && event.data.type === 'recordId' && event.data.recordId) {
+      console.log('[ClientGlance] Received recordId via postMessage:', event.data.recordId);
+      postMessageRecordId = event.data.recordId;
+
+      // If widget already showed "No Record ID" error, re-initialize
+      const container = document.getElementById('app');
+      if (container && container.querySelector('.error')) {
+        init();
+      }
+    }
+  });
+
   const Utils = {
-    // Get recordId from URL params (Softr passes this)
+    // Get recordId from URL params (Softr passes this) or postMessage
     getRecordId() {
+      // First, check if we received recordId via postMessage
+      if (postMessageRecordId) {
+        return postMessageRecordId;
+      }
+
       try {
         const params = new URLSearchParams(window.location.search);
         return params.get('recordId') || params.get('record_id') || params.get('id');
@@ -2054,8 +2077,30 @@
         SchemaProcessor.init(window.MOCK_SCHEMA);
       }
 
-      // Get record ID
-      const recordId = Utils.getRecordId();
+      // Get record ID - wait briefly for postMessage if in iframe context
+      let recordId = Utils.getRecordId();
+
+      // If no recordId and we might be in an iframe, wait briefly for postMessage
+      if (!recordId && !window.MOCK_DATA && window.parent !== window) {
+        console.log('[init] No recordId found, waiting for postMessage...');
+        container.innerHTML = `<div class="loading"><div>Waiting for data...</div></div>`;
+
+        // Wait up to 500ms for postMessage
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            if (postMessageRecordId) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 50);
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+          }, 500);
+        });
+
+        recordId = Utils.getRecordId();
+      }
 
       if (!recordId && !window.MOCK_DATA) {
         container.innerHTML = `
