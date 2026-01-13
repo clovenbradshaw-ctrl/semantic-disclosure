@@ -3150,8 +3150,8 @@
       const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
       const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
 
-      // Get unique cases for the case filter (within Cases tab)
-      const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
+      // Get unique cases for the case filter (within Cases tab) - only show cases with actual data
+      const cases = [...new Set(this.processedFields.filter(f => f.caseLabel && f.value !== undefined && f.value !== null && f.value !== '').map(f => f.caseLabel))];
 
       container.innerHTML = `
         <div class="widget-header">
