@@ -1069,6 +1069,66 @@
       color: var(--text-secondary);
     }
 
+    /* Timeline Grouping */
+    .timeline-grouped {
+      padding-left: 0;
+    }
+
+    .timeline-grouped::before {
+      display: none;
+    }
+
+    .timeline-group {
+      margin-bottom: 20px;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .timeline-group::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 24px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-group-header {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      padding: 4px 0;
+    }
+
+    .timeline-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .timeline-group-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .timeline-item[data-urgency="urgent"] .timeline-content {
+      border-left: 3px solid #dc2626;
+    }
+
+    .timeline-item[data-urgency="upcoming"] .timeline-content {
+      border-left: 3px solid #f59e0b;
+    }
+
+    .timeline-item[data-urgency="scheduled"] .timeline-content {
+      border-left: 3px solid #10b981;
+    }
+
     /* Application Cards */
     .application-cards {
       display: grid;
@@ -3004,10 +3064,106 @@
       this.events = this.extractEvents();
       this.applications = this.extractApplications();
 
+      // Extract ALL date fields with semantic context for timeline
+      this.allDateFields = this.extractAllDateFields();
+      console.log('[Renderer] Extracted', this.allDateFields.length, 'date fields for timeline');
+
       // Organize fields by source table for tabs
       this.organizeFieldsByTab();
 
       this.render();
+    },
+
+    /**
+     * Extract ALL date fields from all processed data with semantic context
+     * Returns timeline entries grouped by semantic category
+     */
+    extractAllDateFields() {
+      const dateEntries = [];
+      const semanticRoles = CONFIG?.SEMANTIC_ROLES || {};
+      const seenDates = new Set(); // Avoid duplicates
+
+      // Helper to check if a value looks like a date
+      const isDateValue = (value) => {
+        if (!value || typeof value !== 'string') return false;
+        // ISO date format: YYYY-MM-DD or datetime
+        if (/^\d{4}-\d{2}-\d{2}/.test(value)) return true;
+        // Try parsing as date
+        const parsed = new Date(value);
+        return !isNaN(parsed.getTime()) && parsed.getFullYear() > 1900 && parsed.getFullYear() < 2100;
+      };
+
+      // Helper to get semantic info for a field
+      const getSemanticInfo = (fieldName) => {
+        const role = semanticRoles[fieldName];
+        if (role) {
+          return {
+            template: role.template,
+            group: role.group,
+            dataType: role.dataType,
+            role: role.role,
+            priority: role.priority || 99
+          };
+        }
+        // Fallback: try to infer group from field name patterns
+        const groupPatterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
+        for (const { group, pattern } of groupPatterns) {
+          if (pattern.test(fieldName)) {
+            return { template: null, group, dataType: 'date', role: null, priority: 50 };
+          }
+        }
+        return { template: null, group: 'Other', dataType: 'date', role: null, priority: 99 };
+      };
+
+      // Scan all processed fields for date values
+      for (const field of this.processedFields) {
+        // Check if this field has date data type in semantic roles
+        const semantic = getSemanticInfo(field.fieldName);
+        const isDateField = semantic.dataType === 'date' || semantic.dataType === 'datetime';
+
+        // Also check if the value looks like a date
+        const hasDateValue = isDateValue(field.value);
+
+        if ((isDateField || hasDateValue) && field.value) {
+          // Create a unique key to avoid duplicates
+          const uniqueKey = `${field.fieldName}-${field.value}-${field.caseLabel || 'default'}`;
+          if (seenDates.has(uniqueKey)) continue;
+          seenDates.add(uniqueKey);
+
+          // Generate semantic title using template or fallback
+          let title;
+          if (semantic.template) {
+            // Apply template formatting
+            title = Utils.applyTemplate(semantic.template, field.value, semantic.dataType);
+          } else {
+            // Fallback: humanize field name
+            title = `${Utils.humanizeFieldName(field.fieldName)}: ${Utils.formatDate(field.value)}`;
+          }
+
+          dateEntries.push({
+            date: field.value,
+            title: title,
+            fieldName: field.fieldName,
+            group: semantic.group,
+            priority: semantic.priority,
+            caseLabel: field.caseLabel,
+            sourceTable: field.sourceTable,
+            matter: this.inferMatterFromCase(field.caseLabel),
+            urgency: MatterDetector.getDateUrgency(field.value),
+            isDateTimeField: semantic.dataType === 'datetime'
+          });
+        }
+      }
+
+      // Sort by date (future first, then past in reverse chronological)
+      dateEntries.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
+
+      return dateEntries;
     },
 
     /**
@@ -3514,58 +3670,128 @@
     },
 
     /**
-     * Render Timeline view
+     * Render Timeline view - shows ALL date fields with semantic context
      */
     renderTimelineView(activeTab) {
-      // Combine and sort all events by date
-      let events = [...this.events];
+      // Use all date fields extracted with semantic context
+      let dateEntries = [...(this.allDateFields || [])];
 
       // Filter by matter if selected
       if (this.state.selectedMatter) {
-        events = events.filter(e => !e.matter || e.matter === this.state.selectedMatter);
+        dateEntries = dateEntries.filter(e => !e.matter || e.matter === this.state.selectedMatter);
       }
 
       // Separate future and past
-      const futureEvents = events.filter(e => e.urgency !== 'past');
-      const pastEvents = events.filter(e => e.urgency === 'past').reverse().slice(0, 10);
+      const futureEntries = dateEntries.filter(e => e.urgency !== 'past');
+      const pastEntries = dateEntries.filter(e => e.urgency === 'past').reverse();
+
+      // Group future entries by semantic group for better organization
+      const groupOrder = CONFIG?.GROUP_ORDER || ['Court', 'SIJ', 'USCIS', 'EAD', 'Asylum', 'U-Visa', 'Appeals', 'Bond', 'FOIA', 'Identity', 'Other'];
+      const groupColors = {
+        'Court': '#dc2626',      // red
+        'SIJ': '#15803d',        // green
+        'USCIS': '#0369a1',      // blue
+        'EAD': '#7c3aed',        // purple
+        'Asylum': '#0369a1',     // blue
+        'U-Visa': '#7c3aed',     // purple
+        'Appeals': '#b45309',    // amber
+        'Bond': '#be123c',       // rose
+        'FOIA': '#6b7280',       // gray
+        'Identity': '#525252',   // neutral
+        'Other': '#6b7280'       // gray
+      };
+
+      // Group future entries
+      const futureByGroup = {};
+      for (const entry of futureEntries) {
+        const group = entry.group || 'Other';
+        if (!futureByGroup[group]) futureByGroup[group] = [];
+        futureByGroup[group].push(entry);
+      }
+
+      // Sort each group by date
+      for (const group of Object.keys(futureByGroup)) {
+        futureByGroup[group].sort((a, b) => new Date(a.date) - new Date(b.date));
+      }
+
+      // Helper to render a single timeline entry
+      const renderEntry = (entry, isFuture = false) => {
+        const groupColor = groupColors[entry.group] || '#6b7280';
+        const matterConfig = entry.matter ? CONFIG?.MATTER_TYPES?.[entry.matter] : null;
+
+        return `
+          <div class="timeline-item ${isFuture ? 'future' : ''}" data-urgency="${entry.urgency || 'unknown'}">
+            <div class="timeline-date">${Utils.formatDate(entry.date, entry.isDateTimeField)}</div>
+            <div class="timeline-content">
+              <div class="timeline-title">${Utils.escapeHtml(entry.title)}</div>
+              <div class="timeline-meta">
+                <span class="timeline-group-tag" style="background: ${groupColor}15; color: ${groupColor}; border: 1px solid ${groupColor}30;">
+                  ${entry.group || 'Other'}
+                </span>
+                ${entry.matter && matterConfig ? `
+                  <span class="event-matter-tag ${entry.matter}" style="background: ${matterConfig.color || '#6b7280'}20; color: ${matterConfig.color || '#6b7280'}">
+                    ${matterConfig.shortLabel || entry.matter}
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      };
+
+      // Render future entries grouped by semantic category
+      const renderFutureSection = () => {
+        if (futureEntries.length === 0) {
+          return '<div class="no-data">No upcoming dates.</div>';
+        }
+
+        // Render groups in order
+        const sections = [];
+        for (const group of groupOrder) {
+          const entries = futureByGroup[group];
+          if (entries && entries.length > 0) {
+            sections.push(`
+              <div class="timeline-group">
+                <div class="timeline-group-header" style="color: ${groupColors[group] || '#6b7280'}">
+                  ${group}
+                </div>
+                ${entries.map(e => renderEntry(e, true)).join('')}
+              </div>
+            `);
+          }
+        }
+
+        // Add any groups not in the standard order
+        for (const group of Object.keys(futureByGroup)) {
+          if (!groupOrder.includes(group)) {
+            const entries = futureByGroup[group];
+            sections.push(`
+              <div class="timeline-group">
+                <div class="timeline-group-header" style="color: ${groupColors[group] || '#6b7280'}">
+                  ${group}
+                </div>
+                ${entries.map(e => renderEntry(e, true)).join('')}
+              </div>
+            `);
+          }
+        }
+
+        return sections.join('');
+      };
 
       return `
         <div class="overview-section">
-          <div class="overview-section-title">Upcoming</div>
-          <div class="timeline-view">
-            ${futureEvents.length > 0 ? futureEvents.map(event => `
-              <div class="timeline-item future">
-                <div class="timeline-date">${Utils.formatDate(event.date, true)}</div>
-                <div class="timeline-content">
-                  <div class="timeline-title">${Utils.escapeHtml(event.title)}</div>
-                  ${event.matter ? `
-                    <span class="event-matter-tag ${event.matter}" style="background: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}20; color: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}">
-                      ${CONFIG?.MATTER_TYPES?.[event.matter]?.shortLabel || event.matter}
-                    </span>
-                  ` : ''}
-                </div>
-              </div>
-            `).join('') : '<div class="no-data">No upcoming events.</div>'}
+          <div class="overview-section-title">Upcoming Dates</div>
+          <div class="timeline-view timeline-grouped">
+            ${renderFutureSection()}
           </div>
         </div>
 
-        ${pastEvents.length > 0 ? `
+        ${pastEntries.length > 0 ? `
           <div class="overview-section" style="margin-top: 24px;">
-            <div class="overview-section-title">Recent History</div>
+            <div class="overview-section-title">History (${Math.min(pastEntries.length, 20)} most recent)</div>
             <div class="timeline-view">
-              ${pastEvents.map(event => `
-                <div class="timeline-item">
-                  <div class="timeline-date">${Utils.formatDate(event.date)}</div>
-                  <div class="timeline-content">
-                    <div class="timeline-title">${Utils.escapeHtml(event.title)}</div>
-                    ${event.matter ? `
-                      <span class="event-matter-tag ${event.matter}" style="background: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}20; color: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}">
-                        ${CONFIG?.MATTER_TYPES?.[event.matter]?.shortLabel || event.matter}
-                      </span>
-                    ` : ''}
-                  </div>
-                </div>
-              `).join('')}
+              ${pastEntries.slice(0, 20).map(entry => renderEntry(entry, false)).join('')}
             </div>
           </div>
         ` : ''}

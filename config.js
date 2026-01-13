@@ -865,6 +865,36 @@ const ClientGlanceConfig = {
       priority: 6
     },
 
+    // --- Applications (generic) ---
+    "Receipt Date": {
+      role: "app_receipt_date",
+      group: "USCIS",
+      template: "application received {value:date}",
+      dataType: "date",
+      priority: 12
+    },
+    "Decision Notice Date": {
+      role: "decision_notice_date",
+      group: "USCIS",
+      template: "decision notice {value:date}",
+      dataType: "date",
+      priority: 13
+    },
+    "Prima Facie": {
+      role: "prima_facie_date",
+      group: "USCIS",
+      template: "prima facie {value:date}",
+      dataType: "date",
+      priority: 14
+    },
+    "Sent Out": {
+      role: "app_sent_date",
+      group: "USCIS",
+      template: "sent {value:date}",
+      dataType: "date",
+      priority: 15
+    },
+
     // --- Asylum ---
     "Asylum Case Status": {
       role: "asylum_status",
@@ -1498,25 +1528,13 @@ const ClientGlanceConfig = {
       id: 'timeline',
       label: 'Timeline',
       icon: '⏱️',
-      description: 'Chronological view of all activity',
-      sourceTables: ['Events', 'Applications', 'Case Master View'],
+      description: 'All dates from every field, grouped by semantic category',
+      sourceTables: ['Client Info', 'Case Master View', 'Events', 'Applications'],
       viewType: 'timeline',
       showMatterLabels: true,
-      // Date fields to include in timeline
-      dateFields: [
-        'Hearing Date/Time',
-        'I-589 Filed/Receipt Date',
-        'Asylum Interview Date',
-        'JDR Ct Date',
-        'Date Custody Filed',
-        'USCIS Receipt Date',
-        'EAD Receipt Date',
-        'EAD Approval Date',
-        'Receipt Date',
-        'Decision Notice Date',
-        'NTA Date',
-        'Entry Date'
-      ],
+      // Date fields are now dynamically extracted from ALL fields using SEMANTIC_ROLES
+      // The extractAllDateFields() method scans all processed fields for date values
+      // and groups them by their semantic group (Court, SIJ, USCIS, EAD, etc.)
       defaultFields: [],
       alwaysHidden: []
     },
