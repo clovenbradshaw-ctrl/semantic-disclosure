@@ -1,17 +1,435 @@
 /**
  * CLIENT GLANCE - DEFINITION LAYER
- * 
+ *
  * This file controls how fields are interpreted and displayed.
  * Update this file when Airtable fields change.
- * 
+ *
  * MAINTENANCE GUIDE:
  * - Field renamed? Update the fieldName in SEMANTIC_ROLES
  * - New field added? Add to SEMANTIC_ROLES or let it fall through to pattern matching
  * - New case type? Add patterns to FIELD_GROUPS
  * - Want prettier sentences? Edit the template in SEMANTIC_ROLES
+ *
+ * ARCHITECTURE:
+ * - MATTER_TYPES: Define case types (Asylum, SIJ, etc.) and their detection rules
+ * - SEMANTIC_TUPLES: Group related fields into coherent display units
+ * - FIELD_CLASSIFICATION: Distinguish meaningful data from structural plumbing
+ * - FIELD_PRIORITY_TIERS: Define which fields are most important
  */
 
 const ClientGlanceConfig = {
+
+  // ==========================================================================
+  // MATTER TYPES - Case type definitions
+  // Each matter type represents a distinct legal proceeding
+  // ==========================================================================
+
+  MATTER_TYPES: {
+    asylum: {
+      id: 'asylum',
+      label: 'Asylum',
+      shortLabel: 'ASY',
+      color: '#0369a1', // blue
+      // Patterns to detect this matter type from case name/description
+      detectPatterns: [/asylum/i, /i-589/i, /defensive/i, /affirmative/i],
+      // Status field for this matter
+      statusField: 'Asylum Case Status',
+      // Fields that belong to this matter type
+      relatedFields: [
+        'Asylum Case Status', 'I-589 Filed/Receipt Date', 'Asylum Interview Date',
+        'I589 Filing Strategy', 'I589 Biom Status', 'Asylum Intake Status',
+        'Aff. I589 Receipt #', 'I-589 Venue', 'I589 Sent in Mail Date', 'I589 Mail Status'
+      ]
+    },
+    sij: {
+      id: 'sij',
+      label: 'SIJ',
+      shortLabel: 'SIJ',
+      color: '#15803d', // green
+      detectPatterns: [/\bsij\b/i, /juvenile/i, /custody/i, /jdr/i],
+      statusField: 'SIJ Case Status',
+      relatedFields: [
+        'SIJ Case Status', 'SIJ Case Status (Revised)', 'SIJ County', 'SIJ Eligible (child)',
+        'Date Custody Filed', 'SIJS Decision', 'SIJ Engaged Date', 'JDR Ct Date'
+      ]
+    },
+    uvisa: {
+      id: 'uvisa',
+      label: 'U-Visa',
+      shortLabel: 'U',
+      color: '#7c3aed', // purple
+      detectPatterns: [/u-visa/i, /u visa/i, /uvisa/i],
+      statusField: 'U-Visa Status',
+      relatedFields: [
+        'U-Visa Status', 'U-Visa Cert Date', 'U-Visa Receipt Date',
+        'U-Visa Prima Facie', 'U-Visa Approval Date', 'U-Visa Certification Status'
+      ]
+    },
+    bond: {
+      id: 'bond',
+      label: 'Bond',
+      shortLabel: 'BND',
+      color: '#b45309', // amber
+      detectPatterns: [/bond/i, /detention/i],
+      statusField: 'Bond Stage',
+      relatedFields: [
+        'Bond Stage', 'Amount of Bond', 'Date Bond Granted', 'Bond Status'
+      ]
+    },
+    family: {
+      id: 'family',
+      label: 'Family Petition',
+      shortLabel: 'FAM',
+      color: '#be123c', // rose
+      detectPatterns: [/family/i, /i-130/i, /petition/i, /fam\./i],
+      statusField: null,
+      relatedFields: []
+    },
+    removal: {
+      id: 'removal',
+      label: 'Removal Defense',
+      shortLabel: 'REM',
+      color: '#dc2626', // red
+      detectPatterns: [/removal/i, /deportation/i, /eoir/i],
+      statusField: 'Final IM Case Status',
+      relatedFields: []
+    }
+  },
+
+  // ==========================================================================
+  // SEMANTIC TUPLES - Logical groupings of related fields
+  // Each tuple represents a coherent unit of information
+  // ==========================================================================
+
+  SEMANTIC_TUPLES: {
+    // Core Identity Tuple - always show together
+    identity: {
+      label: 'Client Identity',
+      priority: 1,
+      fields: [
+        { name: 'Client Name', required: true },
+        { name: 'A#', required: true },
+        { name: 'DOB', format: 'date' },
+        { name: 'Age' },
+        { name: 'Country' },
+        { name: 'Gender' },
+        { name: 'Entry Date', format: 'date' },
+        { name: 'Entry Status' },
+        { name: 'Place of Entry' }
+      ]
+    },
+
+    // Court/EOIR Tuple
+    court: {
+      label: 'Court Proceedings',
+      priority: 2,
+      matterAgnostic: true, // Applies to any matter with court dates
+      fields: [
+        { name: 'Hearing Date/Time', format: 'datetime', urgency: true },
+        { name: 'Court/Office' },
+        { name: 'Judge' },
+        { name: 'Hearing Type' },
+        { name: 'Merits Final Decision' },
+        { name: 'Merits Final Decision Date', format: 'date' },
+        { name: 'IJ Order detail' },
+        { name: 'Pleadings Due Date', format: 'date', urgency: true },
+        { name: 'NTA Date', format: 'date' },
+        { name: 'Final IM Case Status' }
+      ]
+    },
+
+    // Asylum Tuple
+    asylum: {
+      label: 'Asylum Case',
+      priority: 3,
+      matterType: 'asylum',
+      fields: [
+        { name: 'Asylum Case Status', displayAs: 'status' },
+        { name: 'I-589 Filed/Receipt Date', format: 'date' },
+        { name: 'Asylum Interview Date', format: 'date', urgency: true },
+        { name: 'I589 Filing Strategy' },
+        { name: 'I589 Biom Status' },
+        { name: 'Aff. I589 Receipt #' }
+      ]
+    },
+
+    // SIJ Tuple
+    sij: {
+      label: 'SIJ Case',
+      priority: 4,
+      matterType: 'sij',
+      fields: [
+        { name: 'SIJ Case Status', displayAs: 'status' },
+        { name: 'SIJ County' },
+        { name: 'JDR Ct Date', format: 'date', urgency: true },
+        { name: 'Date Custody Filed', format: 'date' },
+        { name: 'SIJS Decision', displayAs: 'status' },
+        { name: 'SIJ Eligible (child)' }
+      ]
+    },
+
+    // U-Visa Tuple
+    uvisa: {
+      label: 'U-Visa Case',
+      priority: 5,
+      matterType: 'uvisa',
+      fields: [
+        { name: 'U-Visa Status', displayAs: 'status' },
+        { name: 'U-Visa Cert Date', format: 'date' },
+        { name: 'U-Visa Receipt Date', format: 'date' },
+        { name: 'U-Visa Prima Facie', format: 'date' },
+        { name: 'U-Visa Approval Date', format: 'date' }
+      ]
+    },
+
+    // EAD/Work Authorization Tuple
+    ead: {
+      label: 'Work Authorization',
+      priority: 6,
+      matterAgnostic: true,
+      fields: [
+        { name: 'EAD Stage', displayAs: 'status' },
+        { name: 'EAD Receipt Date', format: 'date' },
+        { name: 'EAD Approval Date', format: 'date' },
+        { name: 'EAD Sent Date', format: 'date' },
+        { name: 'EAD Eligible Date', format: 'date' }
+      ]
+    },
+
+    // USCIS Applications Tuple
+    uscis: {
+      label: 'USCIS Applications',
+      priority: 7,
+      matterAgnostic: true,
+      fields: [
+        { name: 'Current USCIS application' },
+        { name: 'USCIS Receipt Number' },
+        { name: 'USCIS Receipt Date', format: 'date' },
+        { name: 'I-360 Receipt Number' },
+        { name: 'I-360 Approval Date', format: 'date' },
+        { name: 'Priority Date (I-360)', format: 'date' },
+        { name: 'RFE Due Date', format: 'date', urgency: true },
+        { name: 'RFE/RFI (topic)' },
+        { name: 'Biometric Notice Date', format: 'date' }
+      ]
+    },
+
+    // Bond Tuple
+    bond: {
+      label: 'Bond/Detention',
+      priority: 8,
+      matterType: 'bond',
+      fields: [
+        { name: 'Bond Stage', displayAs: 'status' },
+        { name: 'Bond Status', displayAs: 'status' },
+        { name: 'Amount of Bond', format: 'currency' },
+        { name: 'Date Bond Granted', format: 'date' }
+      ]
+    },
+
+    // Appeals Tuple
+    appeals: {
+      label: 'Appeals',
+      priority: 9,
+      matterAgnostic: true,
+      fields: [
+        { name: 'Appeal Status', displayAs: 'status' },
+        { name: 'Appeal Due Date', format: 'date', urgency: true },
+        { name: 'Appeal Receipt Date', format: 'date' },
+        { name: 'Brief Due Date', format: 'date', urgency: true },
+        { name: 'Brief Filed Date', format: 'date' },
+        { name: 'Appeal Decision' },
+        { name: 'Appeal Forum' }
+      ]
+    },
+
+    // FOIA/Records Tuple
+    foia: {
+      label: 'FOIA & Records',
+      priority: 10,
+      matterAgnostic: true,
+      fields: [
+        { name: 'FOIA Receipt', format: 'date' },
+        { name: 'FOIA #' },
+        { name: 'USCIS FOIA Stage', displayAs: 'status' },
+        { name: 'ICE FOIA Stage', displayAs: 'status' },
+        { name: 'FBI Record Stage', displayAs: 'status' },
+        { name: 'FBI Record Date', format: 'date' },
+        { name: 'OBIM Record Status', displayAs: 'status' }
+      ]
+    },
+
+    // Contact Tuple
+    contact: {
+      label: 'Contact Information',
+      priority: 11,
+      fields: [
+        { name: 'Phone Number', format: 'phone' },
+        { name: 'Client Email', format: 'email' },
+        { name: 'Address' }
+      ]
+    },
+
+    // Management Tuple
+    management: {
+      label: 'Case Management',
+      priority: 12,
+      fields: [
+        { name: 'Case Manager' },
+        { name: 'MCH Attny' },
+        { name: 'Relief Sought' },
+        { name: 'Case Tags' },
+        { name: 'File Case Status', displayAs: 'status' }
+      ]
+    }
+  },
+
+  // ==========================================================================
+  // FIELD CLASSIFICATION - Semantic vs Structural field detection
+  // ==========================================================================
+
+  FIELD_CLASSIFICATION: {
+    // Fields that are always structural (never show to users)
+    structuralPatterns: [
+      // Record IDs and internal references
+      /^recordId$/i,
+      /^id$/i,
+      /_id$/i,
+      /^airtable_/i,
+      /^PPID$/i,
+      /Record ID$/i,
+
+      // Link fields (navigation, not data)
+      /^Link to /i,
+      /^Edit /i,
+      /^View /i,
+      /^Open /i,
+      /^Go to /i,
+
+      // Sync/automation fields
+      /sync$/i,
+      /^Push/i,
+      /^Sync/i,
+      /Calculator$/i,
+      /^calc$/i,
+      /calc$/i,
+
+      // Internal URLs
+      /Softr.*Page/i,
+      /Kenect/i,
+      /Box.*Link/i,
+      /Gmail.*Search/i,
+      /Practice.*Panther/i,
+
+      // Lookup references (usually just IDs)
+      /\(from.*\)$/,
+
+      // Testing/audit fields
+      /^TESTER/i,
+      /^Audit/i,
+      /^Data Test/i,
+
+      // Auto-generated
+      /^Table \d+/,
+      /^Field \d+$/
+    ],
+
+    // Airtable field types that are structural
+    structuralTypes: [
+      'autoNumber',
+      'createdBy',
+      'lastModifiedBy',
+      'count'
+    ],
+
+    // Field types that MIGHT be structural (check name patterns)
+    maybeStructuralTypes: [
+      'formula',
+      'rollup',
+      'multipleRecordLinks',
+      'button'
+    ],
+
+    // Patterns that indicate meaningful data (override structural detection)
+    meaningfulPatterns: [
+      /name/i,
+      /status/i,
+      /date/i,
+      /phone/i,
+      /email/i,
+      /address/i,
+      /country/i,
+      /amount/i,
+      /notes?$/i,
+      /receipt/i,
+      /decision/i,
+      /judge/i,
+      /court/i,
+      /hearing/i
+    ],
+
+    // Airtable types that are always meaningful
+    meaningfulTypes: [
+      'singleLineText',
+      'multilineText',
+      'richText',
+      'email',
+      'phoneNumber',
+      'date',
+      'dateTime',
+      'currency',
+      'singleSelect',
+      'multipleSelects',
+      'checkbox',
+      'attachment'
+    ]
+  },
+
+  // ==========================================================================
+  // FIELD PRIORITY TIERS - Most important fields
+  // ==========================================================================
+
+  FIELD_PRIORITY_TIERS: {
+    // Tier 1: Critical (Top 8) - Always show in header/summary
+    critical: [
+      'Client Name',
+      'A#',
+      'Hearing Date/Time',
+      'File Case Status',
+      'Court/Office',
+      'DOB',
+      'Judge',
+      'Country'
+    ],
+
+    // Tier 2: Important (Next 12) - Show in overview
+    important: [
+      'Case Type',
+      'Relief Sought',
+      'Asylum Case Status',
+      'SIJ Case Status',
+      'EAD Stage',
+      'USCIS Receipt Number',
+      'Case Manager',
+      'Phone Number',
+      'Merits Final Decision',
+      'Entry Date',
+      'I-589 Filed/Receipt Date',
+      'Appeal Status'
+    ],
+
+    // Fields that should trigger urgency indicators
+    urgencyFields: [
+      'Hearing Date/Time',
+      'Pleadings Due Date',
+      'RFE Due Date',
+      'Appeal Due Date',
+      'Brief Due Date',
+      'Asylum Interview Date',
+      'JDR Ct Date',
+      'EAD Eligible Date'
+    ]
+  },
   
   // ==========================================================================
   // SEMANTIC ROLES - Tier 1
@@ -944,18 +1362,171 @@ const ClientGlanceConfig = {
   },
 
   // ==========================================================================
-  // MAIN TABS CONFIGURATION
-  // Organizes data by source table into tabs
-  // Users can customize which fields to show (stored in localStorage)
+  // MAIN TABS CONFIGURATION - NEW ARCHITECTURE
+  // Content-centric navigation (not source-table centric)
   // ==========================================================================
 
   MAIN_TABS: {
+    overview: {
+      id: 'overview',
+      label: 'Overview',
+      icon: '📊',
+      description: 'Summary view with short narrative and matter cards',
+      sourceTables: ['Client Info', 'Case Master View'],
+      viewType: 'overview', // Special view type
+      defaultFields: [], // Uses FIELD_PRIORITY_TIERS.critical + important
+      alwaysHidden: []
+    },
+    matters: {
+      id: 'matters',
+      label: 'Matters',
+      icon: '📁',
+      description: 'Case details organized by matter type (tupelized)',
+      sourceTables: ['Case Master View'],
+      viewType: 'tupelized', // Display using SEMANTIC_TUPLES
+      // Submenu for filtering by matter type
+      hasSubmenu: true,
+      submenuOptions: 'matterTypes', // Dynamically populated from detected matters
+      defaultFields: [
+        'File Case Status',
+        'Asylum Case Status',
+        'SIJ Case Status',
+        'Court/Office',
+        'Judge',
+        'Hearing Date/Time',
+        'Hearing Type',
+        'Relief Sought',
+        'Merits Final Decision',
+        'Appeal Status',
+        'USCIS Receipt Number',
+        'EAD Stage'
+      ],
+      alwaysHidden: [
+        'Edit Client Info',
+        'AMINO',
+        'Invoiced',
+        'Audit25-Q1',
+        'OYD Calculator',
+        'OYD',
+        'Client Name' // Already in header
+      ]
+    },
+    events: {
+      id: 'events',
+      label: 'Events',
+      icon: '📅',
+      description: 'Hearings, interviews, and deadlines',
+      sourceTables: ['Events', 'Case Master View'],
+      viewType: 'timeline', // Chronological with matter labels
+      // Show matter label on each event
+      showMatterLabels: true,
+      defaultFields: [
+        'Event Name',
+        'Hearing Date/Time',
+        'Event Hearing Type',
+        'Court/Office',
+        'Judge',
+        'MCH Attny',
+        'Client Notice Date',
+        'Hearing Notes',
+        'Court Action Items'
+      ],
+      alwaysHidden: [
+        'AMINO',
+        'Audit25-Q1',
+        'Push',
+        'Archive Event',
+        'Edit Client Info',
+        'Event Ids',
+        'Before Buffer Minutes',
+        'Precise Start Time UTC',
+        'Last Updated Core Events'
+      ]
+    },
+    applications: {
+      id: 'applications',
+      label: 'Applications',
+      icon: '📋',
+      description: 'USCIS filings and status',
+      sourceTables: ['Applications'],
+      viewType: 'cards', // Card display for each application
+      showMatterLabels: true,
+      defaultFields: [
+        'Name',
+        'Application',
+        'Status',
+        'Active',
+        'Receipt Number',
+        'Receipt Date',
+        'Sent Out',
+        'Decision Notice Date',
+        'Prima Facie',
+        'RFE Due Date',
+        'RFE/RFI (Topic)',
+        'Notes'
+      ],
+      alwaysHidden: [
+        'Amino',
+        'Edit Client Info',
+        'Created By'
+      ]
+    },
+    notes: {
+      id: 'notes',
+      label: 'Notes',
+      icon: '📝',
+      description: 'Case notes unified across matters',
+      sourceTables: ['Case Master View', 'Events'],
+      viewType: 'notes', // Unified notes feed with matter labels
+      showMatterLabels: true,
+      // Fields that contain notes
+      noteFields: [
+        'Case Notes',
+        'Hearing Notes',
+        'Court Action Items',
+        'Notes',
+        'Master Hearing Notes'
+      ],
+      defaultFields: [
+        'Case Notes',
+        'Hearing Notes',
+        'Court Action Items'
+      ],
+      alwaysHidden: []
+    },
+    timeline: {
+      id: 'timeline',
+      label: 'Timeline',
+      icon: '⏱️',
+      description: 'Chronological view of all activity',
+      sourceTables: ['Events', 'Applications', 'Case Master View'],
+      viewType: 'timeline',
+      showMatterLabels: true,
+      // Date fields to include in timeline
+      dateFields: [
+        'Hearing Date/Time',
+        'I-589 Filed/Receipt Date',
+        'Asylum Interview Date',
+        'JDR Ct Date',
+        'Date Custody Filed',
+        'USCIS Receipt Date',
+        'EAD Receipt Date',
+        'EAD Approval Date',
+        'Receipt Date',
+        'Decision Notice Date',
+        'NTA Date',
+        'Entry Date'
+      ],
+      defaultFields: [],
+      alwaysHidden: []
+    },
     client: {
       id: 'client',
       label: 'Client Info',
       icon: '👤',
+      description: 'Contact and demographic information',
       sourceTables: ['Client Info'],
-      // Default fields to show (field names from Airtable)
+      viewType: 'structured',
       defaultFields: [
         'Client Name',
         'A#',
@@ -968,12 +1539,12 @@ const ClientGlanceConfig = {
         'Phone Number',
         'Client Email',
         'Address',
-        'Case Manager',
-        'ICH Atty',
+        'Gender',
+        'Pronouns',
         'Place of Entry',
-        'Entry Date'
+        'Entry Date',
+        'Entry Status'
       ],
-      // Fields that are always hidden (internal/computed)
       alwaysHidden: [
         'recordId',
         'airtable_client_info_id',
@@ -996,104 +1567,112 @@ const ClientGlanceConfig = {
         'Events 2',
         'Edit Client Info'
       ]
+    }
+  },
+
+  // ==========================================================================
+  // NARRATIVE CONFIGURATION - Short and Long narrative templates
+  // ==========================================================================
+
+  NARRATIVE_CONFIG: {
+    short: {
+      maxSentences: 4,
+      maxWords: 75,
+      sections: ['identity_brief', 'matters_brief', 'next_date', 'ead_brief'],
+      // Template: "{name} (A# {a_number}), {age}, from {country}, has {matter_count} active matters..."
     },
-    cases: {
-      id: 'cases',
-      label: 'Cases',
-      icon: '📁',
-      sourceTables: ['Case Master View'],
-      defaultFields: [
-        'Client Name',
-        'Case Type',
-        'File Case Status',
-        'Asylum Case Status',
-        'Case Tags',
-        'Court/Office',
-        'Judge',
-        'Hearing Date/Time',
-        'Hearing Type',
-        'Relief Sought',
-        'Merits Final Decision',
-        'Merits Final Decision Date',
-        'Appeal Status',
-        'SIJ Case Status',
-        'USCIS Receipt Number',
-        'FBI Record Stage',
-        'Case Notes'
-      ],
-      alwaysHidden: [
-        'Edit Client Info',
-        'AMINO',
-        'Invoiced',
-        'Audit25-Q1',
-        'OYD Calculator',
-        'OYD'
-      ]
-    },
-    events: {
-      id: 'events',
-      label: 'Events',
-      icon: '📅',
-      sourceTables: ['Events'],
-      defaultFields: [
-        'Event Name',
-        'Hearing Date/Time',
-        'Event Hearing Type',
-        'Court/Office',
-        'Judge',
-        'MCH Attny',
-        'DHS ACC',
-        'Client Notice Date',
-        '10 day Client Notice',
-        'Supplement Filed Date',
-        'Hearing Notes',
-        'Court Action Items',
-        'Archive Status'
-      ],
-      alwaysHidden: [
-        'AMINO',
-        'Audit25-Q1',
-        'Push',
-        'Archive Event',
-        'Edit Client Info',
-        'Event Ids',
-        'Before Buffer Minutes',
-        'Precise Start Time UTC',
-        'Last Updated Core Events'
-      ]
-    },
-    applications: {
-      id: 'applications',
-      label: 'Applications',
-      icon: '📋',
-      sourceTables: ['Applications'],
-      defaultFields: [
-        'Name',
-        'Application',
-        'Status',
-        'Active',
-        'Receipt Number',
-        'Receipt Date',
-        'Sent Out',
-        'Decision Notice Date',
-        'Prima Facie',
-        'RFE Due Date',
-        'RFE/RFI (Topic)',
-        'NVC Case Number',
-        'Cert County/State',
-        'Notes',
-        'Tracking Number'
-      ],
-      alwaysHidden: [
-        'Amino',
-        'Edit Client Info',
-        'Created By'
+    long: {
+      maxSentences: null,
+      maxWords: null,
+      sections: [
+        'identity_full',
+        'matters_full',
+        'ead_full',
+        'applications',
+        'events',
+        'management',
+        'notes'
       ]
     }
   },
 
+  // ==========================================================================
+  // FIELD DISPLAY TYPES - How to render different value types
+  // ==========================================================================
+
+  FIELD_DISPLAY_TYPES: {
+    // Short text - single line
+    shortText: {
+      maxLength: 50,
+      truncate: true
+    },
+    // Long text - expandable
+    longText: {
+      previewLines: 3,
+      expandable: true,
+      maxLength: 500
+    },
+    // Rich text - formatted
+    richText: {
+      previewLines: 3,
+      expandable: true,
+      renderMarkdown: true
+    },
+    // URLs - smart link display
+    url: {
+      showDomain: true,
+      smartIcons: {
+        'airtable.com': { icon: '🔗', label: 'Airtable' },
+        'softr.io': { icon: '📄', label: 'Softr' },
+        'drive.google.com': { icon: '📁', label: 'Drive' },
+        'practicepanther': { icon: '📋', label: 'PP' }
+      }
+    },
+    // Dates - smart formatting with urgency
+    date: {
+      showRelative: true,
+      urgencyThresholds: {
+        urgent: 7,    // days - red
+        upcoming: 30, // days - yellow
+        scheduled: 90 // days - green
+      }
+    },
+    // Status - pill/badge
+    status: {
+      colorMap: {
+        active: 'green',
+        current: 'green',
+        engaged: 'green',
+        pending: 'yellow',
+        waiting: 'yellow',
+        approved: 'blue',
+        granted: 'blue',
+        complete: 'blue',
+        denied: 'red',
+        dismissed: 'red',
+        closed: 'gray'
+      }
+    },
+    // Contact fields
+    phone: {
+      format: '(xxx) xxx-xxxx',
+      clickable: true
+    },
+    email: {
+      clickable: true
+    },
+    // Currency
+    currency: {
+      symbol: '$',
+      decimals: 2
+    }
+  },
+
   // LocalStorage key for user field preferences
-  STORAGE_KEY: 'clientGlance_fieldPrefs'
+  STORAGE_KEY: 'clientGlance_fieldPrefs',
+
+  // LocalStorage key for view preferences
+  VIEW_PREFS_KEY: 'clientGlance_viewPrefs'
 };
 
 // Export for use in widget

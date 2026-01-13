@@ -133,6 +133,49 @@
       font-size: 12px;
     }
 
+    /* Matter Pills */
+    .matter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .matter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 2px solid transparent;
+    }
+
+    .matter-pill.active {
+      border-color: currentColor;
+    }
+
+    .matter-pill:hover {
+      opacity: 0.8;
+    }
+
+    .matter-pill .matter-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .matter-pill.asylum { background: #dbeafe; color: #1e40af; }
+    .matter-pill.sij { background: #dcfce7; color: #166534; }
+    .matter-pill.uvisa { background: #ede9fe; color: #5b21b6; }
+    .matter-pill.bond { background: #fef3c7; color: #92400e; }
+    .matter-pill.family { background: #ffe4e6; color: #9f1239; }
+    .matter-pill.removal { background: #fee2e2; color: #dc2626; }
+
     /* Narrative View */
     .narrative-view {
       background: var(--bg-card);
@@ -682,6 +725,406 @@
       font-size: 13px;
     }
 
+    /* Semantic Tuple Card */
+    .tuple-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .tuple-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tuple-card-title {
+      font-weight: 500;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tuple-card-status {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+
+    .tuple-card-content {
+      padding: 12px 16px;
+    }
+
+    .tuple-field-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+
+    .tuple-field-row:last-child {
+      border-bottom: none;
+    }
+
+    .tuple-field-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .tuple-field-value {
+      font-size: 13px;
+      text-align: right;
+    }
+
+    /* Overview Cards */
+    .overview-section {
+      margin-bottom: 20px;
+    }
+
+    .overview-section-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .matter-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .matter-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .matter-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+    }
+
+    .matter-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .matter-card-type {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .matter-card-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+
+    .matter-card-details {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .matter-card-detail {
+      margin-bottom: 4px;
+    }
+
+    /* Upcoming Events Section */
+    .upcoming-events {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .upcoming-event {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+
+    .upcoming-event:last-child {
+      border-bottom: none;
+    }
+
+    .event-urgency {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .event-urgency.urgent { background: #dc2626; }
+    .event-urgency.upcoming { background: #f59e0b; }
+    .event-urgency.scheduled { background: #22c55e; }
+    .event-urgency.past { background: #9ca3af; }
+
+    .event-content {
+      flex: 1;
+    }
+
+    .event-date {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .event-title {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .event-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .event-matter-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Notes Feed */
+    .notes-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .note-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .note-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .note-matter-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .note-date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .note-content {
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .note-content.truncated {
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .note-content.truncated::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(transparent, var(--bg-card));
+    }
+
+    .note-expand-btn {
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--accent-blue);
+      cursor: pointer;
+      border-top: 1px solid var(--bg-secondary);
+    }
+
+    .note-expand-btn:hover {
+      background: var(--bg-secondary);
+    }
+
+    /* Narrative Toggle */
+    .narrative-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-secondary);
+      padding: 2px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .narrative-toggle button {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.15s ease;
+    }
+
+    .narrative-toggle button.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Status Colors */
+    .status-green { background: #dcfce7; color: #166534; }
+    .status-blue { background: #dbeafe; color: #1e40af; }
+    .status-yellow { background: #fef3c7; color: #92400e; }
+    .status-red { background: #fee2e2; color: #dc2626; }
+    .status-gray { background: #f3f4f6; color: #4b5563; }
+
+    /* Timeline View */
+    .timeline-view {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline-view::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-blue);
+    }
+
+    .timeline-item.future::before {
+      background: var(--accent-blue);
+    }
+
+    .timeline-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .timeline-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+
+    .timeline-title {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .timeline-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Application Cards */
+    .application-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .application-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .application-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .application-type {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .application-name {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .application-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+
+    .application-details {
+      font-size: 12px;
+    }
+
+    .application-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+
+    .application-detail:last-child {
+      border-bottom: none;
+    }
+
+    .application-detail-label {
+      color: var(--text-muted);
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
       body {
@@ -1050,6 +1493,478 @@
      */
     hasSchema() {
       return this.schema !== null && this.fieldMap.size > 0;
+    }
+  };
+
+  // ==========================================================================
+  // MATTER DETECTOR
+  // Detects case types (matters) from case records
+  // ==========================================================================
+
+  const MatterDetector = {
+    /**
+     * Detect all matters for a client from their case records
+     * @param {Array} cases - Array of case records from CMV
+     * @returns {Array} Array of detected matter objects
+     */
+    detectMatters(cases) {
+      if (!cases || !Array.isArray(cases)) return [];
+
+      const matterTypes = CONFIG?.MATTER_TYPES || {};
+      const detectedMatters = [];
+
+      for (const caseRecord of cases) {
+        const caseFields = caseRecord.fields || caseRecord;
+        const caseId = caseRecord.recordId || caseRecord.id;
+        const caseIdentifier = caseRecord.caseIdentifier || '';
+
+        // Try to detect matter type from case identifier/description
+        for (const [typeId, typeConfig] of Object.entries(matterTypes)) {
+          const patterns = typeConfig.detectPatterns || [];
+          const matched = patterns.some(p => p.test(caseIdentifier));
+
+          if (matched) {
+            // Get status from the appropriate field
+            const statusValue = typeConfig.statusField
+              ? caseFields[typeConfig.statusField]
+              : null;
+
+            detectedMatters.push({
+              id: `${typeId}-${caseId}`,
+              type: typeId,
+              typeConfig,
+              caseId,
+              caseIdentifier,
+              status: statusValue,
+              fields: this.extractMatterFields(caseFields, typeConfig)
+            });
+          }
+        }
+
+        // If no specific type detected, check for generic matter
+        if (!detectedMatters.some(m => m.caseId === caseId)) {
+          // Try to infer from status fields
+          for (const [typeId, typeConfig] of Object.entries(matterTypes)) {
+            const statusField = typeConfig.statusField;
+            if (statusField && caseFields[statusField]) {
+              detectedMatters.push({
+                id: `${typeId}-${caseId}`,
+                type: typeId,
+                typeConfig,
+                caseId,
+                caseIdentifier,
+                status: caseFields[statusField],
+                fields: this.extractMatterFields(caseFields, typeConfig)
+              });
+              break;
+            }
+          }
+        }
+      }
+
+      return detectedMatters;
+    },
+
+    /**
+     * Extract fields relevant to a matter type
+     */
+    extractMatterFields(caseFields, typeConfig) {
+      const relevantFields = {};
+      const relatedFieldNames = typeConfig.relatedFields || [];
+
+      for (const fieldName of relatedFieldNames) {
+        if (caseFields[fieldName] !== undefined && caseFields[fieldName] !== null) {
+          relevantFields[fieldName] = caseFields[fieldName];
+        }
+      }
+
+      return relevantFields;
+    },
+
+    /**
+     * Get matter type config by ID
+     */
+    getMatterConfig(typeId) {
+      return CONFIG?.MATTER_TYPES?.[typeId] || null;
+    },
+
+    /**
+     * Determine the color class for a status value
+     */
+    getStatusColor(status) {
+      if (!status) return 'gray';
+
+      const statusLower = String(status).toLowerCase();
+      const colorMap = CONFIG?.FIELD_DISPLAY_TYPES?.status?.colorMap || {};
+
+      for (const [keyword, color] of Object.entries(colorMap)) {
+        if (statusLower.includes(keyword)) {
+          return color;
+        }
+      }
+
+      return 'gray';
+    },
+
+    /**
+     * Calculate urgency for a date
+     */
+    getDateUrgency(dateValue) {
+      if (!dateValue) return null;
+
+      try {
+        const date = new Date(dateValue);
+        const now = new Date();
+        const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+
+        const thresholds = CONFIG?.FIELD_DISPLAY_TYPES?.date?.urgencyThresholds || {
+          urgent: 7,
+          upcoming: 30,
+          scheduled: 90
+        };
+
+        if (diffDays < 0) return 'past';
+        if (diffDays <= thresholds.urgent) return 'urgent';
+        if (diffDays <= thresholds.upcoming) return 'upcoming';
+        if (diffDays <= thresholds.scheduled) return 'scheduled';
+        return 'future';
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  // ==========================================================================
+  // FIELD CLASSIFIER
+  // Determines if fields are semantic (meaningful) or structural (plumbing)
+  // ==========================================================================
+
+  const FieldClassifier = {
+    /**
+     * Check if a field is structural (should be hidden)
+     */
+    isStructural(fieldName, fieldType = null) {
+      const classification = CONFIG?.FIELD_CLASSIFICATION || {};
+
+      // Check structural patterns
+      const structuralPatterns = classification.structuralPatterns || [];
+      if (structuralPatterns.some(p => p.test(fieldName))) {
+        // But check if it matches meaningful patterns (override)
+        const meaningfulPatterns = classification.meaningfulPatterns || [];
+        if (meaningfulPatterns.some(p => p.test(fieldName))) {
+          return false; // Meaningful overrides structural
+        }
+        return true;
+      }
+
+      // Check structural types
+      const structuralTypes = classification.structuralTypes || [];
+      if (fieldType && structuralTypes.includes(fieldType)) {
+        return true;
+      }
+
+      // Check maybe-structural types (need pattern check)
+      const maybeTypes = classification.maybeStructuralTypes || [];
+      if (fieldType && maybeTypes.includes(fieldType)) {
+        // These are structural unless they match meaningful patterns
+        const meaningfulPatterns = classification.meaningfulPatterns || [];
+        return !meaningfulPatterns.some(p => p.test(fieldName));
+      }
+
+      return false;
+    },
+
+    /**
+     * Check if a field is high-priority (should always show)
+     */
+    isPriority(fieldName) {
+      const tiers = CONFIG?.FIELD_PRIORITY_TIERS || {};
+      const critical = tiers.critical || [];
+      const important = tiers.important || [];
+
+      return critical.includes(fieldName) || important.includes(fieldName);
+    },
+
+    /**
+     * Check if a field should trigger urgency display
+     */
+    isUrgencyField(fieldName) {
+      const urgencyFields = CONFIG?.FIELD_PRIORITY_TIERS?.urgencyFields || [];
+      return urgencyFields.includes(fieldName);
+    }
+  };
+
+  // ==========================================================================
+  // TUPLE PROCESSOR
+  // Processes fields into semantic tuples for display
+  // ==========================================================================
+
+  const TupleProcessor = {
+    /**
+     * Build tuples from processed fields
+     * @param {Array} fields - Processed field objects
+     * @param {Array} matters - Detected matters
+     * @returns {Array} Array of tuple objects with fields populated
+     */
+    buildTuples(fields, matters) {
+      const tupleConfigs = CONFIG?.SEMANTIC_TUPLES || {};
+      const tuples = [];
+
+      for (const [tupleId, tupleConfig] of Object.entries(tupleConfigs)) {
+        const tuple = {
+          id: tupleId,
+          label: tupleConfig.label,
+          priority: tupleConfig.priority || 99,
+          matterType: tupleConfig.matterType,
+          matterAgnostic: tupleConfig.matterAgnostic,
+          fields: []
+        };
+
+        // Get field values for this tuple
+        for (const fieldSpec of tupleConfig.fields || []) {
+          const fieldName = fieldSpec.name;
+          const matchingFields = fields.filter(f => f.fieldName === fieldName);
+
+          if (matchingFields.length > 0) {
+            // Take the first match (or aggregate if multiple)
+            const field = matchingFields[0];
+            tuple.fields.push({
+              ...field,
+              format: fieldSpec.format,
+              displayAs: fieldSpec.displayAs,
+              urgency: fieldSpec.urgency ? MatterDetector.getDateUrgency(field.value) : null
+            });
+          }
+        }
+
+        // Only include tuple if it has at least one field with a value
+        if (tuple.fields.length > 0) {
+          // Check if this tuple applies to any detected matter
+          if (tuple.matterType) {
+            const relevantMatter = matters.find(m => m.type === tuple.matterType);
+            if (relevantMatter) {
+              tuple.matter = relevantMatter;
+              tuples.push(tuple);
+            }
+          } else if (tuple.matterAgnostic || tupleId === 'identity' || tupleId === 'contact' || tupleId === 'management') {
+            // Matter-agnostic tuples always show
+            tuples.push(tuple);
+          }
+        }
+      }
+
+      // Sort by priority
+      tuples.sort((a, b) => a.priority - b.priority);
+
+      return tuples;
+    },
+
+    /**
+     * Get tuple status (from its status field)
+     */
+    getTupleStatus(tuple) {
+      const statusField = tuple.fields.find(f => f.displayAs === 'status');
+      return statusField?.value || null;
+    }
+  };
+
+  // ==========================================================================
+  // NARRATIVE COMPOSER
+  // Composes short and long narratives from client data
+  // ==========================================================================
+
+  const NarrativeComposer = {
+    pronouns: { subject: 'They', object: 'them', possessive: 'their' },
+
+    /**
+     * Set pronouns based on client data
+     */
+    setPronouns(clientFields) {
+      const gender = clientFields?.Gender?.toLowerCase?.();
+      const pronounsField = clientFields?.Pronouns?.toLowerCase?.();
+
+      if (pronounsField) {
+        if (pronounsField.includes('she') || pronounsField.includes('her')) {
+          this.pronouns = { subject: 'She', object: 'her', possessive: 'her' };
+        } else if (pronounsField.includes('he') || pronounsField.includes('him')) {
+          this.pronouns = { subject: 'He', object: 'him', possessive: 'his' };
+        } else {
+          this.pronouns = { subject: 'They', object: 'them', possessive: 'their' };
+        }
+        return;
+      }
+
+      if (gender === 'female' || gender === 'f') {
+        this.pronouns = { subject: 'She', object: 'her', possessive: 'her' };
+      } else if (gender === 'male' || gender === 'm') {
+        this.pronouns = { subject: 'He', object: 'him', possessive: 'his' };
+      } else {
+        this.pronouns = { subject: 'They', object: 'them', possessive: 'their' };
+      }
+    },
+
+    /**
+     * Compose short narrative (overview)
+     */
+    composeShort(clientInfo, matters, upcomingEvents) {
+      const sentences = [];
+      const fields = clientInfo?.fields || {};
+
+      // Identity sentence
+      const name = fields['Client Name'];
+      const aNum = fields['A#'];
+      const age = fields['Age'];
+      const country = fields['Country'];
+
+      if (name) {
+        let identity = name;
+        if (aNum) identity += ` (A# ${aNum})`;
+        if (age) identity += `, ${age}`;
+        if (country) identity += `, from ${country}`;
+        sentences.push(identity);
+      }
+
+      // Matters sentence
+      if (matters.length > 0) {
+        const matterDescriptions = matters.map(m => {
+          const label = m.typeConfig?.label || m.type;
+          const status = m.status ? ` (${m.status.toLowerCase()})` : '';
+          return label + status;
+        });
+
+        const verb = matters.length === 1 ? 'has' : 'have';
+        sentences.push(`${this.pronouns.subject} ${verb} ${matterDescriptions.join(' and ')} matter${matters.length > 1 ? 's' : ''}`);
+      }
+
+      // Next date sentence
+      if (upcomingEvents.length > 0) {
+        const next = upcomingEvents[0];
+        sentences.push(`Next: ${next.title} on ${Utils.formatDate(next.date)}`);
+      }
+
+      return sentences.join('. ') + (sentences.length ? '.' : '');
+    },
+
+    /**
+     * Compose long narrative (full detail)
+     */
+    composeLong(clientInfo, matters, tuples, events, applications) {
+      const sections = [];
+      const fields = clientInfo?.fields || {};
+
+      // IDENTITY SECTION
+      const identityParts = [];
+      const name = fields['Client Name'];
+      const aNum = fields['A#'];
+      const age = fields['Age'];
+      const gender = fields['Gender'];
+      const country = fields['Country'];
+      const dob = fields['DOB'];
+      const entryDate = fields['Entry Date'];
+      const entryStatus = fields['Entry Status'];
+      const placeOfEntry = fields['Place of Entry'];
+      const address = fields['Address'];
+      const phone = fields['Phone Number'];
+      const email = fields['Client Email'];
+
+      if (name) {
+        let idSentence = `${name}`;
+        if (aNum) idSentence += ` (A# ${aNum})`;
+        if (age && gender) {
+          idSentence += ` is a ${age}-year-old ${gender.toLowerCase()}`;
+        } else if (age) {
+          idSentence += ` is ${age} years old`;
+        }
+        if (country) idSentence += ` from ${country}`;
+        identityParts.push(idSentence);
+      }
+
+      if (dob) {
+        identityParts.push(`Date of birth: ${Utils.formatDate(dob)}`);
+      }
+
+      if (entryDate) {
+        let entrySentence = `Entered the United States on ${Utils.formatDate(entryDate)}`;
+        if (placeOfEntry) entrySentence += ` at ${placeOfEntry}`;
+        if (entryStatus) entrySentence += ` (${entryStatus})`;
+        identityParts.push(entrySentence);
+      }
+
+      if (address || phone || email) {
+        const contactParts = [];
+        if (address) contactParts.push(`Address: ${address}`);
+        if (phone) contactParts.push(`Phone: ${Utils.formatPhone(phone)}`);
+        if (email) contactParts.push(`Email: ${email}`);
+        identityParts.push(contactParts.join('. '));
+      }
+
+      if (identityParts.length > 0) {
+        sections.push({
+          title: 'CLIENT IDENTITY',
+          content: identityParts.join('. ') + '.'
+        });
+      }
+
+      // MATTERS SECTIONS
+      for (const matter of matters) {
+        const matterLabel = matter.typeConfig?.label || matter.type.toUpperCase();
+        const matterParts = [];
+
+        if (matter.status) {
+          matterParts.push(`Status: ${matter.status}`);
+        }
+
+        // Get related tuple
+        const relatedTuple = tuples.find(t => t.matterType === matter.type);
+        if (relatedTuple) {
+          for (const field of relatedTuple.fields) {
+            if (field.displayAs !== 'status' && field.value) {
+              const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
+              let value = field.value;
+              if (field.format === 'date') value = Utils.formatDate(value);
+              matterParts.push(`${label}: ${value}`);
+            }
+          }
+        }
+
+        if (matterParts.length > 0) {
+          sections.push({
+            title: `${matterLabel} CASE`,
+            content: matterParts.join('. ') + '.'
+          });
+        }
+      }
+
+      // UPCOMING EVENTS
+      if (events.length > 0) {
+        const eventLines = events.slice(0, 5).map(e => {
+          let line = `• ${Utils.formatDate(e.date)}: ${e.title}`;
+          if (e.matter) line += ` (${e.matter})`;
+          return line;
+        });
+
+        sections.push({
+          title: 'UPCOMING EVENTS',
+          content: eventLines.join('\n')
+        });
+      }
+
+      // APPLICATIONS
+      if (applications.length > 0) {
+        const appLines = applications.map(a => {
+          let line = `• ${a.application || a.name}`;
+          if (a.status) line += `: ${a.status}`;
+          if (a.receiptNumber) line += ` (${a.receiptNumber})`;
+          return line;
+        });
+
+        sections.push({
+          title: 'APPLICATIONS',
+          content: appLines.join('\n')
+        });
+      }
+
+      return sections;
     }
   };
 
@@ -2056,21 +2971,118 @@
   const Renderer = {
     state: {
       viewMode: 'structured', // 'structured' or 'narrative'
+      narrativeMode: 'short', // 'short' or 'long'
       showProvenance: false,
       expandedGroups: new Set(),
       selectedCase: 'all',
-      activeMainTab: 'client', // Main tab: client, cases, events, applications
+      selectedMatter: null, // Filter by matter type
+      activeMainTab: 'overview', // Main tab: overview, matters, events, applications, notes, timeline, client
       settingsOpen: false
     },
 
     init(data) {
       this.data = data;
       this.processedFields = DataProcessor.processFields(data);
+
       // Load user preferences
       FieldPreferences.load();
+
+      // Transform data for new architecture
+      this.normalizedData = DataTransformer.transform(data);
+
+      // Detect matters
+      this.matters = MatterDetector.detectMatters(this.normalizedData.cases || []);
+      console.log('[Renderer] Detected matters:', this.matters.map(m => m.type));
+
+      // Set pronouns
+      NarrativeComposer.setPronouns(this.normalizedData.clientInfo?.fields);
+
+      // Build tuples
+      this.tuples = TupleProcessor.buildTuples(this.processedFields, this.matters);
+
+      // Extract events and applications
+      this.events = this.extractEvents();
+      this.applications = this.extractApplications();
+
       // Organize fields by source table for tabs
       this.organizeFieldsByTab();
+
       this.render();
+    },
+
+    /**
+     * Extract upcoming and past events
+     */
+    extractEvents() {
+      const events = [];
+      const dateFields = CONFIG?.MAIN_TABS?.timeline?.dateFields || [];
+
+      // From processed fields
+      for (const field of this.processedFields) {
+        if (dateFields.includes(field.fieldName) && field.value) {
+          events.push({
+            date: field.value,
+            title: field.fieldName.replace(/Date.*$/i, '').replace(/\//g, ' '),
+            fieldName: field.fieldName,
+            caseLabel: field.caseLabel,
+            matter: this.inferMatterFromCase(field.caseLabel),
+            urgency: MatterDetector.getDateUrgency(field.value)
+          });
+        }
+      }
+
+      // Sort by date
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      return events;
+    },
+
+    /**
+     * Extract application records
+     */
+    extractApplications() {
+      const appFields = this.tabData?.applications?.fields || [];
+      const applications = [];
+
+      // Group by case/record
+      const byRecord = {};
+      for (const field of appFields) {
+        const recordId = field.recordId || 'default';
+        if (!byRecord[recordId]) byRecord[recordId] = {};
+        byRecord[recordId][field.fieldName] = field.value;
+        byRecord[recordId].caseLabel = field.caseLabel;
+      }
+
+      for (const [recordId, fields] of Object.entries(byRecord)) {
+        applications.push({
+          recordId,
+          name: fields['Name'] || fields['Application'],
+          application: fields['Application'],
+          status: fields['Status'],
+          receiptNumber: fields['Receipt Number'],
+          receiptDate: fields['Receipt Date'],
+          matter: this.inferMatterFromCase(fields.caseLabel),
+          fields
+        });
+      }
+
+      return applications;
+    },
+
+    /**
+     * Infer matter type from case label
+     */
+    inferMatterFromCase(caseLabel) {
+      if (!caseLabel) return null;
+
+      const matterTypes = CONFIG?.MATTER_TYPES || {};
+      for (const [typeId, config] of Object.entries(matterTypes)) {
+        const patterns = config.detectPatterns || [];
+        if (patterns.some(p => p.test(caseLabel))) {
+          return typeId;
+        }
+      }
+      return null;
     },
 
     /**
@@ -2086,9 +3098,11 @@
           config: tabConfig,
           fields: this.processedFields.filter(f => {
             // Match by source table
-            if (sourceTables.includes(f.sourceTable)) return true;
+            if (sourceTables.some(t => f.sourceTable?.includes(t) || t.includes(f.sourceTable || ''))) return true;
             // For client tab, include fields without sourceTable (from client info)
-            if (tabId === 'client' && !f.sourceTable) return true;
+            if (tabId === 'client' && (!f.sourceTable || f.sourceTable === 'Client Info')) return true;
+            // For overview, include critical fields from any source
+            if (tabId === 'overview') return FieldClassifier.isPriority(f.fieldName);
             return false;
           }),
           allFieldNames: new Set()
@@ -2144,15 +3158,52 @@
       const aNum = headerFields.find(f => f.role === 'a_number');
       const dob = headerFields.find(f => f.role === 'date_of_birth');
       const country = headerFields.find(f => f.role === 'country_of_origin');
+      const age = headerFields.find(f => f.role === 'age');
 
       return `
         <div class="client-header">
           <div class="client-name">${Utils.escapeHtml(clientName)}</div>
           <div class="client-meta">
             ${aNum ? `<span class="client-meta-item"><span class="client-meta-label">A#</span> ${Utils.escapeHtml(aNum.value)}</span>` : ''}
-            ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}</span>` : ''}
+            ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}${age ? ` (${age.value})` : ''}</span>` : ''}
             ${country ? `<span class="client-meta-item"><span class="client-meta-label">From</span> ${Utils.escapeHtml(country.value)}</span>` : ''}
           </div>
+          ${this.renderMatterPills()}
+        </div>
+      `;
+    },
+
+    /**
+     * Render matter pills for filtering
+     */
+    renderMatterPills() {
+      if (!this.matters || this.matters.length === 0) return '';
+
+      const uniqueTypes = [...new Set(this.matters.map(m => m.type))];
+
+      return `
+        <div class="matter-pills">
+          ${uniqueTypes.map(typeId => {
+            const config = CONFIG?.MATTER_TYPES?.[typeId] || {};
+            const isActive = this.state.selectedMatter === typeId;
+            const matter = this.matters.find(m => m.type === typeId);
+            const status = matter?.status;
+
+            return `
+              <button class="matter-pill ${typeId} ${isActive ? 'active' : ''}"
+                      data-matter="${typeId}"
+                      title="${config.label || typeId}${status ? ': ' + status : ''}">
+                <span class="matter-dot"></span>
+                ${Utils.escapeHtml(config.shortLabel || config.label || typeId)}
+                ${status ? `<span style="opacity:0.7;font-weight:400">· ${Utils.escapeHtml(status)}</span>` : ''}
+              </button>
+            `;
+          }).join('')}
+          ${this.state.selectedMatter ? `
+            <button class="matter-pill" data-matter="clear" style="background:#f3f4f6;color:#6b7280;">
+              ✕ Clear
+            </button>
+          ` : ''}
         </div>
       `;
     },
@@ -2163,15 +3214,31 @@
     renderMainTabs() {
       const tabs = CONFIG?.MAIN_TABS || {};
 
+      // Define tab order for display
+      const tabOrder = ['overview', 'matters', 'events', 'applications', 'notes', 'timeline', 'client'];
+
       return `
         <div class="main-tabs">
-          ${Object.entries(tabs).map(([tabId, tabConfig]) => {
-            const fieldCount = this.tabData[tabId]?.fields.length || 0;
+          ${tabOrder.filter(tabId => tabs[tabId]).map(tabId => {
+            const tabConfig = tabs[tabId];
+            // Different count logic per tab type
+            let count = '';
+            if (tabId === 'matters') {
+              count = this.matters?.length || 0;
+            } else if (tabId === 'events') {
+              count = this.events?.filter(e => e.urgency !== 'past').length || 0;
+            } else if (tabId === 'applications') {
+              count = this.applications?.length || 0;
+            } else if (tabId !== 'overview' && tabId !== 'timeline') {
+              count = this.tabData[tabId]?.fields.length || 0;
+            }
+
             return `
               <button class="main-tab ${this.state.activeMainTab === tabId ? 'active' : ''}"
-                      data-main-tab="${tabId}">
-                ${tabConfig.label}
-                <span class="tab-count">${fieldCount}</span>
+                      data-main-tab="${tabId}"
+                      title="${tabConfig.description || ''}">
+                ${tabConfig.icon || ''} ${tabConfig.label}
+                ${count !== '' ? `<span class="tab-count">${count}</span>` : ''}
               </button>
             `;
           }).join('')}
@@ -2184,25 +3251,423 @@
      */
     renderTabContent(cases) {
       const activeTab = this.state.activeMainTab;
+      const tabConfig = CONFIG?.MAIN_TABS?.[activeTab];
       const tabData = this.tabData[activeTab];
+      const viewType = tabConfig?.viewType || 'structured';
 
-      if (!tabData || tabData.fields.length === 0) {
-        return `<div class="no-data">No data available for this section.</div>`;
+      // Filter by selected matter if set
+      let displayFields = tabData?.fields || [];
+      if (this.state.selectedMatter) {
+        displayFields = displayFields.filter(f => {
+          const fieldMatter = this.inferMatterFromCase(f.caseLabel);
+          return !fieldMatter || fieldMatter === this.state.selectedMatter;
+        });
       }
 
+      // Route to appropriate view renderer based on viewType
+      switch (viewType) {
+        case 'overview':
+          return this.renderOverviewView();
+
+        case 'tupelized':
+          return this.renderMattersView(cases);
+
+        case 'timeline':
+          return this.renderTimelineView(activeTab);
+
+        case 'notes':
+          return this.renderNotesView();
+
+        case 'cards':
+          return this.renderApplicationsView();
+
+        case 'structured':
+        default:
+          return this.renderStructuredTabContent(cases, displayFields, activeTab, tabData);
+      }
+    },
+
+    /**
+     * Render Overview tab - summary with matter cards and upcoming events
+     */
+    renderOverviewView() {
+      const upcomingEvents = this.events.filter(e => e.urgency !== 'past').slice(0, 5);
+
+      // Short/long narrative toggle
+      const narrative = this.state.narrativeMode === 'long'
+        ? NarrativeComposer.composeLong(
+            this.normalizedData.clientInfo,
+            this.matters,
+            this.tuples,
+            upcomingEvents,
+            this.applications
+          )
+        : NarrativeComposer.composeShort(
+            this.normalizedData.clientInfo,
+            this.matters,
+            upcomingEvents
+          );
+
+      return `
+        <div class="narrative-toggle">
+          <button class="${this.state.narrativeMode === 'short' ? 'active' : ''}" data-narrative="short">Summary</button>
+          <button class="${this.state.narrativeMode === 'long' ? 'active' : ''}" data-narrative="long">Full Detail</button>
+        </div>
+
+        ${this.state.narrativeMode === 'short' ? `
+          <div class="narrative-view">
+            <div class="narrative-text">${narrative || '<em>No data available.</em>'}</div>
+          </div>
+        ` : `
+          <div class="narrative-view">
+            ${Array.isArray(narrative) ? narrative.map(section => `
+              <div style="margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">
+                  ${Utils.escapeHtml(section.title)}
+                </div>
+                <div class="narrative-text" style="white-space: pre-wrap;">${Utils.escapeHtml(section.content)}</div>
+              </div>
+            `).join('') : `<div class="narrative-text">${Utils.escapeHtml(narrative)}</div>`}
+          </div>
+        `}
+
+        <div class="overview-section">
+          <div class="overview-section-title">Active Matters</div>
+          <div class="matter-cards">
+            ${this.matters.length > 0 ? this.matters.map(matter => this.renderMatterCard(matter)).join('') : '<div class="no-data">No active matters detected.</div>'}
+          </div>
+        </div>
+
+        <div class="overview-section">
+          <div class="overview-section-title">Upcoming</div>
+          <div class="upcoming-events">
+            ${upcomingEvents.length > 0 ? upcomingEvents.map(event => `
+              <div class="upcoming-event">
+                <div class="event-urgency ${event.urgency || 'scheduled'}"></div>
+                <div class="event-content">
+                  <div class="event-date">${Utils.formatDate(event.date, true)}</div>
+                  <div class="event-title">${Utils.escapeHtml(event.title)}</div>
+                  ${event.matter ? `
+                    <span class="event-matter-tag ${event.matter}" style="background: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}20; color: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}">
+                      ${CONFIG?.MATTER_TYPES?.[event.matter]?.shortLabel || event.matter}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('') : '<div class="no-data" style="padding: 16px;">No upcoming events.</div>'}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render a single matter card
+     */
+    renderMatterCard(matter) {
+      const config = matter.typeConfig || {};
+      const statusColor = MatterDetector.getStatusColor(matter.status);
+
+      // Get key details from the matter's related tuple
+      const relatedTuple = this.tuples.find(t => t.matterType === matter.type);
+      const keyFields = relatedTuple?.fields.slice(0, 3) || [];
+
+      return `
+        <div class="matter-card" data-matter-card="${matter.type}">
+          <div class="matter-card-header">
+            <span class="matter-card-type" style="color: ${config.color || '#374151'}">
+              ${Utils.escapeHtml(config.label || matter.type)}
+            </span>
+            ${matter.status ? `
+              <span class="matter-card-status status-${statusColor}">
+                ${Utils.escapeHtml(matter.status)}
+              </span>
+            ` : ''}
+          </div>
+          <div class="matter-card-details">
+            ${keyFields.map(f => `
+              <div class="matter-card-detail">
+                ${Utils.escapeHtml(f.displayLabel || Utils.humanizeFieldName(f.fieldName))}:
+                <strong>${Utils.escapeHtml(f.format === 'date' ? Utils.formatDate(f.value) : f.value)}</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render Matters tab - tupelized field display
+     */
+    renderMattersView(cases) {
+      const activeTab = this.state.activeMainTab;
+      const tabData = this.tabData[activeTab];
+
+      // Filter tuples by selected matter
+      let displayTuples = this.tuples;
+      if (this.state.selectedMatter) {
+        displayTuples = this.tuples.filter(t =>
+          t.matterType === this.state.selectedMatter ||
+          t.matterAgnostic ||
+          !t.matterType
+        );
+      }
+
+      // Show case filter if multiple cases
+      const showCaseFilter = cases.length > 1;
+
+      return `
+        ${showCaseFilter ? this.renderCaseTabs(cases) : ''}
+
+        <div class="structured-view">
+          ${displayTuples.length > 0 ? displayTuples.map(tuple => this.renderTupleCard(tuple)).join('') : `
+            <div class="no-data">No data available for ${this.state.selectedMatter ? 'this matter type' : 'matters'}.</div>
+          `}
+        </div>
+
+        ${tabData && tabData.fields.length > 0 ? this.renderSettingsPanel(activeTab, tabData) : ''}
+      `;
+    },
+
+    /**
+     * Render a semantic tuple card
+     */
+    renderTupleCard(tuple) {
+      const status = TupleProcessor.getTupleStatus(tuple);
+      const statusColor = status ? MatterDetector.getStatusColor(status) : null;
+      const matterConfig = tuple.matterType ? CONFIG?.MATTER_TYPES?.[tuple.matterType] : null;
+
+      return `
+        <div class="tuple-card">
+          <div class="tuple-card-header">
+            <span class="tuple-card-title">
+              ${matterConfig ? `<span style="color: ${matterConfig.color}">${Utils.escapeHtml(matterConfig.shortLabel)}</span> ` : ''}
+              ${Utils.escapeHtml(tuple.label)}
+            </span>
+            ${status ? `
+              <span class="tuple-card-status status-${statusColor}">
+                ${Utils.escapeHtml(status)}
+              </span>
+            ` : ''}
+          </div>
+          <div class="tuple-card-content">
+            ${tuple.fields.filter(f => f.displayAs !== 'status').map(field => {
+              const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
+              let value = field.rendered || field.value;
+
+              // Format by type
+              if (field.format === 'date') value = Utils.formatDate(value);
+              if (field.format === 'datetime') value = Utils.formatDate(value, true);
+              if (field.format === 'phone') value = Utils.formatPhone(value);
+
+              // Add urgency indicator
+              const urgencyClass = field.urgency ? `event-urgency ${field.urgency}` : '';
+
+              return `
+                <div class="tuple-field-row">
+                  <span class="tuple-field-label">
+                    ${field.urgency ? `<span class="${urgencyClass}" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;"></span>` : ''}
+                    ${Utils.escapeHtml(label)}
+                  </span>
+                  <span class="tuple-field-value">${this.renderFieldValue(field)}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render Timeline view
+     */
+    renderTimelineView(activeTab) {
+      // Combine and sort all events by date
+      let events = [...this.events];
+
+      // Filter by matter if selected
+      if (this.state.selectedMatter) {
+        events = events.filter(e => !e.matter || e.matter === this.state.selectedMatter);
+      }
+
+      // Separate future and past
+      const futureEvents = events.filter(e => e.urgency !== 'past');
+      const pastEvents = events.filter(e => e.urgency === 'past').reverse().slice(0, 10);
+
+      return `
+        <div class="overview-section">
+          <div class="overview-section-title">Upcoming</div>
+          <div class="timeline-view">
+            ${futureEvents.length > 0 ? futureEvents.map(event => `
+              <div class="timeline-item future">
+                <div class="timeline-date">${Utils.formatDate(event.date, true)}</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">${Utils.escapeHtml(event.title)}</div>
+                  ${event.matter ? `
+                    <span class="event-matter-tag ${event.matter}" style="background: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}20; color: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}">
+                      ${CONFIG?.MATTER_TYPES?.[event.matter]?.shortLabel || event.matter}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('') : '<div class="no-data">No upcoming events.</div>'}
+          </div>
+        </div>
+
+        ${pastEvents.length > 0 ? `
+          <div class="overview-section" style="margin-top: 24px;">
+            <div class="overview-section-title">Recent History</div>
+            <div class="timeline-view">
+              ${pastEvents.map(event => `
+                <div class="timeline-item">
+                  <div class="timeline-date">${Utils.formatDate(event.date)}</div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">${Utils.escapeHtml(event.title)}</div>
+                    ${event.matter ? `
+                      <span class="event-matter-tag ${event.matter}" style="background: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}20; color: ${CONFIG?.MATTER_TYPES?.[event.matter]?.color || '#6b7280'}">
+                        ${CONFIG?.MATTER_TYPES?.[event.matter]?.shortLabel || event.matter}
+                      </span>
+                    ` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `;
+    },
+
+    /**
+     * Render Notes view - unified feed with matter labels
+     */
+    renderNotesView() {
+      const noteFields = CONFIG?.MAIN_TABS?.notes?.noteFields || ['Case Notes', 'Hearing Notes', 'Notes'];
+      const notes = [];
+
+      // Extract notes from all sources
+      for (const field of this.processedFields) {
+        if (noteFields.includes(field.fieldName) && field.value) {
+          notes.push({
+            content: field.value,
+            fieldName: field.fieldName,
+            caseLabel: field.caseLabel,
+            matter: this.inferMatterFromCase(field.caseLabel),
+            sourceTable: field.sourceTable
+          });
+        }
+      }
+
+      // Filter by matter if selected
+      let displayNotes = notes;
+      if (this.state.selectedMatter) {
+        displayNotes = notes.filter(n => !n.matter || n.matter === this.state.selectedMatter);
+      }
+
+      return `
+        <div class="notes-feed">
+          ${displayNotes.length > 0 ? displayNotes.map(note => {
+            const matterConfig = note.matter ? CONFIG?.MATTER_TYPES?.[note.matter] : null;
+            const isLong = String(note.content).length > 300;
+
+            return `
+              <div class="note-card">
+                <div class="note-card-header">
+                  ${note.matter ? `
+                    <span class="note-matter-tag" style="background: ${matterConfig?.color || '#6b7280'}20; color: ${matterConfig?.color || '#6b7280'}">
+                      ${matterConfig?.shortLabel || note.matter}
+                    </span>
+                  ` : `
+                    <span class="note-matter-tag" style="background: #f3f4f6; color: #6b7280;">
+                      ${Utils.escapeHtml(note.caseLabel || note.fieldName)}
+                    </span>
+                  `}
+                  <span class="note-date">${Utils.escapeHtml(note.fieldName)}</span>
+                </div>
+                <div class="note-content ${isLong ? 'truncated' : ''}" data-full="${Utils.escapeHtml(note.content)}">
+                  ${Utils.escapeHtml(isLong ? note.content.slice(0, 300) + '...' : note.content)}
+                </div>
+                ${isLong ? `
+                  <div class="note-expand-btn" data-action="expand-note">Read more</div>
+                ` : ''}
+              </div>
+            `;
+          }).join('') : '<div class="no-data">No notes found.</div>'}
+        </div>
+      `;
+    },
+
+    /**
+     * Render Applications view - cards
+     */
+    renderApplicationsView() {
+      let apps = this.applications;
+
+      // Filter by matter if selected
+      if (this.state.selectedMatter) {
+        apps = apps.filter(a => !a.matter || a.matter === this.state.selectedMatter);
+      }
+
+      return `
+        <div class="application-cards">
+          ${apps.length > 0 ? apps.map(app => {
+            const matterConfig = app.matter ? CONFIG?.MATTER_TYPES?.[app.matter] : null;
+            const statusColor = MatterDetector.getStatusColor(app.status);
+
+            return `
+              <div class="application-card">
+                <div class="application-card-header">
+                  <div>
+                    <div class="application-type">${Utils.escapeHtml(app.application || app.name || 'Application')}</div>
+                    ${app.name && app.name !== app.application ? `<div class="application-name">${Utils.escapeHtml(app.name)}</div>` : ''}
+                  </div>
+                  ${app.status ? `
+                    <span class="application-status status-${statusColor}">${Utils.escapeHtml(app.status)}</span>
+                  ` : ''}
+                </div>
+                <div class="application-details">
+                  ${app.receiptNumber ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">Receipt #</span>
+                      <span>${Utils.escapeHtml(app.receiptNumber)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.receiptDate ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">Filed</span>
+                      <span>${Utils.formatDate(app.receiptDate)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.matter ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">Matter</span>
+                      <span class="event-matter-tag ${app.matter}" style="background: ${matterConfig?.color || '#6b7280'}20; color: ${matterConfig?.color || '#6b7280'}">
+                        ${matterConfig?.shortLabel || app.matter}
+                      </span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('') : '<div class="no-data">No applications found.</div>'}
+        </div>
+      `;
+    },
+
+    /**
+     * Render structured tab content (original behavior for Client Info tab)
+     */
+    renderStructuredTabContent(cases, displayFields, activeTab, tabData) {
       // Filter fields based on user preferences
       const visibleFieldNames = FieldPreferences.getVisibleFields(activeTab);
-      let displayFields = tabData.fields;
 
       // If user has configured visible fields, filter by them
       if (visibleFieldNames.length > 0) {
-        displayFields = tabData.fields.filter(f =>
+        displayFields = displayFields.filter(f =>
           visibleFieldNames.includes(f.fieldName) &&
           !FieldPreferences.isAlwaysHidden(activeTab, f.fieldName)
         );
       } else {
         // Filter out always-hidden fields
-        displayFields = tabData.fields.filter(f =>
+        displayFields = displayFields.filter(f =>
           !FieldPreferences.isAlwaysHidden(activeTab, f.fieldName)
         );
       }
@@ -2213,6 +3678,10 @@
         displayFields = displayFields.filter(f =>
           !f.caseLabel || f.caseLabel === this.state.selectedCase
         );
+      }
+
+      if (!tabData || displayFields.length === 0) {
+        return `<div class="no-data">No data available for this section.</div>`;
       }
 
       return `
@@ -2448,12 +3917,62 @@
         });
       });
 
+      // Narrative mode toggle (short/long)
+      document.querySelectorAll('.narrative-toggle button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          this.state.narrativeMode = e.target.dataset.narrative;
+          this.render();
+        });
+      });
+
       // Main tabs
       document.querySelectorAll('.main-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
           this.state.activeMainTab = e.target.dataset.mainTab;
           this.state.settingsOpen = false; // Close settings when switching tabs
           this.render();
+        });
+      });
+
+      // Matter pills (filter by matter type)
+      document.querySelectorAll('.matter-pill').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const matter = e.currentTarget.dataset.matter;
+          if (matter === 'clear' || this.state.selectedMatter === matter) {
+            this.state.selectedMatter = null;
+          } else {
+            this.state.selectedMatter = matter;
+          }
+          this.render();
+        });
+      });
+
+      // Matter cards (click to filter to that matter)
+      document.querySelectorAll('.matter-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const matter = e.currentTarget.dataset.matterCard;
+          if (matter) {
+            this.state.selectedMatter = matter;
+            this.state.activeMainTab = 'matters';
+            this.render();
+          }
+        });
+      });
+
+      // Note expansion
+      document.querySelectorAll('[data-action="expand-note"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const noteCard = e.target.closest('.note-card');
+          const noteContent = noteCard.querySelector('.note-content');
+          if (noteContent.classList.contains('truncated')) {
+            noteContent.classList.remove('truncated');
+            noteContent.textContent = noteContent.dataset.full;
+            e.target.textContent = 'Show less';
+          } else {
+            noteContent.classList.add('truncated');
+            noteContent.textContent = noteContent.dataset.full.slice(0, 300) + '...';
+            e.target.textContent = 'Read more';
+          }
         });
       });
 
@@ -2687,10 +4206,15 @@
     }
   }
 
-  // Auto-expand first few groups
+  // Auto-expand first few groups in structured view
   Renderer.state.expandedGroups.add('Court');
   Renderer.state.expandedGroups.add('SIJ');
   Renderer.state.expandedGroups.add('USCIS');
+  Renderer.state.expandedGroups.add('Identity');
+  Renderer.state.expandedGroups.add('Contact');
+
+  // Set default tab to overview
+  Renderer.state.activeMainTab = 'overview';
 
   // Initialize when DOM ready
   if (document.readyState === 'loading') {
