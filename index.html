@@ -1652,18 +1652,35 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           return { clientInfo: { fields: {} }, cases: [] };
         }
 
-        DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: rawData.length });
+        // Filter out empty objects from the array
+        const records = rawData.filter(record =>
+          record && typeof record === 'object' && Object.keys(record).length > 0
+        );
 
-        // Extract client info from first record
-        const firstRecord = rawData[0];
-        const clientFields = this.extractClientFields(firstRecord);
+        if (records.length === 0) {
+          DebugLogger.warn('DataTransformer: No valid records after filtering');
+          return { clientInfo: { fields: {} }, cases: [] };
+        }
 
-        // Transform each record into a case
-        const cases = rawData.map((record, index) => this.transformCase(record, index));
+        DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: records.length });
+
+        // Identify Client Info record vs Case records
+        const { clientInfoRecord, caseRecords } = this.separateRecordTypes(records);
+
+        // Extract client fields from the appropriate source
+        const clientFields = clientInfoRecord
+          ? this.extractClientFieldsFromClientInfo(clientInfoRecord)
+          : this.extractClientFields(caseRecords[0] || {});
+
+        // Transform case records
+        const cases = caseRecords.map((record, index) => this.transformCase(record, index));
 
         const result = {
           clientInfo: {
-            recordId: this.unwrapValue(firstRecord['Client_ID_Airtable']) || firstRecord.id,
+            recordId: clientInfoRecord?.id ||
+                      clientInfoRecord?.recordId ||
+                      this.unwrapValue(caseRecords[0]?.['Client_ID_Airtable']) ||
+                      caseRecords[0]?.id,
             fields: clientFields
           },
           cases
@@ -1671,10 +1688,97 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
         DebugLogger.success('DataTransformer: Transformation complete', {
           clientFieldCount: Object.keys(clientFields).length,
-          caseCount: cases.length
+          caseCount: cases.length,
+          hasClientInfoRecord: !!clientInfoRecord
         });
 
         return result;
+      },
+
+      /**
+       * Separate Client Info records from Case Master View records
+       * Uses _sourceTable field when available, falls back to field-based heuristics
+       */
+      separateRecordTypes(records) {
+        let clientInfoRecord = null;
+        const caseRecords = [];
+
+        for (const record of records) {
+          const sourceTable = record._sourceTable;
+
+          // Primary detection: use _sourceTable field if available
+          if (sourceTable) {
+            const tableLower = sourceTable.toLowerCase();
+            if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
+              clientInfoRecord = record;
+              DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
+              continue;
+            }
+          } else {
+            // Fallback: field-based heuristics for older response formats
+            const clientInfoIndicators = [
+              'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
+              'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
+              'Box_Folder_ID', 'Client Details Page', 'airtable_client_info_id'
+            ];
+            const caseIndicators = [
+              'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
+              'Case Master View Record ID', 'Appeal Engagement Deadline'
+            ];
+
+            const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
+            const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
+
+            if (hasClientInfoFields && !hasCaseFields) {
+              clientInfoRecord = record;
+              DebugLogger.info('DataTransformer: Client Info record via field heuristics');
+              continue;
+            }
+          }
+
+          // Default: treat as Case Master View record
+          caseRecords.push(record);
+        }
+
+        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
+        return { clientInfoRecord, caseRecords };
+      },
+
+      /**
+       * Extract client fields from a dedicated Client Info record
+       */
+      extractClientFieldsFromClientInfo(record) {
+        const fieldMappings = {
+          'Full Client Name': 'Client Name',
+          'Client Name': 'Client Name',
+          'First Name': 'First Name',
+          'Family Name': 'Family Name',
+          'Middle Name': 'Middle Name',
+          'A#': 'A#',
+          'DOB': 'DOB',
+          'Age': 'Age',
+          'Country': 'Country',
+          'Phone Number': 'Phone Number',
+          'Phone Reformat 3 (xxx) xxx-xxxx': 'Phone Number',
+          'Client Email': 'Client Email',
+          'Address Formula': 'Address',
+          'Address': 'Address',
+          'Gender': 'Gender',
+          'Pronouns': 'Pronouns',
+          'Detained': 'Detained',
+          'Detainment Status / Location': 'Detention Location'
+        };
+
+        const fields = {};
+        for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
+          if (record[sourceField] !== undefined && !fields[targetField]) {
+            const value = this.normalizeValue(record[sourceField], sourceField);
+            if (value !== null) {
+              fields[targetField] = value;
+            }
+          }
+        }
+        return fields;
       },
 
       extractClientFields(record) {
@@ -1700,15 +1804,16 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         const caseIdentifier = this.deriveCaseIdentifier(record, index);
         const fields = {};
 
-        // Copy all fields except client-level ones
-        const clientFieldNames = new Set([
+        // Client fields to exclude from case
+        const clientOnlyFields = new Set([
           'Client Name', 'First Name', 'Family Name', 'Middle Name',
           'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
-          'Address', 'Gender', 'Pronouns', 'Client_ID_Airtable', 'id'
+          'Address', 'Client_ID_Airtable', 'Edit Client Info', 'Gender', 'Pronouns',
+          'id', '_sourceTable'
         ]);
 
         for (const [key, value] of Object.entries(record)) {
-          if (!clientFieldNames.has(key)) {
+          if (!clientOnlyFields.has(key)) {
             const normalizedValue = this.normalizeValue(value, key);
             if (normalizedValue !== null) {
               fields[key] = normalizedValue;
