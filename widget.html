@@ -1223,6 +1223,743 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* =========================================================================
+       FIELD CANVAS - Visual Field Configuration System
+       ========================================================================= */
+
+    /* Modal Overlay */
+    .field-canvas-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .field-canvas-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .field-canvas-modal {
+      background: var(--bg-card);
+      border-radius: 8px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .field-canvas-overlay.visible .field-canvas-modal {
+      transform: scale(1);
+    }
+
+    /* Modal Header */
+    .field-canvas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .field-canvas-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .field-canvas-title h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .field-canvas-title .tab-context {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 3px 10px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+    }
+
+    .field-canvas-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .field-canvas-close:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    /* View Tabs */
+    .field-canvas-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .field-canvas-tab {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .field-canvas-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .field-canvas-tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Modal Content */
+    .field-canvas-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field-canvas-view {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .field-canvas-view.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Search & Filter Bar */
+    .field-canvas-toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .field-canvas-search {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .field-canvas-search input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      background: var(--bg-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .field-canvas-search input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      background: var(--bg-card);
+    }
+
+    .field-canvas-search::before {
+      content: '🔍';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      opacity: 0.5;
+    }
+
+    .field-canvas-filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .field-canvas-filter select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+    }
+
+    .field-canvas-filter select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    /* Data Atlas View - All Fields Overview */
+    .data-atlas-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .data-atlas-table-group {
+      margin-bottom: 24px;
+    }
+
+    .data-atlas-table-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border-radius: 6px 6px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+
+    .data-atlas-table-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .data-atlas-table-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+    }
+
+    .data-atlas-fields {
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
+    }
+
+    /* Field Card in Atlas */
+    .field-atlas-card {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      align-items: start;
+      transition: background 0.15s ease;
+    }
+
+    .field-atlas-card:last-child {
+      border-bottom: none;
+    }
+
+    .field-atlas-card:hover {
+      background: var(--bg-secondary);
+    }
+
+    .field-atlas-card.hidden-field {
+      opacity: 0.5;
+    }
+
+    .field-atlas-checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 2px;
+    }
+
+    .field-atlas-checkbox input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .field-atlas-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .field-atlas-name {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field-atlas-name .tier-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .tier-badge.tier-1 {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .tier-badge.tier-2 {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .tier-badge.tier-3 {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .field-atlas-address {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-violet);
+      background: var(--bg-secondary);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      max-width: fit-content;
+    }
+
+    .field-atlas-semantic {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-atlas-semantic .semantic-group {
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .field-atlas-placements {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .field-atlas-placements .placement-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+    .placement-badge.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    /* Screen Builder View */
+    .screen-builder-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .screen-builder-zones {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .screen-builder-palette {
+      width: 280px;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      transition: all 0.15s ease;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--accent-blue);
+      background: #eff6ff;
+    }
+
+    .drop-zone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px dashed var(--border);
+      border-radius: 6px 6px 0 0;
+    }
+
+    .drop-zone-title {
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drop-zone-title .zone-icon {
+      font-size: 14px;
+    }
+
+    .drop-zone-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+    }
+
+    .drop-zone-content {
+      padding: 12px;
+      min-height: 60px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: flex-start;
+    }
+
+    .drop-zone-empty {
+      width: 100%;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 16px;
+    }
+
+    /* Draggable Field Chip */
+    .field-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: grab;
+      transition: all 0.15s ease;
+      max-width: 200px;
+    }
+
+    .field-chip:hover {
+      border-color: var(--accent-blue);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .field-chip.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .field-chip .chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .field-chip .chip-remove {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      border-radius: 50%;
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .field-chip .chip-remove:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .field-chip .chip-address {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Field Palette */
+    .palette-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .palette-title {
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .palette-search input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+    }
+
+    .palette-fields {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .palette-group {
+      margin-bottom: 12px;
+    }
+
+    .palette-group-header {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding: 6px 8px;
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+    }
+
+    .palette-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: grab;
+      transition: all 0.15s ease;
+    }
+
+    .palette-field:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .palette-field.in-use {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .palette-field-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .palette-field-name {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .palette-field-address {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Field Matrix View */
+    .field-matrix-container {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .field-matrix {
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .field-matrix th,
+    .field-matrix td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .field-matrix th {
+      background: var(--bg-secondary);
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .field-matrix th.field-col {
+      min-width: 250px;
+      position: sticky;
+      left: 0;
+      z-index: 20;
+    }
+
+    .field-matrix td.field-col {
+      position: sticky;
+      left: 0;
+      background: var(--bg-card);
+      z-index: 5;
+    }
+
+    .field-matrix td.screen-col {
+      text-align: center;
+    }
+
+    .field-matrix .matrix-check {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .field-matrix .field-address {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-violet);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* Modal Footer */
+    .field-canvas-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .footer-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .footer-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .footer-btn.secondary {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+    }
+
+    .footer-btn.secondary:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .footer-btn.primary {
+      border: none;
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .footer-btn.primary:hover {
+      background: #0284c7;
+    }
+
+    /* Configure Button in Settings Panel */
+    .configure-layout-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 12px;
+    }
+
+    .configure-layout-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
+    }
+
+    .configure-layout-btn .btn-icon {
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -2174,6 +2911,1170 @@
   };
 
   // ==========================================================================
+  // FIELD REGISTRY
+  // Unified registry of all fields with their tuple addresses
+  // ==========================================================================
+
+  const FieldRegistry = {
+    registry: new Map(), // fieldKey -> field metadata
+    tableFields: new Map(), // tableName -> Set of fieldNames
+    initialized: false,
+
+    /**
+     * Initialize registry from available data sources
+     */
+    init(data, processedFields) {
+      if (this.initialized) return;
+
+      // Build registry from processed fields
+      if (processedFields && Array.isArray(processedFields)) {
+        for (const field of processedFields) {
+          this.registerField(field);
+        }
+      }
+
+      // Also incorporate schema information
+      if (SchemaProcessor.hasSchema()) {
+        for (const [fieldName, meta] of SchemaProcessor.fieldMap) {
+          if (!this.registry.has(fieldName)) {
+            this.registerFromSchema(fieldName, meta);
+          }
+        }
+      }
+
+      this.initialized = true;
+      console.log(`[FieldRegistry] Initialized with ${this.registry.size} fields`);
+    },
+
+    /**
+     * Register a field from processed field data
+     */
+    registerField(field) {
+      const key = field.fieldName;
+      const sourceTable = field.sourceTable || this.inferTable(field);
+
+      // Build tuple address
+      const tupleAddress = `${sourceTable}.${field.fieldName}`;
+
+      // Get semantic info
+      const semanticRole = CONFIG?.SEMANTIC_ROLES?.[field.fieldName];
+      const semanticGroup = field.group || semanticRole?.group || 'Uncategorized';
+      const semanticAddress = semanticRole
+        ? `${semanticGroup.toLowerCase()}.${semanticRole.role}`
+        : null;
+
+      const entry = {
+        fieldName: field.fieldName,
+        displayName: field.displayLabel || Utils.humanizeFieldName(field.fieldName),
+        tupleAddress,
+        sourceTable,
+        semanticAddress,
+        semanticGroup,
+        tier: field.tier || this.inferTier(field.fieldName),
+        dataType: field.dataType || field.schemaType || 'text',
+        schemaType: field.schemaType,
+        isStructural: SchemaProcessor.shouldHideField?.(field.fieldName) || false,
+        placements: new Map(), // tabId -> Set of zoneIds
+        priority: semanticRole?.priority || 99,
+        template: semanticRole?.template || null,
+        currentValue: field.value
+      };
+
+      this.registry.set(key, entry);
+
+      // Track by table
+      if (!this.tableFields.has(sourceTable)) {
+        this.tableFields.set(sourceTable, new Set());
+      }
+      this.tableFields.get(sourceTable).add(key);
+    },
+
+    /**
+     * Register field from schema only (no value)
+     */
+    registerFromSchema(fieldName, meta) {
+      const sourceTable = meta.tableName || 'Unknown';
+      const tupleAddress = `${sourceTable}.${fieldName}`;
+
+      const semanticRole = CONFIG?.SEMANTIC_ROLES?.[fieldName];
+      const semanticGroup = SchemaProcessor.inferGroup?.(fieldName, meta.type) ||
+                           semanticRole?.group || 'Uncategorized';
+
+      const entry = {
+        fieldName,
+        displayName: SchemaProcessor.getDisplayLabel?.(fieldName) || Utils.humanizeFieldName(fieldName),
+        tupleAddress,
+        sourceTable,
+        semanticAddress: semanticRole ? `${semanticGroup.toLowerCase()}.${semanticRole.role}` : null,
+        semanticGroup,
+        tier: this.inferTier(fieldName),
+        dataType: meta.type || 'text',
+        schemaType: meta.type,
+        isStructural: SchemaProcessor.shouldHideField?.(fieldName) || false,
+        placements: new Map(),
+        priority: semanticRole?.priority || 99,
+        template: semanticRole?.template || null,
+        currentValue: null
+      };
+
+      this.registry.set(fieldName, entry);
+
+      if (!this.tableFields.has(sourceTable)) {
+        this.tableFields.set(sourceTable, new Set());
+      }
+      this.tableFields.get(sourceTable).add(fieldName);
+    },
+
+    /**
+     * Infer which table a field belongs to
+     */
+    inferTable(field) {
+      if (field.sourceTable) return field.sourceTable;
+      if (field.caseLabel) return 'Case Master View';
+
+      // Check schema
+      const meta = SchemaProcessor.getFieldMeta?.(field.fieldName);
+      if (meta?.tableName) return meta.tableName;
+
+      // Infer from field patterns
+      const name = field.fieldName.toLowerCase();
+      if (/client.*name|a#|dob|country|phone|email|address|gender|pronoun/i.test(name)) {
+        return 'Client Info';
+      }
+      if (/hearing|court|judge|status|uscis|ead|asylum|sij|bond|appeal/i.test(name)) {
+        return 'Case Master View';
+      }
+      if (/event|calendar/i.test(name)) {
+        return 'Events';
+      }
+      if (/application|receipt|filing/i.test(name)) {
+        return 'Applications';
+      }
+
+      return 'Unknown';
+    },
+
+    /**
+     * Infer tier from field name
+     */
+    inferTier(fieldName) {
+      // Tier 1: Has semantic role
+      if (CONFIG?.SEMANTIC_ROLES?.[fieldName]) return 1;
+
+      // Tier 2: Matches group pattern
+      const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
+      for (const p of patterns) {
+        if (p.pattern.test(fieldName)) return 2;
+      }
+
+      // Tier 3: Everything else
+      return 3;
+    },
+
+    /**
+     * Get all fields grouped by source table
+     */
+    getFieldsByTable() {
+      const result = {};
+      for (const [tableName, fieldNames] of this.tableFields) {
+        result[tableName] = Array.from(fieldNames)
+          .map(name => this.registry.get(name))
+          .filter(Boolean)
+          .sort((a, b) => a.priority - b.priority);
+      }
+      return result;
+    },
+
+    /**
+     * Get all fields as flat array
+     */
+    getAllFields() {
+      return Array.from(this.registry.values());
+    },
+
+    /**
+     * Get field by name
+     */
+    getField(fieldName) {
+      return this.registry.get(fieldName);
+    },
+
+    /**
+     * Set field placement for a tab/zone
+     */
+    setPlacement(fieldName, tabId, zoneId) {
+      const field = this.registry.get(fieldName);
+      if (!field) return;
+
+      if (!field.placements.has(tabId)) {
+        field.placements.set(tabId, new Set());
+      }
+      field.placements.get(tabId).add(zoneId);
+    },
+
+    /**
+     * Remove field from a zone
+     */
+    removePlacement(fieldName, tabId, zoneId) {
+      const field = this.registry.get(fieldName);
+      if (!field || !field.placements.has(tabId)) return;
+
+      field.placements.get(tabId).delete(zoneId);
+    },
+
+    /**
+     * Get all placements for a field
+     */
+    getPlacements(fieldName) {
+      const field = this.registry.get(fieldName);
+      if (!field) return {};
+
+      const result = {};
+      for (const [tabId, zones] of field.placements) {
+        result[tabId] = Array.from(zones);
+      }
+      return result;
+    },
+
+    /**
+     * Search fields by name or address
+     */
+    search(query) {
+      const q = query.toLowerCase();
+      return Array.from(this.registry.values()).filter(field =>
+        field.fieldName.toLowerCase().includes(q) ||
+        field.tupleAddress.toLowerCase().includes(q) ||
+        field.displayName.toLowerCase().includes(q) ||
+        (field.semanticAddress && field.semanticAddress.toLowerCase().includes(q))
+      );
+    },
+
+    /**
+     * Filter fields by criteria
+     */
+    filter({ table, tier, group, includeStructural = false }) {
+      return Array.from(this.registry.values()).filter(field => {
+        if (!includeStructural && field.isStructural) return false;
+        if (table && field.sourceTable !== table) return false;
+        if (tier && field.tier !== tier) return false;
+        if (group && field.semanticGroup !== group) return false;
+        return true;
+      });
+    }
+  };
+
+  // ==========================================================================
+  // SCREEN ZONES
+  // Defines available zones per screen/tab type
+  // ==========================================================================
+
+  const ScreenZones = {
+    // Zone definitions per tab type
+    definitions: {
+      overview: {
+        zones: [
+          { id: 'narrative', label: 'Narrative Summary', icon: '📝', description: 'Fields included in the narrative text' },
+          { id: 'header', label: 'Header Info', icon: '👤', description: 'Key identifiers shown at top' },
+          { id: 'status-cards', label: 'Status Cards', icon: '📊', description: 'Matter status badges' },
+          { id: 'events-panel', label: 'Upcoming Events', icon: '📅', description: 'Scheduled dates and deadlines' }
+        ],
+        layout: 'dashboard'
+      },
+      matters: {
+        zones: [
+          { id: 'card-header', label: 'Card Header', icon: '🏷️', description: 'Top of each matter card' },
+          { id: 'card-status', label: 'Status Badge', icon: '🔵', description: 'Status indicator on card' },
+          { id: 'card-body', label: 'Card Details', icon: '📋', description: 'Main content area' },
+          { id: 'card-dates', label: 'Key Dates', icon: '📆', description: 'Important dates section' }
+        ],
+        layout: 'card-grid'
+      },
+      events: {
+        zones: [
+          { id: 'event-header', label: 'Event Title', icon: '📌', description: 'Event name and type' },
+          { id: 'event-datetime', label: 'Date & Time', icon: '🕐', description: 'When the event occurs' },
+          { id: 'event-location', label: 'Location', icon: '📍', description: 'Where the event takes place' },
+          { id: 'event-details', label: 'Details', icon: '📝', description: 'Additional event info' }
+        ],
+        layout: 'timeline'
+      },
+      applications: {
+        zones: [
+          { id: 'app-type', label: 'Application Type', icon: '📄', description: 'Form number and name' },
+          { id: 'app-status', label: 'Status', icon: '🔵', description: 'Current status' },
+          { id: 'app-receipt', label: 'Receipt Info', icon: '🔢', description: 'Receipt number and date' },
+          { id: 'app-details', label: 'Details', icon: '📋', description: 'Additional application info' }
+        ],
+        layout: 'cards'
+      },
+      notes: {
+        zones: [
+          { id: 'note-content', label: 'Note Content', icon: '📝', description: 'The note text' },
+          { id: 'note-meta', label: 'Metadata', icon: '🏷️', description: 'Date, source, matter' }
+        ],
+        layout: 'feed'
+      },
+      timeline: {
+        zones: [
+          { id: 'timeline-date', label: 'Date', icon: '📅', description: 'When it happened' },
+          { id: 'timeline-event', label: 'Event', icon: '📌', description: 'What happened' },
+          { id: 'timeline-details', label: 'Details', icon: '📋', description: 'Additional context' }
+        ],
+        layout: 'chronological'
+      },
+      client: {
+        zones: [
+          { id: 'identity-hero', label: 'Hero Section', icon: '👤', description: 'Name and key identifiers' },
+          { id: 'identity-details', label: 'Identity Details', icon: '🪪', description: 'DOB, country, etc.' },
+          { id: 'contact-info', label: 'Contact Info', icon: '📞', description: 'Phone, email, address' },
+          { id: 'entry-info', label: 'Entry Info', icon: '🛬', description: 'Entry date, status, place' }
+        ],
+        layout: 'structured'
+      }
+    },
+
+    /**
+     * Get zones for a tab
+     */
+    getZonesForTab(tabId) {
+      return this.definitions[tabId]?.zones || [];
+    },
+
+    /**
+     * Get layout type for a tab
+     */
+    getLayoutForTab(tabId) {
+      return this.definitions[tabId]?.layout || 'structured';
+    },
+
+    /**
+     * Get all zone IDs for a tab
+     */
+    getZoneIds(tabId) {
+      return this.getZonesForTab(tabId).map(z => z.id);
+    }
+  };
+
+  // ==========================================================================
+  // LAYOUT PREFERENCES
+  // Stores user's custom field placements per tab/zone
+  // ==========================================================================
+
+  const LayoutPreferences = {
+    storageKey: 'clientGlance_layoutPrefs',
+    preferences: null,
+
+    load() {
+      try {
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) {
+          this.preferences = JSON.parse(stored);
+          console.log('[LayoutPreferences] Loaded from localStorage');
+        } else {
+          this.preferences = this.getDefaults();
+        }
+      } catch (e) {
+        console.warn('[LayoutPreferences] Error loading:', e.message);
+        this.preferences = this.getDefaults();
+      }
+      return this.preferences;
+    },
+
+    getDefaults() {
+      return {
+        tabs: {},
+        version: 1
+      };
+    },
+
+    save() {
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.preferences));
+        console.log('[LayoutPreferences] Saved');
+      } catch (e) {
+        console.warn('[LayoutPreferences] Error saving:', e.message);
+      }
+    },
+
+    /**
+     * Get zone contents for a tab
+     */
+    getZoneContents(tabId, zoneId) {
+      if (!this.preferences) this.load();
+      return this.preferences.tabs?.[tabId]?.zones?.[zoneId] || [];
+    },
+
+    /**
+     * Set zone contents for a tab
+     */
+    setZoneContents(tabId, zoneId, fieldNames) {
+      if (!this.preferences) this.load();
+
+      if (!this.preferences.tabs[tabId]) {
+        this.preferences.tabs[tabId] = { zones: {} };
+      }
+
+      this.preferences.tabs[tabId].zones[zoneId] = [...fieldNames];
+      this.save();
+    },
+
+    /**
+     * Add field to a zone
+     */
+    addToZone(tabId, zoneId, fieldName) {
+      const current = this.getZoneContents(tabId, zoneId);
+      if (!current.includes(fieldName)) {
+        current.push(fieldName);
+        this.setZoneContents(tabId, zoneId, current);
+      }
+    },
+
+    /**
+     * Remove field from a zone
+     */
+    removeFromZone(tabId, zoneId, fieldName) {
+      const current = this.getZoneContents(tabId, zoneId);
+      const idx = current.indexOf(fieldName);
+      if (idx > -1) {
+        current.splice(idx, 1);
+        this.setZoneContents(tabId, zoneId, current);
+      }
+    },
+
+    /**
+     * Move field from one zone to another
+     */
+    moveField(fieldName, fromTabId, fromZoneId, toTabId, toZoneId) {
+      this.removeFromZone(fromTabId, fromZoneId, fieldName);
+      this.addToZone(toTabId, toZoneId, fieldName);
+    },
+
+    /**
+     * Get all field placements for a tab
+     */
+    getTabLayout(tabId) {
+      if (!this.preferences) this.load();
+      return this.preferences.tabs?.[tabId]?.zones || {};
+    },
+
+    /**
+     * Check if field is placed in any zone of a tab
+     */
+    isFieldPlaced(tabId, fieldName) {
+      const layout = this.getTabLayout(tabId);
+      for (const zoneFields of Object.values(layout)) {
+        if (zoneFields.includes(fieldName)) return true;
+      }
+      return false;
+    },
+
+    /**
+     * Reset tab to defaults
+     */
+    resetTab(tabId) {
+      if (!this.preferences) this.load();
+      delete this.preferences.tabs[tabId];
+      this.save();
+    }
+  };
+
+  // ==========================================================================
+  // FIELD CANVAS
+  // Visual field configuration UI
+  // ==========================================================================
+
+  const FieldCanvas = {
+    isOpen: false,
+    currentTab: null,
+    activeView: 'atlas', // 'atlas', 'builder', 'matrix'
+    searchQuery: '',
+    filterTable: 'all',
+    filterTier: 'all',
+    pendingChanges: new Map(), // Track unsaved changes
+    draggedField: null,
+
+    /**
+     * Open the Field Canvas modal
+     */
+    open(tabId) {
+      this.currentTab = tabId;
+      this.isOpen = true;
+      this.pendingChanges.clear();
+
+      // Initialize registry if needed
+      if (!FieldRegistry.initialized && window.ClientGlanceWidget?.processedFields) {
+        FieldRegistry.init(null, window.ClientGlanceWidget.processedFields);
+      }
+
+      this.render();
+
+      // Animate in
+      requestAnimationFrame(() => {
+        const overlay = document.getElementById('field-canvas-overlay');
+        if (overlay) overlay.classList.add('visible');
+      });
+
+      console.log('[FieldCanvas] Opened for tab:', tabId);
+    },
+
+    /**
+     * Close the modal
+     */
+    close() {
+      const overlay = document.getElementById('field-canvas-overlay');
+      if (overlay) {
+        overlay.classList.remove('visible');
+        setTimeout(() => {
+          this.isOpen = false;
+          this.render();
+        }, 200);
+      }
+    },
+
+    /**
+     * Save changes and close
+     */
+    save() {
+      // Apply pending changes to LayoutPreferences
+      for (const [key, value] of this.pendingChanges) {
+        const [tabId, zoneId] = key.split('::');
+        LayoutPreferences.setZoneContents(tabId, zoneId, value);
+      }
+
+      this.pendingChanges.clear();
+      this.close();
+
+      // Trigger re-render of main widget
+      if (window.ClientGlanceWidget) {
+        window.ClientGlanceWidget.render();
+      }
+    },
+
+    /**
+     * Render the Field Canvas modal
+     */
+    render() {
+      // Remove existing overlay if any
+      const existing = document.getElementById('field-canvas-overlay');
+      if (existing) existing.remove();
+
+      if (!this.isOpen) return;
+
+      const tabConfig = CONFIG?.MAIN_TABS?.[this.currentTab];
+      const tabLabel = tabConfig?.label || this.currentTab;
+
+      const html = `
+        <div class="field-canvas-overlay" id="field-canvas-overlay">
+          <div class="field-canvas-modal">
+            <div class="field-canvas-header">
+              <div class="field-canvas-title">
+                <h2>Configure Fields</h2>
+                <span class="tab-context">${Utils.escapeHtml(tabLabel)} Tab</span>
+              </div>
+              <button class="field-canvas-close" data-action="close-canvas">&times;</button>
+            </div>
+
+            <div class="field-canvas-tabs">
+              <button class="field-canvas-tab ${this.activeView === 'atlas' ? 'active' : ''}" data-view="atlas">
+                Data Atlas
+              </button>
+              <button class="field-canvas-tab ${this.activeView === 'builder' ? 'active' : ''}" data-view="builder">
+                Screen Builder
+              </button>
+              <button class="field-canvas-tab ${this.activeView === 'matrix' ? 'active' : ''}" data-view="matrix">
+                Field Matrix
+              </button>
+            </div>
+
+            <div class="field-canvas-content">
+              ${this.renderActiveView()}
+            </div>
+
+            <div class="field-canvas-footer">
+              <div class="footer-info">
+                ${this.pendingChanges.size > 0 ? `${this.pendingChanges.size} pending changes` : 'No changes'}
+              </div>
+              <div class="footer-actions">
+                <button class="footer-btn secondary" data-action="reset-tab">Reset to Defaults</button>
+                <button class="footer-btn secondary" data-action="close-canvas">Cancel</button>
+                <button class="footer-btn primary" data-action="save-canvas">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', html);
+      this.attachEventListeners();
+    },
+
+    /**
+     * Render the active view content
+     */
+    renderActiveView() {
+      switch (this.activeView) {
+        case 'atlas':
+          return this.renderDataAtlas();
+        case 'builder':
+          return this.renderScreenBuilder();
+        case 'matrix':
+          return this.renderFieldMatrix();
+        default:
+          return this.renderDataAtlas();
+      }
+    },
+
+    /**
+     * Render Data Atlas view - all fields overview
+     */
+    renderDataAtlas() {
+      const fieldsByTable = FieldRegistry.getFieldsByTable();
+      const tables = Object.keys(fieldsByTable).sort();
+      const visibleFields = FieldPreferences.getVisibleFields(this.currentTab);
+
+      return `
+        <div class="field-canvas-view active" data-view="atlas">
+          <div class="field-canvas-toolbar">
+            <div class="field-canvas-search">
+              <input type="text"
+                     placeholder="Search fields by name or address..."
+                     value="${Utils.escapeHtml(this.searchQuery)}"
+                     data-action="search-fields">
+            </div>
+            <div class="field-canvas-filter">
+              <select data-action="filter-table">
+                <option value="all" ${this.filterTable === 'all' ? 'selected' : ''}>All Tables</option>
+                ${tables.map(t => `
+                  <option value="${Utils.escapeHtml(t)}" ${this.filterTable === t ? 'selected' : ''}>
+                    ${Utils.escapeHtml(t)}
+                  </option>
+                `).join('')}
+              </select>
+              <select data-action="filter-tier">
+                <option value="all" ${this.filterTier === 'all' ? 'selected' : ''}>All Tiers</option>
+                <option value="1" ${this.filterTier === '1' ? 'selected' : ''}>Tier 1 (Semantic)</option>
+                <option value="2" ${this.filterTier === '2' ? 'selected' : ''}>Tier 2 (Pattern)</option>
+                <option value="3" ${this.filterTier === '3' ? 'selected' : ''}>Tier 3 (Raw)</option>
+              </select>
+            </div>
+          </div>
+          <div class="data-atlas-container">
+            ${tables.map(tableName => this.renderTableGroup(tableName, fieldsByTable[tableName], visibleFields)).join('')}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render a table group in Data Atlas
+     */
+    renderTableGroup(tableName, fields, visibleFields) {
+      // Apply filters
+      let filteredFields = fields;
+
+      if (this.filterTable !== 'all' && this.filterTable !== tableName) {
+        return '';
+      }
+
+      if (this.filterTier !== 'all') {
+        filteredFields = filteredFields.filter(f => f.tier === parseInt(this.filterTier));
+      }
+
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        filteredFields = filteredFields.filter(f =>
+          f.fieldName.toLowerCase().includes(q) ||
+          f.tupleAddress.toLowerCase().includes(q) ||
+          f.displayName.toLowerCase().includes(q)
+        );
+      }
+
+      // Filter out structural fields unless searching
+      if (!this.searchQuery) {
+        filteredFields = filteredFields.filter(f => !f.isStructural);
+      }
+
+      if (filteredFields.length === 0) return '';
+
+      return `
+        <div class="data-atlas-table-group">
+          <div class="data-atlas-table-header">
+            <span class="data-atlas-table-name">${Utils.escapeHtml(tableName)}</span>
+            <span class="data-atlas-table-count">${filteredFields.length} fields</span>
+          </div>
+          <div class="data-atlas-fields">
+            ${filteredFields.map(field => this.renderAtlasField(field, visibleFields)).join('')}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render a single field card in Data Atlas
+     */
+    renderAtlasField(field, visibleFields) {
+      const isVisible = visibleFields.length === 0 || visibleFields.includes(field.fieldName);
+      const isHidden = FieldPreferences.isAlwaysHidden(this.currentTab, field.fieldName);
+
+      // Get current tab placements
+      const allTabs = Object.keys(CONFIG?.MAIN_TABS || {});
+
+      return `
+        <div class="field-atlas-card ${isHidden ? 'hidden-field' : ''}" data-field="${Utils.escapeHtml(field.fieldName)}">
+          <div class="field-atlas-checkbox">
+            <input type="checkbox"
+                   ${isVisible && !isHidden ? 'checked' : ''}
+                   ${isHidden ? 'disabled' : ''}
+                   data-action="toggle-field-visibility"
+                   data-field="${Utils.escapeHtml(field.fieldName)}"
+                   title="${isHidden ? 'This field is always hidden' : 'Toggle visibility'}">
+          </div>
+          <div class="field-atlas-info">
+            <div class="field-atlas-name">
+              ${Utils.escapeHtml(field.displayName)}
+              <span class="tier-badge tier-${field.tier}">Tier ${field.tier}</span>
+            </div>
+            <div class="field-atlas-address">${Utils.escapeHtml(field.tupleAddress)}</div>
+            <div class="field-atlas-semantic">
+              ${field.semanticAddress
+                ? `<span class="semantic-group">${Utils.escapeHtml(field.semanticGroup)}</span> ${Utils.escapeHtml(field.semanticAddress)}`
+                : `<span class="semantic-group">${Utils.escapeHtml(field.semanticGroup)}</span>`
+              }
+              ${field.dataType ? `<span style="color: var(--text-muted)">${Utils.escapeHtml(field.dataType)}</span>` : ''}
+            </div>
+          </div>
+          <div class="field-atlas-placements">
+            ${allTabs.slice(0, 4).map(tabId => {
+              const tabConfig = CONFIG?.MAIN_TABS?.[tabId];
+              const isOnTab = FieldPreferences.getVisibleFields(tabId).includes(field.fieldName) ||
+                              (FieldPreferences.getVisibleFields(tabId).length === 0 &&
+                               !FieldPreferences.isAlwaysHidden(tabId, field.fieldName));
+              return `<span class="placement-badge ${isOnTab && tabId === this.currentTab ? 'active' : ''}"
+                            title="${tabConfig?.label || tabId}">
+                ${(tabConfig?.label || tabId).slice(0, 3)}
+              </span>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render Screen Builder view - drag-drop zones
+     */
+    renderScreenBuilder() {
+      const zones = ScreenZones.getZonesForTab(this.currentTab);
+      const allFields = FieldRegistry.getAllFields().filter(f => !f.isStructural);
+      const fieldsByGroup = this.groupFieldsBySemanticGroup(allFields);
+
+      return `
+        <div class="field-canvas-view active" data-view="builder">
+          <div class="screen-builder-container">
+            <div class="screen-builder-zones">
+              <h3 style="margin-bottom: 16px; font-size: 14px; color: var(--text-secondary)">
+                Drag fields to customize ${CONFIG?.MAIN_TABS?.[this.currentTab]?.label || this.currentTab} layout
+              </h3>
+              ${zones.map(zone => this.renderDropZone(zone)).join('')}
+            </div>
+            <div class="screen-builder-palette">
+              <div class="palette-header">
+                <div class="palette-title">Available Fields</div>
+                <div class="palette-search">
+                  <input type="text" placeholder="Search fields..." data-action="palette-search">
+                </div>
+              </div>
+              <div class="palette-fields">
+                ${Object.entries(fieldsByGroup).map(([group, fields]) => `
+                  <div class="palette-group">
+                    <div class="palette-group-header">${Utils.escapeHtml(group)}</div>
+                    ${fields.map(field => this.renderPaletteField(field)).join('')}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render a drop zone
+     */
+    renderDropZone(zone) {
+      const contents = this.getZoneContents(zone.id);
+
+      return `
+        <div class="drop-zone" data-zone="${zone.id}">
+          <div class="drop-zone-header">
+            <span class="drop-zone-title">
+              <span class="zone-icon">${zone.icon}</span>
+              ${Utils.escapeHtml(zone.label)}
+            </span>
+            <span class="drop-zone-count">${contents.length} fields</span>
+          </div>
+          <div class="drop-zone-content" data-zone="${zone.id}">
+            ${contents.length === 0
+              ? `<div class="drop-zone-empty">Drag fields here</div>`
+              : contents.map(fieldName => {
+                  const field = FieldRegistry.getField(fieldName);
+                  if (!field) return '';
+                  return `
+                    <div class="field-chip" draggable="true" data-field="${Utils.escapeHtml(fieldName)}">
+                      <span class="chip-name" title="${Utils.escapeHtml(field.tupleAddress)}">${Utils.escapeHtml(field.displayName)}</span>
+                      <span class="chip-remove" data-action="remove-from-zone" data-field="${Utils.escapeHtml(fieldName)}" data-zone="${zone.id}">&times;</span>
+                    </div>
+                  `;
+                }).join('')
+            }
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render a palette field
+     */
+    renderPaletteField(field) {
+      const isInUse = this.isFieldInAnyZone(field.fieldName);
+
+      return `
+        <div class="palette-field ${isInUse ? 'in-use' : ''}"
+             draggable="${!isInUse}"
+             data-field="${Utils.escapeHtml(field.fieldName)}">
+          <div class="palette-field-info">
+            <div class="palette-field-name">${Utils.escapeHtml(field.displayName)}</div>
+            <div class="palette-field-address">${Utils.escapeHtml(field.tupleAddress)}</div>
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render Field Matrix view - spreadsheet-like
+     */
+    renderFieldMatrix() {
+      const allFields = FieldRegistry.getAllFields().filter(f => !f.isStructural);
+      const tabs = Object.keys(CONFIG?.MAIN_TABS || {});
+
+      return `
+        <div class="field-canvas-view active" data-view="matrix">
+          <div class="field-canvas-toolbar">
+            <div class="field-canvas-search">
+              <input type="text" placeholder="Filter fields..." value="${Utils.escapeHtml(this.searchQuery)}" data-action="search-fields">
+            </div>
+          </div>
+          <div class="field-matrix-container">
+            <table class="field-matrix">
+              <thead>
+                <tr>
+                  <th class="field-col">Field Address</th>
+                  ${tabs.map(tabId => `
+                    <th>${Utils.escapeHtml(CONFIG?.MAIN_TABS?.[tabId]?.label || tabId)}</th>
+                  `).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${allFields
+                  .filter(f => !this.searchQuery ||
+                    f.fieldName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    f.tupleAddress.toLowerCase().includes(this.searchQuery.toLowerCase()))
+                  .slice(0, 100) // Limit for performance
+                  .map(field => `
+                    <tr>
+                      <td class="field-col">
+                        <strong>${Utils.escapeHtml(field.displayName)}</strong>
+                        <span class="field-address">${Utils.escapeHtml(field.tupleAddress)}</span>
+                      </td>
+                      ${tabs.map(tabId => {
+                        const visibleFields = FieldPreferences.getVisibleFields(tabId);
+                        const isHidden = FieldPreferences.isAlwaysHidden(tabId, field.fieldName);
+                        const isVisible = !isHidden && (visibleFields.length === 0 || visibleFields.includes(field.fieldName));
+
+                        return `
+                          <td class="screen-col">
+                            <input type="checkbox"
+                                   class="matrix-check"
+                                   ${isVisible ? 'checked' : ''}
+                                   ${isHidden ? 'disabled' : ''}
+                                   data-action="matrix-toggle"
+                                   data-field="${Utils.escapeHtml(field.fieldName)}"
+                                   data-tab="${tabId}">
+                          </td>
+                        `;
+                      }).join('')}
+                    </tr>
+                  `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Group fields by semantic group
+     */
+    groupFieldsBySemanticGroup(fields) {
+      const groups = {};
+      for (const field of fields) {
+        const group = field.semanticGroup || 'Uncategorized';
+        if (!groups[group]) groups[group] = [];
+        groups[group].push(field);
+      }
+
+      // Sort groups by CONFIG.GROUP_ORDER
+      const order = CONFIG?.GROUP_ORDER || Object.keys(groups);
+      const sorted = {};
+      for (const groupName of order) {
+        if (groups[groupName]) {
+          sorted[groupName] = groups[groupName];
+        }
+      }
+      // Add any remaining groups
+      for (const groupName of Object.keys(groups)) {
+        if (!sorted[groupName]) {
+          sorted[groupName] = groups[groupName];
+        }
+      }
+
+      return sorted;
+    },
+
+    /**
+     * Get zone contents (from pending changes or saved preferences)
+     */
+    getZoneContents(zoneId) {
+      const key = `${this.currentTab}::${zoneId}`;
+      if (this.pendingChanges.has(key)) {
+        return this.pendingChanges.get(key);
+      }
+      return LayoutPreferences.getZoneContents(this.currentTab, zoneId);
+    },
+
+    /**
+     * Set zone contents (to pending changes)
+     */
+    setZoneContents(zoneId, fieldNames) {
+      const key = `${this.currentTab}::${zoneId}`;
+      this.pendingChanges.set(key, [...fieldNames]);
+    },
+
+    /**
+     * Check if field is in any zone of current tab
+     */
+    isFieldInAnyZone(fieldName) {
+      const zones = ScreenZones.getZonesForTab(this.currentTab);
+      for (const zone of zones) {
+        const contents = this.getZoneContents(zone.id);
+        if (contents.includes(fieldName)) return true;
+      }
+      return false;
+    },
+
+    /**
+     * Attach event listeners
+     */
+    attachEventListeners() {
+      const overlay = document.getElementById('field-canvas-overlay');
+      if (!overlay) return;
+
+      // Close button
+      overlay.querySelectorAll('[data-action="close-canvas"]').forEach(btn => {
+        btn.addEventListener('click', () => this.close());
+      });
+
+      // Save button
+      overlay.querySelector('[data-action="save-canvas"]')?.addEventListener('click', () => {
+        this.save();
+      });
+
+      // Reset button
+      overlay.querySelector('[data-action="reset-tab"]')?.addEventListener('click', () => {
+        LayoutPreferences.resetTab(this.currentTab);
+        FieldPreferences.setVisibleFields(this.currentTab,
+          CONFIG?.MAIN_TABS?.[this.currentTab]?.defaultFields || []);
+        this.pendingChanges.clear();
+        this.render();
+      });
+
+      // View tabs
+      overlay.querySelectorAll('.field-canvas-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          this.activeView = e.target.dataset.view;
+          this.render();
+        });
+      });
+
+      // Search input
+      overlay.querySelectorAll('[data-action="search-fields"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+          this.searchQuery = e.target.value;
+          this.render();
+        });
+      });
+
+      // Filter selects
+      overlay.querySelector('[data-action="filter-table"]')?.addEventListener('change', (e) => {
+        this.filterTable = e.target.value;
+        this.render();
+      });
+
+      overlay.querySelector('[data-action="filter-tier"]')?.addEventListener('change', (e) => {
+        this.filterTier = e.target.value;
+        this.render();
+      });
+
+      // Field visibility toggles in Atlas view
+      overlay.querySelectorAll('[data-action="toggle-field-visibility"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const fieldName = e.target.dataset.field;
+          const visible = e.target.checked;
+
+          // Update via FieldPreferences
+          const currentVisible = FieldPreferences.getVisibleFields(this.currentTab);
+
+          if (currentVisible.length === 0) {
+            // First customization - start with all non-hidden fields
+            const allFields = FieldRegistry.getAllFields()
+              .filter(f => !f.isStructural && !FieldPreferences.isAlwaysHidden(this.currentTab, f.fieldName))
+              .map(f => f.fieldName);
+
+            if (!visible) {
+              // Uncheck = remove from all
+              const newVisible = allFields.filter(f => f !== fieldName);
+              FieldPreferences.setVisibleFields(this.currentTab, newVisible);
+            }
+          } else {
+            FieldPreferences.toggleField(this.currentTab, fieldName, visible);
+          }
+
+          // Re-render to update badges
+          this.render();
+        });
+      });
+
+      // Matrix checkboxes
+      overlay.querySelectorAll('[data-action="matrix-toggle"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const fieldName = e.target.dataset.field;
+          const tabId = e.target.dataset.tab;
+          const visible = e.target.checked;
+
+          const currentVisible = FieldPreferences.getVisibleFields(tabId);
+
+          if (currentVisible.length === 0) {
+            const allFields = FieldRegistry.getAllFields()
+              .filter(f => !f.isStructural && !FieldPreferences.isAlwaysHidden(tabId, f.fieldName))
+              .map(f => f.fieldName);
+
+            if (!visible) {
+              const newVisible = allFields.filter(f => f !== fieldName);
+              FieldPreferences.setVisibleFields(tabId, newVisible);
+            }
+          } else {
+            FieldPreferences.toggleField(tabId, fieldName, visible);
+          }
+        });
+      });
+
+      // Remove from zone buttons
+      overlay.querySelectorAll('[data-action="remove-from-zone"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const fieldName = e.target.dataset.field;
+          const zoneId = e.target.dataset.zone;
+
+          const current = this.getZoneContents(zoneId);
+          const newContents = current.filter(f => f !== fieldName);
+          this.setZoneContents(zoneId, newContents);
+          this.render();
+        });
+      });
+
+      // Drag and drop for Screen Builder
+      this.setupDragAndDrop(overlay);
+
+      // Close on overlay click (outside modal)
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          this.close();
+        }
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isOpen) {
+          this.close();
+        }
+      });
+    },
+
+    /**
+     * Setup drag and drop for Screen Builder
+     */
+    setupDragAndDrop(overlay) {
+      // Draggable fields
+      overlay.querySelectorAll('[draggable="true"]').forEach(el => {
+        el.addEventListener('dragstart', (e) => {
+          this.draggedField = e.target.dataset.field;
+          e.target.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        el.addEventListener('dragend', (e) => {
+          e.target.classList.remove('dragging');
+          this.draggedField = null;
+        });
+      });
+
+      // Drop zones
+      overlay.querySelectorAll('.drop-zone-content').forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          zone.closest('.drop-zone').classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', (e) => {
+          zone.closest('.drop-zone').classList.remove('drag-over');
+        });
+
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zone.closest('.drop-zone').classList.remove('drag-over');
+
+          if (this.draggedField) {
+            const zoneId = zone.dataset.zone;
+            const current = this.getZoneContents(zoneId);
+
+            // Remove from other zones first
+            const zones = ScreenZones.getZonesForTab(this.currentTab);
+            for (const z of zones) {
+              if (z.id !== zoneId) {
+                const zContents = this.getZoneContents(z.id);
+                if (zContents.includes(this.draggedField)) {
+                  this.setZoneContents(z.id, zContents.filter(f => f !== this.draggedField));
+                }
+              }
+            }
+
+            // Add to this zone if not already there
+            if (!current.includes(this.draggedField)) {
+              current.push(this.draggedField);
+              this.setZoneContents(zoneId, current);
+            }
+
+            this.render();
+          }
+        });
+      });
+    }
+  };
+
+  // Make FieldCanvas globally accessible
+  window.FieldCanvas = FieldCanvas;
+
+  // ==========================================================================
   // DATA TRANSFORMER
   // Converts flat API array format to normalized clientInfo/cases structure
   // ==========================================================================
@@ -3075,6 +4976,13 @@
 
       // Load user preferences
       FieldPreferences.load();
+      LayoutPreferences.load();
+
+      // Initialize Field Registry for Field Canvas
+      FieldRegistry.init(data, this.processedFields);
+
+      // Make widget accessible for Field Canvas
+      window.ClientGlanceWidget = this;
 
       // Transform data for new architecture
       this.normalizedData = DataTransformer.transform(data);
@@ -4007,6 +5915,10 @@
             <span>${this.state.settingsOpen ? '▼' : '▶'}</span>
           </div>
           <div class="settings-panel-content">
+            <button class="configure-layout-btn" data-action="open-field-canvas" data-tab="${tabId}">
+              <span class="btn-icon">⚙️</span>
+              Advanced Field Configuration
+            </button>
             <div class="field-checkbox-list">
               ${allFieldNames.map(fieldName => {
                 const isAlwaysHidden = FieldPreferences.isAlwaysHidden(tabId, fieldName);
@@ -4014,9 +5926,11 @@
 
                 const isChecked = visibleFields.length === 0 || visibleFields.includes(fieldName);
                 const schemaType = SchemaProcessor.getFieldType(fieldName);
+                const field = FieldRegistry.getField(fieldName);
+                const tupleAddress = field?.tupleAddress || '';
 
                 return `
-                  <label class="field-checkbox-item">
+                  <label class="field-checkbox-item" title="${Utils.escapeHtml(tupleAddress)}">
                     <input type="checkbox"
                            data-field="${Utils.escapeHtml(fieldName)}"
                            data-tab="${tabId}"
@@ -4287,6 +6201,15 @@
           this.render();
         });
       }
+
+      // Open Field Canvas button
+      document.querySelectorAll('[data-action="open-field-canvas"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tabId = e.currentTarget.dataset.tab;
+          FieldCanvas.open(tabId);
+        });
+      });
 
       // Field checkboxes
       document.querySelectorAll('.field-checkbox-item input').forEach(checkbox => {
