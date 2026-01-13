@@ -4245,7 +4245,7 @@
       // Case tabs (within Cases tab)
       document.querySelectorAll('.case-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          this.state.selectedCase = e.target.dataset.case;
+          this.state.selectedCase = e.currentTarget.dataset.case;
           this.render();
         });
       });
