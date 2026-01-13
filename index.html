@@ -404,6 +404,11 @@
     [data-mode="url"] .manual-only { display: none !important; }
     [data-mode="manual"] .url-only { display: none !important; }
 
+    /* Embed mode - hide test controls, show only widget */
+    .embed-mode .control-panel { display: none !important; }
+    .embed-mode .status-bar { display: none !important; }
+    .embed-mode .widget-area { padding-top: 0; }
+
     /* Responsive */
     @media (max-width: 768px) {
       .control-header {
@@ -1208,8 +1213,13 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     // Check URL for recordId
     const params = new URLSearchParams(window.location.search);
     const urlRecordId = params.get('recordId') || params.get('record_id') || params.get('id');
+    const showTestMode = params.get('test') === 'true';
 
     if (urlRecordId) {
+      // Enable embed mode (hide test controls) unless ?test=true
+      if (!showTestMode) {
+        document.getElementById('pageContainer').classList.add('embed-mode');
+      }
       // Auto-switch to URL mode if recordId found
       setMode('url');
       document.getElementById('recordIdInput').value = urlRecordId;
@@ -1778,6 +1788,18 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             }
           }
         }
+
+        // Compose Client Name from First Name + Family Name if not already set
+        if (!fields['Client Name']) {
+          const firstName = fields['First Name'] || '';
+          const familyName = fields['Family Name'] || '';
+          const middleName = fields['Middle Name'] || '';
+          const nameParts = [firstName, middleName, familyName].filter(p => p);
+          if (nameParts.length > 0) {
+            fields['Client Name'] = nameParts.join(' ');
+          }
+        }
+
         return fields;
       },
 
@@ -1797,6 +1819,18 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             }
           }
         }
+
+        // Compose Client Name from First Name + Family Name if not already set
+        if (!fields['Client Name']) {
+          const firstName = fields['First Name'] || '';
+          const familyName = fields['Family Name'] || '';
+          const middleName = fields['Middle Name'] || '';
+          const nameParts = [firstName, middleName, familyName].filter(p => p);
+          if (nameParts.length > 0) {
+            fields['Client Name'] = nameParts.join(' ');
+          }
+        }
+
         return fields;
       },
 
