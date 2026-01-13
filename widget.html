@@ -1819,7 +1819,7 @@
       if (name) {
         let identity = name;
         if (aNum) identity += ` (A# ${aNum})`;
-        if (age) identity += `, ${age}`;
+        if (age) identity += `, age ${age}`;
         if (country) identity += `, from ${country}`;
         sentences.push(identity);
       }
@@ -1828,7 +1828,7 @@
       if (matters.length > 0) {
         const matterDescriptions = matters.map(m => {
           const label = m.typeConfig?.label || m.type;
-          const status = m.status ? ` (${m.status.toLowerCase()})` : '';
+          const status = m.status ? ` (${String(m.status).toLowerCase()})` : '';
           return label + status;
         });
 
@@ -1871,7 +1871,7 @@
         let idSentence = `${name}`;
         if (aNum) idSentence += ` (A# ${aNum})`;
         if (age && gender) {
-          idSentence += ` is a ${age}-year-old ${gender.toLowerCase()}`;
+          idSentence += ` is a ${age}-year-old ${String(gender).toLowerCase()}`;
         } else if (age) {
           idSentence += ` is ${age} years old`;
         }
@@ -2582,7 +2582,7 @@
         case 'date': return this.formatDate(value);
         case 'datetime': return this.formatDate(value, true);
         case 'phone': return this.formatPhone(value);
-        case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+        case 'boolean': return String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes' ? 'Yes' : 'No';
         case 'url': return value;
         default: return value;
       }
@@ -3011,28 +3011,57 @@
     },
 
     /**
-     * Extract upcoming and past events
+     * Extract events from Events table records
      */
     extractEvents() {
       const events = [];
-      const dateFields = CONFIG?.MAIN_TABS?.timeline?.dateFields || [];
 
-      // From processed fields
-      for (const field of this.processedFields) {
-        if (dateFields.includes(field.fieldName) && field.value) {
-          events.push({
-            date: field.value,
-            title: field.fieldName.replace(/Date.*$/i, '').replace(/\//g, ' '),
-            fieldName: field.fieldName,
+      // Get fields from Events source table
+      const eventFields = this.processedFields.filter(f =>
+        f.sourceTable && f.sourceTable.toLowerCase().includes('event')
+      );
+
+      // Group by recordId to identify unique event records
+      const eventsByRecord = {};
+      for (const field of eventFields) {
+        const recordId = field.recordId || field.caseLabel || 'default';
+        if (!eventsByRecord[recordId]) {
+          eventsByRecord[recordId] = {
+            fields: {},
             caseLabel: field.caseLabel,
-            matter: this.inferMatterFromCase(field.caseLabel),
-            urgency: MatterDetector.getDateUrgency(field.value)
+            sourceTable: field.sourceTable
+          };
+        }
+        eventsByRecord[recordId].fields[field.fieldName] = field.value;
+      }
+
+      // Create event objects from grouped records
+      for (const [recordId, record] of Object.entries(eventsByRecord)) {
+        const fields = record.fields;
+        // Look for date field (Hearing Date/Time, Event Date, etc.)
+        const dateValue = fields['Hearing Date/Time'] || fields['Event Date'] || fields['Date'] || fields['Start Date'];
+        const eventName = fields['Event Name'] || fields['Hearing Type'] || fields['Event Hearing Type'] || 'Event';
+
+        if (dateValue || eventName) {
+          events.push({
+            date: dateValue,
+            title: eventName,
+            recordId,
+            fields: fields,
+            caseLabel: record.caseLabel,
+            matter: this.inferMatterFromCase(record.caseLabel),
+            urgency: dateValue ? MatterDetector.getDateUrgency(dateValue) : 'unknown'
           });
         }
       }
 
-      // Sort by date
-      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // Sort by date (events without dates go last)
+      events.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
 
       return events;
     },
@@ -3229,8 +3258,15 @@
               count = this.events?.filter(e => e.urgency !== 'past').length || 0;
             } else if (tabId === 'applications') {
               count = this.applications?.length || 0;
+            } else if (tabId === 'notes') {
+              // Count actual note entries with content
+              const noteFields = CONFIG?.MAIN_TABS?.notes?.noteFields || ['Case Notes', 'Hearing Notes', 'Notes'];
+              count = this.processedFields?.filter(f => noteFields.includes(f.fieldName) && f.value).length || 0;
+            } else if (tabId === 'client') {
+              // Count client info fields with values
+              count = this.tabData[tabId]?.fields?.filter(f => f.value).length || 0;
             } else if (tabId !== 'overview' && tabId !== 'timeline') {
-              count = this.tabData[tabId]?.fields.length || 0;
+              count = this.tabData[tabId]?.fields?.filter(f => f.value).length || 0;
             }
 
             return `
