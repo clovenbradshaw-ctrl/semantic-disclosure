@@ -1164,6 +1164,7 @@ const ClientGlanceConfig = {
   // ==========================================================================
 
   FIELD_GROUP_PATTERNS: [
+    { group: "Calendar", pattern: /calendar|gcal|appointment|meeting|schedule/i },
     { group: "Court", pattern: /hearing|court|judge|eoir|ich|merits|pleading|nta/i },
     { group: "SIJ", pattern: /sij|custody|jdr|juvenile/i },
     { group: "USCIS", pattern: /uscis|i-\d{3}|receipt|biometric|rfe|rfi/i },
@@ -1445,11 +1446,13 @@ const ClientGlanceConfig = {
       id: 'events',
       label: 'Events',
       icon: '📅',
-      description: 'Hearings, interviews, and deadlines',
-      sourceTables: ['Events', 'Case Master View'],
-      viewType: 'timeline', // Chronological with matter labels
+      description: 'Google Calendar events - hearings, interviews, and appointments',
+      sourceTables: ['Events', 'Google Calendar', 'Case Master View'],
+      viewType: 'events', // Dedicated events view for Google Calendar data
       // Show matter label on each event
       showMatterLabels: true,
+      // Group events by urgency (Urgent, Upcoming, Scheduled, Past)
+      groupByUrgency: true,
       defaultFields: [
         'Event Name',
         'Hearing Date/Time',
@@ -1459,7 +1462,10 @@ const ClientGlanceConfig = {
         'MCH Attny',
         'Client Notice Date',
         'Hearing Notes',
-        'Court Action Items'
+        'Court Action Items',
+        'Location',
+        'Attendees',
+        'Description'
       ],
       alwaysHidden: [
         'AMINO',
