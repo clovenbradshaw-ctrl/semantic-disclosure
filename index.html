@@ -2009,7 +2009,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         const container = document.getElementById('app');
         const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
         const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
-        const cases = [...new Set(this.processedFields.filter(f => f.caseLabel).map(f => f.caseLabel))];
+        const cases = [...new Set(this.processedFields.filter(f => f.caseLabel && f.value !== undefined && f.value !== null && f.value !== '').map(f => f.caseLabel))];
 
         let displayFields = this.processedFields;
         if (this.state.selectedCase !== 'all' && cases.length > 1) {
