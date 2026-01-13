@@ -3011,57 +3011,48 @@
     },
 
     /**
-     * Extract events from Events table records
+     * Extract events from date fields in processed data
+     * Events are derived from date fields like Hearing Date/Time, JDR Ct Date, etc.
      */
     extractEvents() {
       const events = [];
 
-      // Get fields from Events source table
-      const eventFields = this.processedFields.filter(f =>
-        f.sourceTable && f.sourceTable.toLowerCase().includes('event')
-      );
+      // Use dateFields from timeline config for event extraction
+      const dateFields = CONFIG?.MAIN_TABS?.timeline?.dateFields || [
+        'Hearing Date/Time', 'JDR Ct Date', 'Asylum Interview Date',
+        'I-589 Filed/Receipt Date', 'Date Custody Filed'
+      ];
 
-      // Group by recordId to identify unique event records
-      const eventsByRecord = {};
-      for (const field of eventFields) {
-        const recordId = field.recordId || field.caseLabel || 'default';
-        if (!eventsByRecord[recordId]) {
-          eventsByRecord[recordId] = {
-            fields: {},
-            caseLabel: field.caseLabel,
-            sourceTable: field.sourceTable
-          };
-        }
-        eventsByRecord[recordId].fields[field.fieldName] = field.value;
-      }
+      // Extract events from date fields in processed fields
+      for (const field of this.processedFields) {
+        if (dateFields.includes(field.fieldName) && field.value) {
+          // Create human-readable title from field name
+          let title = field.fieldName
+            .replace(/Date\/Time$/i, '')
+            .replace(/Date$/i, '')
+            .replace(/ Filed\/Receipt$/i, '')
+            .replace(/\//g, ' ')
+            .trim();
 
-      // Create event objects from grouped records
-      for (const [recordId, record] of Object.entries(eventsByRecord)) {
-        const fields = record.fields;
-        // Look for date field (Hearing Date/Time, Event Date, etc.)
-        const dateValue = fields['Hearing Date/Time'] || fields['Event Date'] || fields['Date'] || fields['Start Date'];
-        const eventName = fields['Event Name'] || fields['Hearing Type'] || fields['Event Hearing Type'] || 'Event';
+          // Add context if available
+          if (!title || title.length < 3) {
+            title = field.fieldName;
+          }
 
-        if (dateValue || eventName) {
           events.push({
-            date: dateValue,
-            title: eventName,
-            recordId,
-            fields: fields,
-            caseLabel: record.caseLabel,
-            matter: this.inferMatterFromCase(record.caseLabel),
-            urgency: dateValue ? MatterDetector.getDateUrgency(dateValue) : 'unknown'
+            date: field.value,
+            title: title,
+            fieldName: field.fieldName,
+            caseLabel: field.caseLabel,
+            recordId: field.recordId,
+            matter: this.inferMatterFromCase(field.caseLabel),
+            urgency: MatterDetector.getDateUrgency(field.value)
           });
         }
       }
 
-      // Sort by date (events without dates go last)
-      events.sort((a, b) => {
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(a.date) - new Date(b.date);
-      });
+      // Sort by date
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       return events;
     },
