@@ -1615,6 +1615,246 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
       }
     };
 
+    // ==========================================================================
+    // DATA TRANSFORMER
+    // Converts various API response formats to normalized clientInfo/cases structure
+    // ==========================================================================
+    const DataTransformer = {
+      transform(rawData) {
+        DebugLogger.info('DataTransformer: Analyzing input format', {
+          type: typeof rawData,
+          isArray: Array.isArray(rawData),
+          keys: rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 5) : null
+        });
+
+        // Handle n8n webhook wrapper format: [{"data":[...]}]
+        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0] && rawData[0].data) {
+          DebugLogger.info('DataTransformer: Detected n8n webhook wrapper format [{"data":[...]}]');
+          rawData = rawData[0].data;
+          if (!Array.isArray(rawData)) rawData = [rawData];
+        }
+
+        // Handle response with schema included: { schema: [...], data: [...] }
+        if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
+          DebugLogger.info('DataTransformer: Schema detected in response');
+          rawData = rawData.data || rawData.records || [];
+        }
+
+        // Handle already-normalized data
+        if (rawData && rawData.clientInfo) {
+          DebugLogger.info('DataTransformer: Data already in normalized format');
+          return rawData;
+        }
+
+        // Handle flat array of records
+        if (!Array.isArray(rawData) || rawData.length === 0) {
+          DebugLogger.warn('DataTransformer: Empty or invalid data received');
+          return { clientInfo: { fields: {} }, cases: [] };
+        }
+
+        // Filter out empty objects from the array
+        const records = rawData.filter(record =>
+          record && typeof record === 'object' && Object.keys(record).length > 0
+        );
+
+        if (records.length === 0) {
+          DebugLogger.warn('DataTransformer: No valid records after filtering');
+          return { clientInfo: { fields: {} }, cases: [] };
+        }
+
+        DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: records.length });
+
+        // Identify Client Info record vs Case records
+        const { clientInfoRecord, caseRecords } = this.separateRecordTypes(records);
+
+        // Extract client fields from the appropriate source
+        const clientFields = clientInfoRecord
+          ? this.extractClientFieldsFromClientInfo(clientInfoRecord)
+          : this.extractClientFields(caseRecords[0] || {});
+
+        // Transform case records
+        const cases = caseRecords.map((record, index) => this.transformCase(record, index));
+
+        const result = {
+          clientInfo: {
+            recordId: clientInfoRecord?.id ||
+                      clientInfoRecord?.recordId ||
+                      this.unwrapValue(caseRecords[0]?.['Client_ID_Airtable']) ||
+                      caseRecords[0]?.id,
+            fields: clientFields
+          },
+          cases
+        };
+
+        DebugLogger.success('DataTransformer: Transformation complete', {
+          clientFieldCount: Object.keys(clientFields).length,
+          caseCount: cases.length,
+          hasClientInfoRecord: !!clientInfoRecord
+        });
+
+        return result;
+      },
+
+      /**
+       * Separate Client Info records from Case Master View records
+       * Uses _sourceTable field when available, falls back to field-based heuristics
+       */
+      separateRecordTypes(records) {
+        let clientInfoRecord = null;
+        const caseRecords = [];
+
+        for (const record of records) {
+          const sourceTable = record._sourceTable;
+
+          // Primary detection: use _sourceTable field if available
+          if (sourceTable) {
+            const tableLower = sourceTable.toLowerCase();
+            if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
+              clientInfoRecord = record;
+              DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
+              continue;
+            }
+          } else {
+            // Fallback: field-based heuristics for older response formats
+            const clientInfoIndicators = [
+              'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
+              'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
+              'Box_Folder_ID', 'Client Details Page', 'airtable_client_info_id'
+            ];
+            const caseIndicators = [
+              'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
+              'Case Master View Record ID', 'Appeal Engagement Deadline'
+            ];
+
+            const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
+            const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
+
+            if (hasClientInfoFields && !hasCaseFields) {
+              clientInfoRecord = record;
+              DebugLogger.info('DataTransformer: Client Info record via field heuristics');
+              continue;
+            }
+          }
+
+          // Default: treat as Case Master View record
+          caseRecords.push(record);
+        }
+
+        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
+        return { clientInfoRecord, caseRecords };
+      },
+
+      /**
+       * Extract client fields from a dedicated Client Info record
+       */
+      extractClientFieldsFromClientInfo(record) {
+        const fieldMappings = {
+          'Full Client Name': 'Client Name',
+          'Client Name': 'Client Name',
+          'First Name': 'First Name',
+          'Family Name': 'Family Name',
+          'Middle Name': 'Middle Name',
+          'A#': 'A#',
+          'DOB': 'DOB',
+          'Age': 'Age',
+          'Country': 'Country',
+          'Phone Number': 'Phone Number',
+          'Phone Reformat 3 (xxx) xxx-xxxx': 'Phone Number',
+          'Client Email': 'Client Email',
+          'Address Formula': 'Address',
+          'Address': 'Address',
+          'Gender': 'Gender',
+          'Pronouns': 'Pronouns',
+          'Detained': 'Detained',
+          'Detainment Status / Location': 'Detention Location'
+        };
+
+        const fields = {};
+        for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
+          if (record[sourceField] !== undefined && !fields[targetField]) {
+            const value = this.normalizeValue(record[sourceField], sourceField);
+            if (value !== null) {
+              fields[targetField] = value;
+            }
+          }
+        }
+        return fields;
+      },
+
+      extractClientFields(record) {
+        const clientFieldNames = [
+          'Client Name', 'First Name', 'Family Name', 'Middle Name',
+          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+          'Address', 'Gender', 'Pronouns'
+        ];
+
+        const fields = {};
+        for (const fieldName of clientFieldNames) {
+          if (record[fieldName] !== undefined) {
+            const value = this.normalizeValue(record[fieldName], fieldName);
+            if (value !== null) {
+              fields[fieldName] = value;
+            }
+          }
+        }
+        return fields;
+      },
+
+      transformCase(record, index) {
+        const caseIdentifier = this.deriveCaseIdentifier(record, index);
+        const fields = {};
+
+        // Client fields to exclude from case
+        const clientOnlyFields = new Set([
+          'Client Name', 'First Name', 'Family Name', 'Middle Name',
+          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+          'Address', 'Client_ID_Airtable', 'Edit Client Info', 'Gender', 'Pronouns',
+          'id', '_sourceTable'
+        ]);
+
+        for (const [key, value] of Object.entries(record)) {
+          if (!clientOnlyFields.has(key)) {
+            const normalizedValue = this.normalizeValue(value, key);
+            if (normalizedValue !== null) {
+              fields[key] = normalizedValue;
+            }
+          }
+        }
+
+        return {
+          caseIdentifier,
+          recordId: record.id || record.recordId,
+          fields
+        };
+      },
+
+      deriveCaseIdentifier(record, index) {
+        // Try common case identifier fields
+        const identifierFields = ['Case Type', 'Case_Type', 'caseType', 'Case Number', 'Case_Number'];
+        for (const field of identifierFields) {
+          if (record[field]) {
+            return this.unwrapValue(record[field]);
+          }
+        }
+        return `Case ${index + 1}`;
+      },
+
+      normalizeValue(value, fieldName) {
+        if (value === null || value === undefined || value === '') return null;
+        if (Array.isArray(value)) {
+          if (value.length === 0) return null;
+          if (value.length === 1) return value[0];
+          return value;
+        }
+        return value;
+      },
+
+      unwrapValue(value) {
+        if (Array.isArray(value) && value.length > 0) return value[0];
+        return value;
+      }
+    };
+
     const DataProcessor = {
       processFields(rawData) {
         const processed = [];
@@ -1743,10 +1983,12 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
       init(data) {
         DebugLogger.info('Renderer initializing with data');
-        this.data = data;
+        // Transform raw API response to normalized format
+        const normalizedData = DataTransformer.transform(data);
+        this.data = normalizedData;
         try {
           DebugLogger.info('Processing fields...');
-          this.processedFields = DataProcessor.processFields(data);
+          this.processedFields = DataProcessor.processFields(normalizedData);
           DebugLogger.success('Fields processed', {
             totalFields: this.processedFields.length,
             tier1: this.processedFields.filter(f => f.tier === 1).length,
@@ -1967,7 +2209,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     }
 
     // Expose globally
-    window.ClientGlance = { Utils, DataProcessor, Renderer, DebugLogger };
+    window.ClientGlance = { Utils, DataTransformer, DataProcessor, Renderer, DebugLogger };
   }
 })();
 </script>
