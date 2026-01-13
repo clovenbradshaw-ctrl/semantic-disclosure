@@ -357,3 +357,158 @@ window.MOCK_SCHEMA = [
 ];
 
 console.log('[MockData] Loaded mock schema with', window.MOCK_SCHEMA.length, 'tables');
+
+/**
+ * MOCK GOOGLE CALENDAR DATA
+ * Sample calendar events in Google Calendar API format
+ * Load this data via window.GOOGLE_CALENDAR_DATA to populate the Events tab
+ */
+window.GOOGLE_CALENDAR_DATA = [
+  {
+    "id": "evt001",
+    "summary": "Individual Hearing - Immigration Court",
+    "start": {
+      "dateTime": "2025-02-15T09:00:00-06:00"
+    },
+    "end": {
+      "dateTime": "2025-02-15T11:00:00-06:00"
+    },
+    "location": "Memphis Immigration Court, 80 Monroe Ave, Memphis, TN 38103",
+    "description": "Individual hearing for Maria Rodriguez. Bring all evidence and witnesses. Judge: Hon. Patricia Williams",
+    "attendees": [
+      { "email": "sarah.johnson@lawfirm.com", "displayName": "Sarah Johnson", "responseStatus": "accepted" },
+      { "email": "maria.rodriguez@email.com", "displayName": "Maria Rodriguez", "responseStatus": "accepted" }
+    ],
+    "organizer": {
+      "email": "calendar@lawfirm.com",
+      "displayName": "Law Office"
+    },
+    "htmlLink": "https://calendar.google.com/calendar/event?eid=evt001"
+  },
+  {
+    "id": "evt002",
+    "summary": "JDR Court Date - Davidson County",
+    "start": {
+      "dateTime": "2025-01-28T14:00:00-06:00"
+    },
+    "end": {
+      "dateTime": "2025-01-28T15:30:00-06:00"
+    },
+    "location": "Davidson County Juvenile Court, 100 Courthouse Square, Nashville, TN",
+    "description": "SIJ custody hearing. Need to bring client and GAL. Documents prepared.",
+    "attendees": [
+      { "email": "sarah.johnson@lawfirm.com", "displayName": "Sarah Johnson", "responseStatus": "accepted" }
+    ],
+    "organizer": {
+      "email": "calendar@lawfirm.com",
+      "displayName": "Law Office"
+    },
+    "htmlLink": "https://calendar.google.com/calendar/event?eid=evt002"
+  },
+  {
+    "id": "evt003",
+    "summary": "Biometrics Appointment - USCIS",
+    "start": {
+      "dateTime": "2025-02-05T10:30:00-06:00"
+    },
+    "end": {
+      "dateTime": "2025-02-05T11:00:00-06:00"
+    },
+    "location": "USCIS Nashville Field Office, 711 Broad St, Nashville, TN 37203",
+    "description": "Biometrics appointment for I-360 application. Bring appointment notice and ID.",
+    "attendees": [
+      { "email": "maria.rodriguez@email.com", "displayName": "Maria Rodriguez", "responseStatus": "needsAction" }
+    ],
+    "organizer": {
+      "email": "uscis@uscis.gov",
+      "displayName": "USCIS"
+    },
+    "htmlLink": "https://calendar.google.com/calendar/event?eid=evt003"
+  },
+  {
+    "id": "evt004",
+    "summary": "Client Consultation - New Case Review",
+    "start": {
+      "dateTime": "2025-01-20T15:00:00-06:00"
+    },
+    "end": {
+      "dateTime": "2025-01-20T16:00:00-06:00"
+    },
+    "location": "Office - Conference Room A",
+    "description": "Initial consultation to discuss case strategy and gather documents.",
+    "attendees": [
+      { "email": "sarah.johnson@lawfirm.com", "displayName": "Sarah Johnson", "responseStatus": "accepted" },
+      { "email": "paralegal@lawfirm.com", "displayName": "Lisa Paralegal", "responseStatus": "accepted" }
+    ],
+    "organizer": {
+      "email": "sarah.johnson@lawfirm.com",
+      "displayName": "Sarah Johnson"
+    },
+    "htmlLink": "https://calendar.google.com/calendar/event?eid=evt004"
+  },
+  {
+    "id": "evt005",
+    "summary": "RFE Response Deadline",
+    "start": {
+      "date": "2025-03-01"
+    },
+    "end": {
+      "date": "2025-03-02"
+    },
+    "description": "Deadline to respond to Request for Evidence for I-360. Need birth certificate authentication.",
+    "organizer": {
+      "email": "calendar@lawfirm.com",
+      "displayName": "Law Office"
+    }
+  },
+  {
+    "id": "evt006",
+    "summary": "Brief Due Date - BIA Appeal",
+    "start": {
+      "date": "2025-03-15"
+    },
+    "end": {
+      "date": "2025-03-16"
+    },
+    "description": "Appellant's brief due for BIA appeal. Case: A234-567-890",
+    "organizer": {
+      "email": "calendar@lawfirm.com",
+      "displayName": "Law Office"
+    }
+  },
+  {
+    "id": "evt007",
+    "summary": "Master Calendar Hearing - Past",
+    "start": {
+      "dateTime": "2024-12-10T09:00:00-06:00"
+    },
+    "end": {
+      "dateTime": "2024-12-10T10:00:00-06:00"
+    },
+    "location": "Memphis Immigration Court",
+    "description": "Initial master calendar hearing. Case continued to individual hearing.",
+    "attendees": [
+      { "email": "sarah.johnson@lawfirm.com", "displayName": "Sarah Johnson", "responseStatus": "accepted" }
+    ],
+    "organizer": {
+      "email": "calendar@lawfirm.com",
+      "displayName": "Law Office"
+    },
+    "status": "confirmed"
+  },
+  {
+    "id": "evt008",
+    "summary": "Document Pickup",
+    "start": {
+      "dateTime": "2024-11-20T14:00:00-06:00"
+    },
+    "end": {
+      "dateTime": "2024-11-20T14:30:00-06:00"
+    },
+    "location": "Office",
+    "description": "Client to pick up filed documents.",
+    "status": "confirmed"
+  }
+];
+
+console.log('[MockData] Loaded mock Google Calendar data with', window.GOOGLE_CALENDAR_DATA.length, 'events');
