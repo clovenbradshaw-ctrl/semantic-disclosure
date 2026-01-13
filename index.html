@@ -511,6 +511,7 @@
         <button class="quick-btn" onclick="logState()">Log State</button>
         <button class="quick-btn" onclick="logMockData()">Log Mock Data</button>
         <button class="quick-btn" onclick="logSchema()">Log Schema</button>
+        <button class="quick-btn" onclick="logLastApiResponse()">Log API Response</button>
         <button class="quick-btn" onclick="toggleDebug()">Toggle Debug</button>
         <button class="quick-btn" onclick="copyUrl()">Copy URL</button>
         <button class="quick-btn" onclick="openInNewTab()">Open in Tab</button>
@@ -1186,6 +1187,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
   let currentMode = 'manual';
   let widgetLoaded = false;
+  let lastApiResponse = null;
 
   const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
 
@@ -1198,7 +1200,10 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    return response.json();
+    const data = await response.json();
+    lastApiResponse = data;
+    console.log('[API] Raw response stored in lastApiResponse:', data);
+    return data;
   }
 
   // Initialize on DOM ready
@@ -1300,6 +1305,97 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     loadWidgetWithData(window.MOCK_DATA);
   };
 
+  // Transform API response to expected widget format
+  function transformApiResponse(apiData) {
+    console.log('[Transform] Raw API data:', apiData);
+    console.log('[Transform] Type:', typeof apiData, Array.isArray(apiData) ? 'isArray' : '');
+
+    // If it's already in the expected format, return as-is
+    if (apiData && (apiData.clientInfo || apiData.cases)) {
+      console.log('[Transform] Data already in expected format');
+      return apiData;
+    }
+
+    // Handle array wrapper: [{ data: [...] }] or just [...]
+    let records = apiData;
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      // Check if it's wrapped in a data property: [{ data: [...] }]
+      if (apiData[0] && apiData[0].data) {
+        records = apiData[0].data;
+        console.log('[Transform] Unwrapped from data property');
+      }
+    }
+
+    console.log('[Transform] Records to process:', records);
+
+    // Transform Airtable-style records to expected format
+    const result = { clientInfo: null, cases: [] };
+
+    if (!Array.isArray(records)) {
+      console.warn('[Transform] Records is not an array:', records);
+      return result;
+    }
+
+    records.forEach((record, index) => {
+      console.log(`[Transform] Processing record ${index}:`, record.name || record.id);
+
+      // Extract field values from the record
+      // The API might return fields as array with values, or as object
+      let fieldValues = {};
+
+      if (record.fields) {
+        if (Array.isArray(record.fields)) {
+          // Fields are array of {name, type, value?, ...}
+          record.fields.forEach(field => {
+            if (field.name && field.value !== undefined) {
+              fieldValues[field.name] = field.value;
+            }
+          });
+          console.log(`[Transform] Extracted ${Object.keys(fieldValues).length} field values from array`);
+        } else if (typeof record.fields === 'object') {
+          // Fields are already key-value pairs
+          fieldValues = record.fields;
+          console.log(`[Transform] Using fields object directly with ${Object.keys(fieldValues).length} fields`);
+        }
+      }
+
+      // Also check for direct properties on the record (flat structure)
+      if (Object.keys(fieldValues).length === 0) {
+        // Maybe the values are directly on the record
+        const excludeKeys = ['id', 'name', 'primaryFieldId', 'fields', 'data'];
+        Object.keys(record).forEach(key => {
+          if (!excludeKeys.includes(key) && record[key] !== undefined) {
+            fieldValues[key] = record[key];
+          }
+        });
+        console.log(`[Transform] Extracted ${Object.keys(fieldValues).length} field values from flat record`);
+      }
+
+      const tableName = record.name || record.tableName || '';
+
+      if (tableName.toLowerCase().includes('client info') || index === 0) {
+        result.clientInfo = {
+          recordId: record.id || `rec${index}`,
+          fields: fieldValues
+        };
+        console.log('[Transform] Set as clientInfo');
+      } else {
+        result.cases.push({
+          recordId: record.id || `rec${index}`,
+          caseIdentifier: tableName || `Case ${result.cases.length + 1}`,
+          fields: fieldValues
+        });
+        console.log('[Transform] Added as case');
+      }
+    });
+
+    console.log('[Transform] Final result:', result);
+    console.log('[Transform] ClientInfo fields:', result.clientInfo ? Object.keys(result.clientInfo.fields || {}).length : 0);
+    console.log('[Transform] Cases:', result.cases.length);
+
+    return result;
+  }
+
   function loadWidgetWithData(data) {
     const container = document.getElementById('widgetContainer');
     const emptyState = document.getElementById('emptyState');
@@ -1310,6 +1406,10 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     // Remove existing widget frame
     const existingFrame = document.getElementById('widget-frame');
     if (existingFrame) existingFrame.remove();
+
+    // Transform API data to expected format
+    const transformedData = transformApiResponse(data);
+    console.log('[LoadWidget] Transformed data:', transformedData);
 
     // Create widget frame
     const widgetFrame = document.createElement('div');
@@ -1326,7 +1426,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
     // Initialize widget after a brief delay
     setTimeout(() => {
-      initWidget(data);
+      initWidget(transformedData);
       widgetLoaded = true;
       showStatus('Widget loaded successfully', 'success');
       updateSchemaStatus();
@@ -1381,6 +1481,25 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     if (window.ClientGlance && window.ClientGlance.SchemaProcessor) {
       console.log('SchemaProcessor hasSchema:', window.ClientGlance.SchemaProcessor.hasSchema());
       console.log('SchemaProcessor fieldMap:', window.ClientGlance.SchemaProcessor.fieldMap);
+    }
+  };
+
+  window.logLastApiResponse = function() {
+    if (lastApiResponse) {
+      console.log('=== LAST API RESPONSE ===');
+      console.log('Type:', typeof lastApiResponse, Array.isArray(lastApiResponse) ? '(Array)' : '');
+      console.log('Full response:', lastApiResponse);
+      console.log('JSON:', JSON.stringify(lastApiResponse, null, 2));
+
+      // Deep inspection
+      if (Array.isArray(lastApiResponse) && lastApiResponse[0]) {
+        console.log('First element keys:', Object.keys(lastApiResponse[0]));
+        if (lastApiResponse[0].data) {
+          console.log('data property:', lastApiResponse[0].data);
+        }
+      }
+    } else {
+      console.log('No API response stored yet. Load data from webhook first.');
     }
   };
 
