@@ -2012,7 +2012,10 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         const cases = [...new Set(this.processedFields.filter(f => f.caseLabel && f.value !== undefined && f.value !== null && f.value !== '').map(f => f.caseLabel))];
 
         let displayFields = this.processedFields;
-        if (this.state.selectedCase !== 'all' && cases.length > 1) {
+        if (this.state.selectedCase === 'client-info') {
+          // Show only client info fields (no caseLabel)
+          displayFields = this.processedFields.filter(f => !f.caseLabel);
+        } else if (this.state.selectedCase !== 'all' && cases.length > 0) {
           displayFields = this.processedFields.filter(f => !f.caseLabel || f.caseLabel === this.state.selectedCase);
         }
 
@@ -2025,7 +2028,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             </div>
           </div>
           ${this.renderClientHeader(headerFields, clientName)}
-          ${cases.length > 1 ? this.renderCaseTabs(cases) : ''}
+          ${cases.length > 0 ? this.renderCaseTabs(cases) : ''}
           ${this.state.viewMode === 'narrative' ? this.renderNarrativeView(displayFields) : this.renderStructuredView(displayFields)}
           <div class="settings-row">
             <label class="settings-toggle">
@@ -2063,6 +2066,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         return `
           <div class="case-tabs">
             <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">All Cases<span class="case-count">${cases.length}</span></button>
+            <button class="case-tab ${this.state.selectedCase === 'client-info' ? 'active' : ''}" data-case="client-info">Client Info</button>
             ${cases.map(c => `<button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">${Utils.escapeHtml(c)}</button>`).join('')}
           </div>
         `;
@@ -2162,36 +2166,79 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         `).join('');
       },
 
-      attachEventListeners() {
-        document.querySelectorAll('#widget-frame .view-toggle button').forEach(btn => {
-          btn.addEventListener('click', (e) => { this.state.viewMode = e.currentTarget.dataset.view; this.render(); });
-        });
-        document.querySelectorAll('#widget-frame .case-tab').forEach(btn => {
-          btn.addEventListener('click', (e) => { this.state.selectedCase = e.currentTarget.dataset.case; this.render(); });
-        });
-        document.querySelectorAll('#widget-frame .field-group-header').forEach(header => {
-          header.addEventListener('click', (e) => {
-            const group = e.currentTarget.parentElement;
-            const groupName = group.dataset.group;
-            if (this.state.expandedGroups.has(groupName)) this.state.expandedGroups.delete(groupName);
-            else this.state.expandedGroups.add(groupName);
-            group.classList.toggle('collapsed');
-          });
-        });
-        const extraToggle = document.querySelector('#widget-frame [data-action="toggle-extra"]');
-        if (extraToggle) {
-          extraToggle.addEventListener('click', () => {
+      setupEventDelegation() {
+        // Set up event delegation once on the container - this persists across renders
+        const container = document.getElementById('app');
+        if (!container || container._delegationSetup) return;
+        container._delegationSetup = true;
+
+        container.addEventListener('click', (e) => {
+          const target = e.target;
+
+          // View toggle buttons (Structured/Narrative)
+          const viewBtn = target.closest('.view-toggle button');
+          if (viewBtn && viewBtn.dataset.view) {
+            e.preventDefault();
+            this.state.viewMode = viewBtn.dataset.view;
+            this.render();
+            return;
+          }
+
+          // Case tabs
+          const caseTab = target.closest('.case-tab');
+          if (caseTab && caseTab.dataset.case) {
+            e.preventDefault();
+            this.state.selectedCase = caseTab.dataset.case;
+            this.render();
+            return;
+          }
+
+          // Field group headers (expand/collapse)
+          const groupHeader = target.closest('.field-group-header');
+          if (groupHeader) {
+            const group = groupHeader.closest('.field-group');
+            if (group) {
+              const groupName = group.dataset.group;
+              if (this.state.expandedGroups.has(groupName)) {
+                this.state.expandedGroups.delete(groupName);
+              } else {
+                this.state.expandedGroups.add(groupName);
+              }
+              group.classList.toggle('collapsed');
+            }
+            return;
+          }
+
+          // Extra fields toggle
+          const extraToggle = target.closest('[data-action="toggle-extra"]');
+          if (extraToggle) {
             const content = document.getElementById('extra-fields');
-            content.classList.toggle('visible');
-            extraToggle.querySelector('span').innerHTML = content.classList.contains('visible') ? '&#9660;' : '&#9654;';
-          });
-        }
-        document.querySelectorAll('#widget-frame [data-setting]').forEach(input => {
-          input.addEventListener('change', (e) => {
-            if (e.target.dataset.setting === 'provenance') { this.state.showProvenance = e.target.checked; this.render(); }
-            if (e.target.dataset.setting === 'debug') { DebugLogger.toggle(e.target.checked); }
-          });
+            if (content) {
+              content.classList.toggle('visible');
+              const arrow = extraToggle.querySelector('span');
+              if (arrow) {
+                arrow.innerHTML = content.classList.contains('visible') ? '&#9660;' : '&#9654;';
+              }
+            }
+            return;
+          }
         });
+
+        container.addEventListener('change', (e) => {
+          const target = e.target;
+          if (target.dataset.setting === 'provenance') {
+            this.state.showProvenance = target.checked;
+            this.render();
+          }
+          if (target.dataset.setting === 'debug') {
+            DebugLogger.toggle(target.checked);
+          }
+        });
+      },
+
+      attachEventListeners() {
+        // Now just calls setupEventDelegation which only runs once
+        this.setupEventDelegation();
       }
     };
 
