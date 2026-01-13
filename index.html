@@ -1664,8 +1664,8 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
         DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: records.length });
 
-        // Identify Client Info record vs Case records
-        const { clientInfoRecord, caseRecords } = this.separateRecordTypes(records);
+        // Identify Client Info, Events, and Case records
+        const { clientInfoRecord, caseRecords, eventRecords } = this.separateRecordTypes(records);
 
         // Extract client fields from the appropriate source
         const clientFields = clientInfoRecord
@@ -1675,6 +1675,9 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         // Transform case records
         const cases = caseRecords.map((record, index) => this.transformCase(record, index));
 
+        // Transform event records
+        const events = eventRecords.map((record, index) => this.transformEvent(record, index));
+
         const result = {
           clientInfo: {
             recordId: clientInfoRecord?.id ||
@@ -1683,12 +1686,14 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
                       caseRecords[0]?.id,
             fields: clientFields
           },
-          cases
+          cases,
+          events
         };
 
         DebugLogger.success('DataTransformer: Transformation complete', {
           clientFieldCount: Object.keys(clientFields).length,
           caseCount: cases.length,
+          eventCount: events.length,
           hasClientInfoRecord: !!clientInfoRecord
         });
 
@@ -1696,12 +1701,13 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
       },
 
       /**
-       * Separate Client Info records from Case Master View records
+       * Separate Client Info, Events, and Case Master View records
        * Uses _sourceTable field when available, falls back to field-based heuristics
        */
       separateRecordTypes(records) {
         let clientInfoRecord = null;
         const caseRecords = [];
+        const eventRecords = [];
 
         for (const record of records) {
           const sourceTable = record._sourceTable;
@@ -1712,6 +1718,12 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
               clientInfoRecord = record;
               DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
+              continue;
+            }
+            // Check for Events table
+            if (tableLower.includes('event')) {
+              eventRecords.push(record);
+              DebugLogger.info(`DataTransformer: Event record via _sourceTable: ${sourceTable}`);
               continue;
             }
           } else {
@@ -1725,13 +1737,23 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
               'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
               'Case Master View Record ID', 'Appeal Engagement Deadline'
             ];
+            // Event-specific fields that distinguish from case records
+            const eventSpecificIndicators = ['Created At', 'Created date', 'Activity Details'];
 
             const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
             const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
+            const hasEventSpecificFields = eventSpecificIndicators.some(f => record[f] !== undefined);
 
             if (hasClientInfoFields && !hasCaseFields) {
               clientInfoRecord = record;
               DebugLogger.info('DataTransformer: Client Info record via field heuristics');
+              continue;
+            }
+
+            // Event records have Activity + Created At/Created date but lack complex case fields
+            if (hasEventSpecificFields && record['Activity'] && !record['Description'] && !record['Relief Sought']) {
+              eventRecords.push(record);
+              DebugLogger.info('DataTransformer: Event record via field heuristics');
               continue;
             }
           }
@@ -1740,8 +1762,8 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           caseRecords.push(record);
         }
 
-        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
-        return { clientInfoRecord, caseRecords };
+        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, ${eventRecords.length} event records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
+        return { clientInfoRecord, caseRecords, eventRecords };
       },
 
       /**
@@ -1828,6 +1850,37 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         };
       },
 
+      /**
+       * Transform a single event record
+       */
+      transformEvent(record, index) {
+        const fields = {};
+
+        // Fields to exclude from event records
+        const excludeFields = new Set([
+          'id', 'createdTime', '_sourceTable'
+        ]);
+
+        for (const [fieldName, rawValue] of Object.entries(record)) {
+          // Skip metadata/excluded fields
+          if (excludeFields.has(fieldName)) continue;
+
+          const value = this.normalizeValue(rawValue, fieldName);
+          if (value !== null) {
+            fields[fieldName] = value;
+          }
+        }
+
+        // Derive event identifier - use Activity or Event Name if available
+        const eventIdentifier = fields['Activity'] || fields['Event Name'] || `Event ${index + 1}`;
+
+        return {
+          recordId: record.id || `event-${index}`,
+          eventIdentifier,
+          fields
+        };
+      },
+
       deriveCaseIdentifier(record, index) {
         // Try common case identifier fields
         const identifierFields = ['Case Type', 'Case_Type', 'caseType', 'Case Number', 'Case_Number'];
@@ -1864,7 +1917,16 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         if (rawData.cases && Array.isArray(rawData.cases)) {
           rawData.cases.forEach((caseRecord, index) => {
             const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
-            this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
+            // Pass full record object to preserve recordId
+            this.processRecord(caseRecord, 'Case Master View', caseLabel, processed);
+          });
+        }
+        // Process event records
+        if (rawData.events && Array.isArray(rawData.events)) {
+          rawData.events.forEach((eventRecord, index) => {
+            const eventLabel = eventRecord.eventIdentifier || `Event ${index + 1}`;
+            // Pass full record object to preserve recordId
+            this.processRecord(eventRecord, 'Events', eventLabel, processed);
           });
         }
         return processed;
@@ -1876,7 +1938,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           if (value === null || value === undefined || value === '') return;
           if (Array.isArray(value) && value.length === 0) return;
           if (Utils.isHiddenField(fieldName)) return;
-          if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
+          if (fieldName === 'recordId' || fieldName === 'caseIdentifier' || fieldName === 'eventIdentifier') return;
           const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
           if (processedField) results.push(processedField);
         });

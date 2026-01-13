@@ -173,6 +173,68 @@ window.MOCK_DATA = [
     // Internal
     "Record ID": "recCASE003",
     "Case Master View Record ID": "recCASE003"
+  },
+  // Events table records
+  {
+    "id": "recEVENT001",
+    "createdTime": "2024-12-15T10:30:00.000Z",
+    "_sourceTable": "Events",
+    "Client Name": ["Rodriguez Garcia, Maria Elena"],
+    "Activity": "Intake completed",
+    "Details": "Client appeared with counsel. Initial consultation completed.\n════════════════════════════════════════════════════════════\nDocuments collected: ID, birth certificate, entry documents.\nNext steps: File SIJ petition in juvenile court.",
+    "Created At": "2024-12-15T10:30:00.000Z",
+    "Created date": "2024-12-15",
+    "Case Notes": "Initial intake for SIJ case. Client eligible based on age and circumstances.",
+    "Activity Details": { "label": "Edit", "url": "https://rklacylaw.softr.app/legacy-cmv-details?recordId=recEVENT001" }
+  },
+  {
+    "id": "recEVENT002",
+    "createdTime": "2025-01-05T14:00:00.000Z",
+    "_sourceTable": "Events",
+    "Client Name": ["Rodriguez Garcia, Maria Elena"],
+    "Activity": "SIJ Petition Filed",
+    "Details": "Filed custody petition in Davidson County Juvenile Court.\n════════════════════════════════════════════════════════════\nCase Number: 2025-JV-00123\nHearing scheduled for 2025-01-28.",
+    "Created At": "2025-01-05T14:00:00.000Z",
+    "Created date": "2025-01-05",
+    "Case Notes": "Custody petition filed. Awaiting court date.",
+    "Activity Details": { "label": "Edit", "url": "https://rklacylaw.softr.app/legacy-cmv-details?recordId=recEVENT002" }
+  },
+  {
+    "id": "recEVENT003",
+    "createdTime": "2025-01-10T09:15:00.000Z",
+    "_sourceTable": "Events",
+    "Client Name": ["Rodriguez Garcia, Maria Elena"],
+    "Activity": "Document Request",
+    "Details": "Requested authenticated birth certificate from Guatemala.\n════════════════════════════════════════════════════════════\nExpedited processing requested.\nEstimated arrival: 2-3 weeks.",
+    "Created At": "2025-01-10T09:15:00.000Z",
+    "Created date": "2025-01-10",
+    "Case Notes": "Birth certificate needed for I-360 filing. Client contacted family in Guatemala.",
+    "Activity Details": { "label": "Edit", "url": "https://rklacylaw.softr.app/legacy-cmv-details?recordId=recEVENT003" }
+  },
+  {
+    "id": "recEVENT004",
+    "createdTime": "2025-01-12T11:00:00.000Z",
+    "_sourceTable": "Events",
+    "Client Name": ["Rodriguez Garcia, Maria Elena"],
+    "Activity": "Pago Received",
+    "Details": "Payment received for SIJ services.\n════════════════════════════════════════════════════════════\nAmount: $1,500\nPayment plan: 3 installments remaining.",
+    "Created At": "2025-01-12T11:00:00.000Z",
+    "Created date": "2025-01-12",
+    "Case Notes": "First payment of $1,500 received. Balance: $3,000.",
+    "Activity Details": { "label": "Edit", "url": "https://rklacylaw.softr.app/legacy-cmv-details?recordId=recEVENT004" }
+  },
+  {
+    "id": "recEVENT005",
+    "createdTime": "2025-02-15T09:00:00.000Z",
+    "_sourceTable": "Events",
+    "Client Name": ["Rodriguez Garcia, Maria Elena"],
+    "Activity": "Court Hearing",
+    "Details": "Individual hearing at Memphis Immigration Court.\n════════════════════════════════════════════════════════════\nJudge: Hon. Patricia Williams\nOutcome: Pending SIJ determination.",
+    "Hearing Date/Time": "2025-02-15T09:00:00.000Z",
+    "Created At": "2025-02-15T09:00:00.000Z",
+    "Created date": "2025-02-15",
+    "Case Notes": "Appeared for scheduled individual hearing. Case continued pending SIJ adjudication.",
+    "Activity Details": { "label": "Edit", "url": "https://rklacylaw.softr.app/legacy-cmv-details?recordId=recEVENT005" }
   }
 ];
 
@@ -352,6 +414,34 @@ window.MOCK_SCHEMA = [
       { "type": "createdTime", "id": "fldCreated001", "name": "Created At" },
       { "type": "formula", "id": "fldRecordId001", "name": "Record ID", "options": { "result": { "type": "singleLineText" } } },
       { "type": "formula", "id": "fldCMVRecordId001", "name": "Case Master View Record ID", "options": { "result": { "type": "singleLineText" } } }
+    ]
+  },
+  {
+    "id": "tblEvents001",
+    "name": "Events",
+    "primaryFieldId": "fldActivity001",
+    "fields": [
+      { "type": "singleLineText", "id": "fldActivity001", "name": "Activity" },
+      { "type": "multilineText", "id": "fldDetails001", "name": "Details" },
+      { "type": "multilineText", "id": "fldCaseNotes001", "name": "Case Notes" },
+      { "type": "createdTime", "id": "fldCreatedAt001", "name": "Created At" },
+      { "type": "date", "id": "fldCreatedDate001", "name": "Created date" },
+      { "type": "dateTime", "id": "fldHearingDateTime001", "name": "Hearing Date/Time", "options": { "dateFormat": { "name": "local" }, "timeFormat": { "name": "12hour" } } },
+      { "type": "multipleRecordLinks", "id": "fldClientName001", "name": "Client Name" },
+      { "type": "button", "id": "fldActivityDetails001", "name": "Activity Details" },
+      { "type": "singleLineText", "id": "fldEventName001", "name": "Event Name" },
+      { "type": "singleSelect", "id": "fldHearingType001", "name": "Hearing Type", "options": { "choices": [
+        { "id": "selInd001", "name": "Individual" },
+        { "id": "selMaster001", "name": "Master Calendar" },
+        { "id": "selBond001", "name": "Bond" }
+      ]}},
+      { "type": "singleLineText", "id": "fldEventHearingType001", "name": "Event Hearing Type" },
+      { "type": "singleLineText", "id": "fldCourtOffice001", "name": "Court/Office" },
+      { "type": "multipleRecordLinks", "id": "fldJudge001", "name": "Judge" },
+      { "type": "multipleRecordLinks", "id": "fldMCHAttny001", "name": "MCH Attny" },
+      { "type": "date", "id": "fldClientNoticeDate001", "name": "Client Notice Date" },
+      { "type": "multilineText", "id": "fldHearingNotes001", "name": "Hearing Notes" },
+      { "type": "multilineText", "id": "fldCourtActionItems001", "name": "Court Action Items" }
     ]
   }
 ];
