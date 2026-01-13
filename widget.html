@@ -3948,7 +3948,7 @@
       // View toggle
       document.querySelectorAll('.view-toggle button').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          this.state.viewMode = e.target.dataset.view;
+          this.state.viewMode = e.currentTarget.dataset.view;
           this.render();
         });
       });
@@ -3956,7 +3956,7 @@
       // Narrative mode toggle (short/long)
       document.querySelectorAll('.narrative-toggle button').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          this.state.narrativeMode = e.target.dataset.narrative;
+          this.state.narrativeMode = e.currentTarget.dataset.narrative;
           this.render();
         });
       });
@@ -3964,7 +3964,7 @@
       // Main tabs
       document.querySelectorAll('.main-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          this.state.activeMainTab = e.target.dataset.mainTab;
+          this.state.activeMainTab = e.currentTarget.dataset.mainTab;
           this.state.settingsOpen = false; // Close settings when switching tabs
           this.render();
         });
