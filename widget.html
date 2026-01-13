@@ -2582,7 +2582,7 @@
         case 'date': return this.formatDate(value);
         case 'datetime': return this.formatDate(value, true);
         case 'phone': return this.formatPhone(value);
-        case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+        case 'boolean': return String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes' ? 'Yes' : 'No';
         case 'url': return value;
         default: return value;
       }
