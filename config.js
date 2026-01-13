@@ -941,7 +941,159 @@ const ClientGlanceConfig = {
     // Date format
     dateFormat: { year: 'numeric', month: 'short', day: 'numeric' },
     dateTimeFormat: { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
-  }
+  },
+
+  // ==========================================================================
+  // MAIN TABS CONFIGURATION
+  // Organizes data by source table into tabs
+  // Users can customize which fields to show (stored in localStorage)
+  // ==========================================================================
+
+  MAIN_TABS: {
+    client: {
+      id: 'client',
+      label: 'Client Info',
+      icon: '👤',
+      sourceTables: ['Client Info'],
+      // Default fields to show (field names from Airtable)
+      defaultFields: [
+        'Client Name',
+        'A#',
+        'First Name',
+        'Family Name',
+        'Middle Name',
+        'DOB',
+        'Age',
+        'Country',
+        'Phone Number',
+        'Client Email',
+        'Address',
+        'Case Manager',
+        'ICH Atty',
+        'Place of Entry',
+        'Entry Date'
+      ],
+      // Fields that are always hidden (internal/computed)
+      alwaysHidden: [
+        'recordId',
+        'airtable_client_info_id',
+        'A_number_airtable',
+        'Link to Practice Panther',
+        'PracticePanther',
+        'Softr Client Page',
+        'Client Details Page',
+        'Kenect Link',
+        'Kenect Thread',
+        'AMINO',
+        'box_shared_link',
+        'Box Sync Start',
+        'CMV sync',
+        'xanoEngagementNote',
+        'bahr_import_flatpack_data',
+        'PPID',
+        'Created At',
+        'Events',
+        'Events 2',
+        'Edit Client Info'
+      ]
+    },
+    cases: {
+      id: 'cases',
+      label: 'Cases',
+      icon: '📁',
+      sourceTables: ['Case Master View'],
+      defaultFields: [
+        'Client Name',
+        'Case Type',
+        'File Case Status',
+        'Asylum Case Status',
+        'Case Tags',
+        'Court/Office',
+        'Judge',
+        'Hearing Date/Time',
+        'Hearing Type',
+        'Relief Sought',
+        'Merits Final Decision',
+        'Merits Final Decision Date',
+        'Appeal Status',
+        'SIJ Case Status',
+        'USCIS Receipt Number',
+        'FBI Record Stage',
+        'Case Notes'
+      ],
+      alwaysHidden: [
+        'Edit Client Info',
+        'AMINO',
+        'Invoiced',
+        'Audit25-Q1',
+        'OYD Calculator',
+        'OYD'
+      ]
+    },
+    events: {
+      id: 'events',
+      label: 'Events',
+      icon: '📅',
+      sourceTables: ['Events'],
+      defaultFields: [
+        'Event Name',
+        'Hearing Date/Time',
+        'Event Hearing Type',
+        'Court/Office',
+        'Judge',
+        'MCH Attny',
+        'DHS ACC',
+        'Client Notice Date',
+        '10 day Client Notice',
+        'Supplement Filed Date',
+        'Hearing Notes',
+        'Court Action Items',
+        'Archive Status'
+      ],
+      alwaysHidden: [
+        'AMINO',
+        'Audit25-Q1',
+        'Push',
+        'Archive Event',
+        'Edit Client Info',
+        'Event Ids',
+        'Before Buffer Minutes',
+        'Precise Start Time UTC',
+        'Last Updated Core Events'
+      ]
+    },
+    applications: {
+      id: 'applications',
+      label: 'Applications',
+      icon: '📋',
+      sourceTables: ['Applications'],
+      defaultFields: [
+        'Name',
+        'Application',
+        'Status',
+        'Active',
+        'Receipt Number',
+        'Receipt Date',
+        'Sent Out',
+        'Decision Notice Date',
+        'Prima Facie',
+        'RFE Due Date',
+        'RFE/RFI (Topic)',
+        'NVC Case Number',
+        'Cert County/State',
+        'Notes',
+        'Tracking Number'
+      ],
+      alwaysHidden: [
+        'Amino',
+        'Edit Client Info',
+        'Created By'
+      ]
+    }
+  },
+
+  // LocalStorage key for user field preferences
+  STORAGE_KEY: 'clientGlance_fieldPrefs'
 };
 
 // Export for use in widget

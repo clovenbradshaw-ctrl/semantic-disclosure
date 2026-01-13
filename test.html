@@ -509,6 +509,13 @@
     iframe.src = `widget.html?recordId=${encodeURIComponent(recordId)}`;
     iframe.onload = () => {
       showStatus(`Widget loaded successfully for: ${recordId}`, 'success');
+      // Send recordId via postMessage as fallback for cross-origin/iframe issues
+      try {
+        iframe.contentWindow.postMessage({ type: 'recordId', recordId: recordId }, '*');
+        console.log('[Test] Sent recordId via postMessage:', recordId);
+      } catch (e) {
+        console.warn('[Test] Could not send postMessage:', e.message);
+      }
     };
     iframe.onerror = () => {
       showStatus('Failed to load widget', 'error');
