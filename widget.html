@@ -1819,7 +1819,7 @@
       if (name) {
         let identity = name;
         if (aNum) identity += ` (A# ${aNum})`;
-        if (age) identity += `, ${age}`;
+        if (age) identity += `, age ${age}`;
         if (country) identity += `, from ${country}`;
         sentences.push(identity);
       }
@@ -1828,7 +1828,7 @@
       if (matters.length > 0) {
         const matterDescriptions = matters.map(m => {
           const label = m.typeConfig?.label || m.type;
-          const status = m.status ? ` (${m.status.toLowerCase()})` : '';
+          const status = m.status ? ` (${String(m.status).toLowerCase()})` : '';
           return label + status;
         });
 
@@ -1871,7 +1871,7 @@
         let idSentence = `${name}`;
         if (aNum) idSentence += ` (A# ${aNum})`;
         if (age && gender) {
-          idSentence += ` is a ${age}-year-old ${gender.toLowerCase()}`;
+          idSentence += ` is a ${age}-year-old ${String(gender).toLowerCase()}`;
         } else if (age) {
           idSentence += ` is ${age} years old`;
         }
