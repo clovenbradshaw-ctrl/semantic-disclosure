@@ -1615,6 +1615,141 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
       }
     };
 
+    // ==========================================================================
+    // DATA TRANSFORMER
+    // Converts various API response formats to normalized clientInfo/cases structure
+    // ==========================================================================
+    const DataTransformer = {
+      transform(rawData) {
+        DebugLogger.info('DataTransformer: Analyzing input format', {
+          type: typeof rawData,
+          isArray: Array.isArray(rawData),
+          keys: rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 5) : null
+        });
+
+        // Handle n8n webhook wrapper format: [{"data":[...]}]
+        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0] && rawData[0].data) {
+          DebugLogger.info('DataTransformer: Detected n8n webhook wrapper format [{"data":[...]}]');
+          rawData = rawData[0].data;
+          if (!Array.isArray(rawData)) rawData = [rawData];
+        }
+
+        // Handle response with schema included: { schema: [...], data: [...] }
+        if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
+          DebugLogger.info('DataTransformer: Schema detected in response');
+          rawData = rawData.data || rawData.records || [];
+        }
+
+        // Handle already-normalized data
+        if (rawData && rawData.clientInfo) {
+          DebugLogger.info('DataTransformer: Data already in normalized format');
+          return rawData;
+        }
+
+        // Handle flat array of records
+        if (!Array.isArray(rawData) || rawData.length === 0) {
+          DebugLogger.warn('DataTransformer: Empty or invalid data received');
+          return { clientInfo: { fields: {} }, cases: [] };
+        }
+
+        DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: rawData.length });
+
+        // Extract client info from first record
+        const firstRecord = rawData[0];
+        const clientFields = this.extractClientFields(firstRecord);
+
+        // Transform each record into a case
+        const cases = rawData.map((record, index) => this.transformCase(record, index));
+
+        const result = {
+          clientInfo: {
+            recordId: this.unwrapValue(firstRecord['Client_ID_Airtable']) || firstRecord.id,
+            fields: clientFields
+          },
+          cases
+        };
+
+        DebugLogger.success('DataTransformer: Transformation complete', {
+          clientFieldCount: Object.keys(clientFields).length,
+          caseCount: cases.length
+        });
+
+        return result;
+      },
+
+      extractClientFields(record) {
+        const clientFieldNames = [
+          'Client Name', 'First Name', 'Family Name', 'Middle Name',
+          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+          'Address', 'Gender', 'Pronouns'
+        ];
+
+        const fields = {};
+        for (const fieldName of clientFieldNames) {
+          if (record[fieldName] !== undefined) {
+            const value = this.normalizeValue(record[fieldName], fieldName);
+            if (value !== null) {
+              fields[fieldName] = value;
+            }
+          }
+        }
+        return fields;
+      },
+
+      transformCase(record, index) {
+        const caseIdentifier = this.deriveCaseIdentifier(record, index);
+        const fields = {};
+
+        // Copy all fields except client-level ones
+        const clientFieldNames = new Set([
+          'Client Name', 'First Name', 'Family Name', 'Middle Name',
+          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
+          'Address', 'Gender', 'Pronouns', 'Client_ID_Airtable', 'id'
+        ]);
+
+        for (const [key, value] of Object.entries(record)) {
+          if (!clientFieldNames.has(key)) {
+            const normalizedValue = this.normalizeValue(value, key);
+            if (normalizedValue !== null) {
+              fields[key] = normalizedValue;
+            }
+          }
+        }
+
+        return {
+          caseIdentifier,
+          recordId: record.id || record.recordId,
+          fields
+        };
+      },
+
+      deriveCaseIdentifier(record, index) {
+        // Try common case identifier fields
+        const identifierFields = ['Case Type', 'Case_Type', 'caseType', 'Case Number', 'Case_Number'];
+        for (const field of identifierFields) {
+          if (record[field]) {
+            return this.unwrapValue(record[field]);
+          }
+        }
+        return `Case ${index + 1}`;
+      },
+
+      normalizeValue(value, fieldName) {
+        if (value === null || value === undefined || value === '') return null;
+        if (Array.isArray(value)) {
+          if (value.length === 0) return null;
+          if (value.length === 1) return value[0];
+          return value;
+        }
+        return value;
+      },
+
+      unwrapValue(value) {
+        if (Array.isArray(value) && value.length > 0) return value[0];
+        return value;
+      }
+    };
+
     const DataProcessor = {
       processFields(rawData) {
         const processed = [];
@@ -1743,10 +1878,12 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
       init(data) {
         DebugLogger.info('Renderer initializing with data');
-        this.data = data;
+        // Transform raw API response to normalized format
+        const normalizedData = DataTransformer.transform(data);
+        this.data = normalizedData;
         try {
           DebugLogger.info('Processing fields...');
-          this.processedFields = DataProcessor.processFields(data);
+          this.processedFields = DataProcessor.processFields(normalizedData);
           DebugLogger.success('Fields processed', {
             totalFields: this.processedFields.length,
             tier1: this.processedFields.filter(f => f.tier === 1).length,
@@ -1967,7 +2104,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     }
 
     // Expose globally
-    window.ClientGlance = { Utils, DataProcessor, Renderer, DebugLogger };
+    window.ClientGlance = { Utils, DataTransformer, DataProcessor, Renderer, DebugLogger };
   }
 })();
 </script>
