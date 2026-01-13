@@ -3229,8 +3229,15 @@
               count = this.events?.filter(e => e.urgency !== 'past').length || 0;
             } else if (tabId === 'applications') {
               count = this.applications?.length || 0;
+            } else if (tabId === 'notes') {
+              // Count actual note entries with content
+              const noteFields = CONFIG?.MAIN_TABS?.notes?.noteFields || ['Case Notes', 'Hearing Notes', 'Notes'];
+              count = this.processedFields?.filter(f => noteFields.includes(f.fieldName) && f.value).length || 0;
+            } else if (tabId === 'client') {
+              // Count client info fields with values
+              count = this.tabData[tabId]?.fields?.filter(f => f.value).length || 0;
             } else if (tabId !== 'overview' && tabId !== 'timeline') {
-              count = this.tabData[tabId]?.fields.length || 0;
+              count = this.tabData[tabId]?.fields?.filter(f => f.value).length || 0;
             }
 
             return `
