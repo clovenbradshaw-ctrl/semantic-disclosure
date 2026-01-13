@@ -938,39 +938,48 @@
 
     /**
      * Separate Client Info records from Case Master View records
-     * Client Info records have unique fields like "Full Client Name", "Address Line 1", etc.
+     * Uses _sourceTable field when available, falls back to field-based heuristics
      */
     separateRecordTypes(records) {
-      // Fields that indicate a Client Info record (not Case Master View)
-      const clientInfoIndicators = [
-        'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
-        'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
-        'Box_Folder_ID', 'Phone Reformat 1 xxxxxxxxxx', 'Kenect Link',
-        'Client Details Page', 'airtable_client_info_id'
-      ];
-
-      // Fields that indicate a Case Master View record
-      const caseIndicators = [
-        'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
-        'Case Master View Record ID', 'Appeal Engagement Deadline',
-        'Est. Clock Days', 'FOIA Button', 'Activity Details'
-      ];
-
       let clientInfoRecord = null;
       const caseRecords = [];
 
       for (const record of records) {
-        const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
-        const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
+        const sourceTable = record._sourceTable;
 
-        if (hasClientInfoFields && !hasCaseFields) {
-          // This is a Client Info record
-          clientInfoRecord = record;
-          console.log('[DataTransformer] Identified Client Info record');
+        // Primary detection: use _sourceTable field if available
+        if (sourceTable) {
+          const tableLower = sourceTable.toLowerCase();
+          if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
+            clientInfoRecord = record;
+            console.log(`[DataTransformer] Client Info record via _sourceTable: ${sourceTable}`);
+            continue;
+          }
+          // Otherwise it's a case record - continue to add below
         } else {
-          // This is a Case Master View record
-          caseRecords.push(record);
+          // Fallback: field-based heuristics for older response formats
+          const clientInfoIndicators = [
+            'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
+            'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
+            'Box_Folder_ID', 'Client Details Page', 'airtable_client_info_id'
+          ];
+          const caseIndicators = [
+            'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
+            'Case Master View Record ID', 'Appeal Engagement Deadline'
+          ];
+
+          const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
+          const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
+
+          if (hasClientInfoFields && !hasCaseFields) {
+            clientInfoRecord = record;
+            console.log('[DataTransformer] Client Info record via field heuristics');
+            continue;
+          }
         }
+
+        // Default: treat as Case Master View record
+        caseRecords.push(record);
       }
 
       console.log(`[DataTransformer] Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
