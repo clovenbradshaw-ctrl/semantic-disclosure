@@ -1587,7 +1587,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           case 'date': return this.formatDate(value);
           case 'datetime': return this.formatDate(value, true);
           case 'phone': return this.formatPhone(value);
-          case 'boolean': return value.toLowerCase() === 'true' || value.toLowerCase() === 'yes' ? 'Yes' : 'No';
+          case 'boolean': return String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes' ? 'Yes' : 'No';
           default: return value;
         }
       },
@@ -1708,7 +1708,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
           // Primary detection: use _sourceTable field if available
           if (sourceTable) {
-            const tableLower = sourceTable.toLowerCase();
+            const tableLower = String(sourceTable).toLowerCase();
             if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
               clientInfoRecord = record;
               DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
