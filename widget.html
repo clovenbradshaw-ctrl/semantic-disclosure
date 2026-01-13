@@ -2227,7 +2227,36 @@
         : this.extractClientFields(caseRecords[0] || {});
 
       // Transform case records
-      const cases = caseRecords.map((record, index) => this.transformCase(record, index));
+      const transformedCases = caseRecords.map((record, index) => this.transformCase(record, index));
+
+      // Deduplicate cases by recordId AND caseIdentifier
+      // This prevents duplicate tabs when:
+      // 1. Same recordId appears multiple times in the data
+      // 2. Different records have the same case description (same logical case)
+      const seenRecordIds = new Set();
+      const seenCaseIdentifiers = new Set();
+      const cases = transformedCases.filter(caseRecord => {
+        // First check: skip if we've seen this exact recordId before
+        if (caseRecord.recordId && seenRecordIds.has(caseRecord.recordId)) {
+          console.log(`[DataTransformer] Skipping duplicate recordId: ${caseRecord.recordId}`);
+          return false;
+        }
+
+        // Second check: skip if we've seen this caseIdentifier before
+        // (unless it's a generic "Case X" identifier which should be kept)
+        const isGenericLabel = /^Case \d+$/.test(caseRecord.caseIdentifier);
+        if (!isGenericLabel && seenCaseIdentifiers.has(caseRecord.caseIdentifier)) {
+          console.log(`[DataTransformer] Skipping duplicate caseIdentifier: ${caseRecord.caseIdentifier}`);
+          return false;
+        }
+
+        // Track both keys
+        if (caseRecord.recordId) seenRecordIds.add(caseRecord.recordId);
+        seenCaseIdentifiers.add(caseRecord.caseIdentifier);
+        return true;
+      });
+
+      console.log(`[DataTransformer] After deduplication: ${cases.length} cases (was ${transformedCases.length})`);
 
       return {
         clientInfo: {
