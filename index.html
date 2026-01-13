@@ -2134,7 +2134,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             <span class="field-label"><span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}</span>
             <span class="field-value">
               ${this.renderFieldValue(field)}
-              ${this.state.showProvenance && field.caseLabel ? `<span class="provenance-badge">${Utils.escapeHtml(field.caseLabel)}</span>` : ''}
+              ${this.state.showProvenance && (field.sourceTable || field.caseLabel) ? `<span class="provenance-badge">${Utils.escapeHtml(field.sourceTable || field.caseLabel)}</span>` : ''}
             </span>
           </div>
         `).join('');
