@@ -34,7 +34,7 @@
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
     const SOFTR_BASE_URL = 'https://rklacylaw.softr.app/client-info';
-    const STORAGE_KEY = 'semantic-disclosure-field-prefs-v2';
+    const STORAGE_KEY = 'semantic-disclosure-field-prefs-v3';
 
     // ═══════════════════════════════════════════════════════════════
     // EXTERNAL LINK HELPERS - Generate URLs for Softr and Google Calendar
@@ -140,7 +140,7 @@
         for (const [category, fields] of Object.entries(FIELD_REGISTRY)) {
           prefs[view][category] = fields.map(f => ({
             key: f.key,
-            visible: f.views[view] ?? false
+            visible: true  // All fields available by default - users can toggle off what they don't need
           }));
         }
       });
@@ -166,7 +166,7 @@
                   if (!existingKeys.has(f.key)) {
                     parsed[view][category].push({
                       key: f.key,
-                      visible: f.views[view] ?? false
+                      visible: true  // New fields are visible by default
                     });
                   }
                 });
