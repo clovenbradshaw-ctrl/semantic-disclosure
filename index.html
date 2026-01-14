@@ -775,9 +775,10 @@
         }
       }
 
-      // Events summary (calendar events)
-      if (events && events.length > 0) {
-        const upcomingEvents = events
+      // Calendar events (combined hearings and events)
+      const allCalendarItems = [...(hearings || []), ...(events || [])];
+      if (allCalendarItems.length > 0) {
+        const upcomingEvents = allCalendarItems
           .filter(e => e.startDateTime && new Date(e.startDateTime) >= new Date())
           .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
 
@@ -785,35 +786,18 @@
           const nextEvent = upcomingEvents[0];
           const eventDate = isFieldVisible('events', 'dateTime') ? formatDate(nextEvent.startDateTime) : '';
           const eventTitle = isFieldVisible('events', 'title') ? (nextEvent.title || nextEvent.summary || 'Upcoming event') : 'Event';
+          const location = (isFieldVisible('events', 'location') && nextEvent.location) ? ` at ${escapeHtml(nextEvent.location)}` : '';
 
-          let eventLine = `<span class="text-rose-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)}`;
+          let eventLine = `<span class="text-amber-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)}`;
           if (eventDate) eventLine += ` on ${eventDate}`;
+          eventLine += location;
           lines.push(eventLine);
 
           if (upcomingEvents.length > 1) {
             lines.push(`<span class="text-slate-400">${upcomingEvents.length - 1} more upcoming ${pluralize(upcomingEvents.length - 1, 'event')}.</span>`);
           }
         } else {
-          lines.push(`<span class="text-rose-300">${events.length} ${pluralize(events.length, 'event')} on file.</span>`);
-        }
-      }
-
-      // Hearings from calendar
-      if (hearings && hearings.length > 0) {
-        const upcomingHearings = hearings
-          .filter(h => h.startDateTime && new Date(h.startDateTime) >= new Date())
-          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
-
-        if (upcomingHearings.length > 0) {
-          const nextHearing = upcomingHearings[0];
-          const hearingDate = isFieldVisible('events', 'dateTime') ? formatDate(nextHearing.startDateTime) : '';
-          const hearingTitle = isFieldVisible('events', 'title') ? (nextHearing.title || nextHearing.summary || 'Hearing') : 'Hearing';
-          const location = (isFieldVisible('events', 'location') && nextHearing.location) ? ` at ${escapeHtml(nextHearing.location)}` : '';
-
-          let hearingLine = `<span class="text-amber-400 font-medium">Scheduled hearing:</span> ${escapeHtml(hearingTitle)}`;
-          if (hearingDate) hearingLine += ` on ${hearingDate}`;
-          hearingLine += location;
-          lines.push(hearingLine);
+          lines.push(`<span class="text-amber-300">${allCalendarItems.length} ${pluralize(allCalendarItems.length, 'event')} on file.</span>`);
         }
       }
 
@@ -1095,10 +1079,10 @@
         }
       }
 
-      // ─── Calendar Events & Hearings ───
-      const allCalendarItems = [...(events || []), ...(hearings || [])];
+      // ─── Calendar Events ───
+      const allCalendarItems = [...(hearings || []), ...(events || [])];
       if (allCalendarItems.length > 0) {
-        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Scheduled Events & Hearings</span>`);
+        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Scheduled Events</span>`);
 
         // Sort by date
         const sortedItems = allCalendarItems
@@ -1210,8 +1194,7 @@
         client: data.client ? 1 : 0,
         cases: Array.isArray(data.cases) ? data.cases.length : 0,
         applications: Array.isArray(data.applications) ? data.applications.length : 0,
-        hearings: Array.isArray(data.hearings) ? data.hearings.length : 0,
-        events: Array.isArray(data.events) ? data.events.length : 0
+        events: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0)
       };
       const countBadges = Object.entries(counts).map(([type, count]) => {
         const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
@@ -1686,8 +1669,9 @@
       }
 
       const applicationsHtml = renderApplicationsSection(applications);
-      const hearingsHtml = renderCalendarSection('Hearings', hearings, 'hearings', 'bg-amber-500/20', 'text-amber-400');
-      const eventsHtml = renderCalendarSection('Events', events, 'events', 'bg-rose-500/20', 'text-rose-400');
+      // Combine hearings and events into a single Events section
+      const allCalendarEvents = [...(hearings || []), ...(events || [])];
+      const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-400');
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
@@ -1695,7 +1679,6 @@
           ${clientHtml}
           ${casesHtml}
           ${applicationsHtml}
-          ${hearingsHtml}
           ${eventsHtml}
         </div>
       `;
@@ -1821,27 +1804,10 @@
         });
       }
 
-      // ─── CALENDAR: HEARINGS ───
-      if (hearings && hearings.length > 0) {
-        hearings.forEach(hearing => {
-          if (isValidDate(hearing.startDateTime)) {
-            timelineItems.push({
-              date: new Date(hearing.startDateTime),
-              statement: hearing.title || hearing.summary || 'Hearing',
-              detail: hearing.location || null,
-              source: 'Hearings',
-              meetLink: hearing.meetLink,
-              calendarUrl: getGoogleCalendarEventUrl(hearing),
-              icon: '🏛️',
-              color: 'amber'
-            });
-          }
-        });
-      }
-
-      // ─── CALENDAR: EVENTS ───
-      if (events && events.length > 0) {
-        events.forEach(event => {
+      // ─── CALENDAR EVENTS ───
+      const allCalendarEvents = [...(hearings || []), ...(events || [])];
+      if (allCalendarEvents.length > 0) {
+        allCalendarEvents.forEach(event => {
           if (isValidDate(event.startDateTime)) {
             timelineItems.push({
               date: new Date(event.startDateTime),
@@ -1851,7 +1817,7 @@
               meetLink: event.meetLink,
               calendarUrl: getGoogleCalendarEventUrl(event),
               icon: '📅',
-              color: 'rose'
+              color: 'amber'
             });
           }
         });
@@ -1906,9 +1872,9 @@
           meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-xs">Join Video</a>`;
         }
 
-        // Add Google Calendar link for Events and Hearings sources
+        // Add Google Calendar link for Events source
         let calendarLinkLine = '';
-        if ((item.source === 'Events' || item.source === 'Hearings') && item.calendarUrl) {
+        if (item.source === 'Events' && item.calendarUrl) {
           calendarLinkLine = renderCalendarLinkIcon(item.calendarUrl, 'Open in Google Calendar');
         }
 
