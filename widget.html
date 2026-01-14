@@ -319,6 +319,24 @@
       text-decoration: none;
     }
 
+    .smart-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .smart-link:hover {
+      background: var(--bg-tertiary);
+      color: var(--accent-blue);
+    }
+
     /* Provenance Badge */
     .provenance-badge {
       font-size: 10px;
@@ -777,6 +795,24 @@
       padding: 12px 16px;
     }
 
+    .tuple-card-dates {
+      padding: 8px 16px 12px;
+      border-top: 1px dashed var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .tuple-card-dates .tuple-field-row {
+      font-size: 12px;
+    }
+
+    .tab-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
     .tuple-field-row {
       display: flex;
       justify-content: space-between;
@@ -1014,6 +1050,42 @@
       background: var(--bg-card);
       color: var(--text-primary);
       box-shadow: var(--shadow-sm);
+    }
+
+    /* Overview Toolbar */
+    .overview-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .customize-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .customize-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--accent-blue);
+      background: var(--bg-secondary);
+    }
+
+    .zone-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      border-left: 2px solid var(--accent-blue);
     }
 
     /* Status Colors */
@@ -2268,6 +2340,16 @@
       color: var(--text-primary);
     }
 
+    .footer-btn.danger {
+      border: 1px solid #dc2626;
+      background: transparent;
+      color: #dc2626;
+    }
+
+    .footer-btn.danger:hover {
+      background: #dc262610;
+    }
+
     .footer-btn.primary {
       border: none;
       background: var(--accent-blue);
@@ -2986,6 +3068,84 @@
     },
 
     /**
+     * Compose short narrative using zone-configured fields
+     * This allows users to customize which fields appear in the summary
+     */
+    composeShortFromZone(clientInfo, matters, upcomingEvents, narrativeFieldNames) {
+      const sentences = [];
+      const fields = clientInfo?.fields || {};
+
+      // Build identity sentence from zone-configured fields
+      if (narrativeFieldNames.length > 0) {
+        const parts = [];
+        for (const fieldName of narrativeFieldNames) {
+          const value = fields[fieldName];
+          if (value) {
+            // Format based on field name
+            if (fieldName === 'Client Name') {
+              parts.unshift(value); // Name goes first
+            } else if (fieldName === 'A#') {
+              // Insert A# right after name
+              if (parts.length > 0) {
+                parts[0] = `${parts[0]} (A# ${value})`;
+              } else {
+                parts.push(`A# ${value}`);
+              }
+            } else if (fieldName === 'Age') {
+              parts.push(`age ${value}`);
+            } else if (fieldName === 'Country') {
+              parts.push(`from ${value}`);
+            } else if (fieldName === 'DOB') {
+              parts.push(`born ${Utils.formatDate(value)}`);
+            } else if (fieldName === 'Gender') {
+              parts.push(String(value).toLowerCase());
+            } else {
+              // Generic format
+              parts.push(value);
+            }
+          }
+        }
+        if (parts.length > 0) {
+          sentences.push(parts.join(', '));
+        }
+      } else {
+        // Fallback to default behavior if no zone config
+        const name = fields['Client Name'];
+        const aNum = fields['A#'];
+        const age = fields['Age'];
+        const country = fields['Country'];
+
+        if (name) {
+          let identity = name;
+          if (aNum) identity += ` (A# ${aNum})`;
+          if (age) identity += `, age ${age}`;
+          if (country) identity += `, from ${country}`;
+          sentences.push(identity);
+        }
+      }
+
+      // Matters sentence
+      if (matters.length > 0) {
+        const matterDescriptions = matters.map(m => {
+          const label = m.typeConfig?.label || m.type;
+          const status = m.status ? ` (${String(m.status).toLowerCase()})` : '';
+          return label + status;
+        });
+
+        const verb = matters.length === 1 ? 'has' : 'have';
+        sentences.push(`${this.pronouns.subject} ${verb} ${matterDescriptions.join(' and ')} matter${matters.length > 1 ? 's' : ''}`);
+      }
+
+      // Next date sentence
+      if (upcomingEvents.length > 0) {
+        const next = upcomingEvents[0];
+        sentences.push(`Next: ${next.title} on ${Utils.formatDate(next.date)}`);
+      }
+
+      return sentences.join('. ') + (sentences.length ? '.' : '');
+    },
+
+    /**
      * Compose long narrative (full detail)
      */
     composeLong(clientInfo, matters, tuples, events, applications) {
@@ -3630,6 +3790,73 @@
       };
     },
 
+    /**
+     * Get default zone contents for a tab based on semantic field assignments
+     * These are used when user hasn't customized the layout
+     */
+    getDefaultZoneContents(tabId, zoneId) {
+      const defaults = {
+        overview: {
+          'narrative': ['Client Name', 'A#', 'Age', 'Country', 'DOB'],
+          'header': ['Client Name', 'A#'],
+          'status-cards': [], // Populated dynamically from matters
+          'events-panel': [] // Populated dynamically from events
+        },
+        matters: {
+          'card-header': ['Description', 'File Case Status'],
+          'card-status': ['Asylum Case Status', 'SIJ Case Status', 'U-Visa Status', 'Bond Stage'],
+          'card-body': ['Court/Office', 'Judge', 'Relief Sought'],
+          'card-dates': ['Hearing Date/Time', 'Next Master', 'SIJS Decision']
+        },
+        events: {
+          'event-header': ['summary', 'Hearing Type'],
+          'event-datetime': ['start', 'Hearing Date/Time'],
+          'event-location': ['location', 'Court/Office'],
+          'event-details': ['description', 'Hearing Notes', 'Court Action Items']
+        },
+        applications: {
+          'app-type': ['Application', 'Name'],
+          'app-status': ['Status', 'Active'],
+          'app-receipt': ['Receipt Number', 'Receipt Date'],
+          'app-details': ['Decision Notice Date', 'Prima Facie', 'RFE Due Date', 'Notes']
+        },
+        notes: {
+          'note-content': ['Case Notes', 'Hearing Notes', 'Court Action Items', 'Notes', 'Master Hearing Notes'],
+          'note-meta': []
+        },
+        timeline: {
+          'timeline-date': [],
+          'timeline-event': [],
+          'timeline-details': []
+        },
+        client: {
+          'identity-hero': ['Client Name', 'A#'],
+          'identity-details': ['DOB', 'Age', 'Country', 'Gender', 'Pronouns'],
+          'contact-info': ['Phone Number', 'Client Email', 'Address'],
+          'entry-info': ['Entry Date', 'Entry Status', 'Place of Entry']
+        }
+      };
+      return defaults[tabId]?.[zoneId] || [];
+    },
+
+    /**
+     * Get effective zone contents - user preferences or defaults
+     */
+    getEffectiveZoneContents(tabId, zoneId) {
+      const userContents = this.getZoneContents(tabId, zoneId);
+      if (userContents.length > 0) {
+        return userContents;
+      }
+      return this.getDefaultZoneContents(tabId, zoneId);
+    },
+
+    /**
+     * Check if user has customized a specific zone
+     */
+    isZoneCustomized(tabId, zoneId) {
+      return this.getZoneContents(tabId, zoneId).length > 0;
+    },
+
     save() {
       try {
         localStorage.setItem(this.storageKey, JSON.stringify(this.preferences));
@@ -3717,6 +3944,90 @@
     resetTab(tabId) {
       if (!this.preferences) this.load();
       delete this.preferences.tabs[tabId];
+      this.save();
+    }
+  };
+
+  // ==========================================================================
+  // VIEW PREFERENCES
+  // Persists view state (active tab, narrative mode, etc.) across sessions
+  // ==========================================================================
+
+  const ViewPreferences = {
+    storageKey: CONFIG?.VIEW_PREFS_KEY || 'clientGlance_viewPrefs',
+    preferences: null,
+
+    load() {
+      try {
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) {
+          this.preferences = JSON.parse(stored);
+          console.log('[ViewPreferences] Loaded from localStorage');
+        } else {
+          this.preferences = this.getDefaults();
+        }
+      } catch (e) {
+        console.warn('[ViewPreferences] Error loading:', e.message);
+        this.preferences = this.getDefaults();
+      }
+      return this.preferences;
+    },
+
+    getDefaults() {
+      return {
+        activeTab: 'overview',
+        narrativeMode: 'short',
+        selectedMatter: null,
+        expandedGroups: [],
+        version: 1
+      };
+    },
+
+    save() {
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.preferences));
+      } catch (e) {
+        console.warn('[ViewPreferences] Error saving:', e.message);
+      }
+    },
+
+    get(key) {
+      if (!this.preferences) this.load();
+      return this.preferences[key];
+    },
+
+    set(key, value) {
+      if (!this.preferences) this.load();
+      this.preferences[key] = value;
+      this.save();
+    },
+
+    getActiveTab() {
+      return this.get('activeTab') || 'overview';
+    },
+
+    setActiveTab(tabId) {
+      this.set('activeTab', tabId);
+    },
+
+    getNarrativeMode() {
+      return this.get('narrativeMode') || 'short';
+    },
+
+    setNarrativeMode(mode) {
+      this.set('narrativeMode', mode);
+    },
+
+    getSelectedMatter() {
+      return this.get('selectedMatter');
+    },
+
+    setSelectedMatter(matter) {
+      this.set('selectedMatter', matter);
+    },
+
+    reset() {
+      this.preferences = this.getDefaults();
       this.save();
     }
   };
@@ -3838,7 +4149,8 @@
                 ${this.pendingChanges.size > 0 ? `${this.pendingChanges.size} pending changes` : 'No changes'}
               </div>
               <div class="footer-actions">
-                <button class="footer-btn secondary" data-action="reset-tab">Reset to Defaults</button>
+                <button class="footer-btn danger" data-action="reset-all" title="Reset all tabs to defaults">Reset All</button>
+                <button class="footer-btn secondary" data-action="reset-tab" title="Reset this tab to defaults">Reset Tab</button>
                 <button class="footer-btn secondary" data-action="close-canvas">Cancel</button>
                 <button class="footer-btn primary" data-action="save-canvas">Save Changes</button>
               </div>
@@ -4231,13 +4543,53 @@
         this.save();
       });
 
-      // Reset button
+      // Reset button - reset current tab to defaults
       overlay.querySelector('[data-action="reset-tab"]')?.addEventListener('click', () => {
-        LayoutPreferences.resetTab(this.currentTab);
-        FieldPreferences.setVisibleFields(this.currentTab,
-          CONFIG?.MAIN_TABS?.[this.currentTab]?.defaultFields || []);
-        this.pendingChanges.clear();
-        this.render();
+        const tabLabel = CONFIG?.MAIN_TABS?.[this.currentTab]?.label || this.currentTab;
+        if (confirm(`Reset "${tabLabel}" tab to default settings?\n\nThis will remove any custom field configurations and zone assignments for this tab.`)) {
+          LayoutPreferences.resetTab(this.currentTab);
+          FieldPreferences.setVisibleFields(this.currentTab,
+            CONFIG?.MAIN_TABS?.[this.currentTab]?.defaultFields || []);
+          this.pendingChanges.clear();
+          this.render();
+
+          // Show feedback
+          const footer = overlay.querySelector('.footer-info');
+          if (footer) {
+            footer.innerHTML = '✓ Reset to defaults';
+            footer.style.color = '#10b981';
+            setTimeout(() => {
+              footer.innerHTML = 'No changes';
+              footer.style.color = '';
+            }, 2000);
+          }
+        }
+      });
+
+      // Reset all preferences button
+      overlay.querySelector('[data-action="reset-all"]')?.addEventListener('click', () => {
+        if (confirm('Reset ALL preferences to defaults?\n\nThis will clear all custom configurations for every tab, zone assignments, and view preferences.\n\nThis action cannot be undone.')) {
+          // Reset all tabs
+          const tabs = Object.keys(CONFIG?.MAIN_TABS || {});
+          for (const tabId of tabs) {
+            LayoutPreferences.resetTab(tabId);
+            FieldPreferences.setVisibleFields(tabId, CONFIG?.MAIN_TABS?.[tabId]?.defaultFields || []);
+          }
+          ViewPreferences.reset();
+          this.pendingChanges.clear();
+          this.render();
+
+          // Show feedback
+          const footer = overlay.querySelector('.footer-info');
+          if (footer) {
+            footer.innerHTML = '✓ All preferences reset';
+            footer.style.color = '#10b981';
+            setTimeout(() => {
+              footer.innerHTML = 'No changes';
+              footer.style.color = '';
+            }, 2000);
+          }
+        }
       });
 
       // View tabs
@@ -5452,6 +5804,12 @@
       // Load user preferences
       FieldPreferences.load();
       LayoutPreferences.load();
+      ViewPreferences.load();
+
+      // Restore view state from preferences
+      this.state.activeMainTab = ViewPreferences.getActiveTab();
+      this.state.narrativeMode = ViewPreferences.getNarrativeMode();
+      this.state.selectedMatter = ViewPreferences.getSelectedMatter();
 
       // Initialize Field Registry for Field Canvas
       FieldRegistry.init(data, this.processedFields);
@@ -5484,6 +5842,70 @@
       this.organizeFieldsByTab();
 
       this.render();
+    },
+
+    /**
+     * Get fields for a specific zone in the current tab
+     * Returns processed fields that match the zone configuration
+     */
+    getFieldsForZone(tabId, zoneId) {
+      const zoneFieldNames = LayoutPreferences.getEffectiveZoneContents(tabId, zoneId);
+      const fields = [];
+
+      for (const fieldName of zoneFieldNames) {
+        // Find matching processed fields
+        const matchingFields = this.processedFields.filter(f =>
+          f.fieldName === fieldName ||
+          f.displayLabel === fieldName ||
+          f.fieldName.toLowerCase() === fieldName.toLowerCase()
+        );
+        fields.push(...matchingFields);
+      }
+
+      return fields;
+    },
+
+    /**
+     * Get a single field value from client info or cases
+     */
+    getFieldValue(fieldName) {
+      // Check client info first
+      const clientFields = this.normalizedData.clientInfo?.fields || {};
+      if (clientFields[fieldName] !== undefined) {
+        return clientFields[fieldName];
+      }
+
+      // Check processed fields
+      const field = this.processedFields.find(f => f.fieldName === fieldName);
+      return field?.value;
+    },
+
+    /**
+     * Get fields from client info that match zone configuration
+     */
+    getClientFieldsForZone(zoneId) {
+      const zoneFieldNames = LayoutPreferences.getEffectiveZoneContents('client', zoneId);
+      const clientFields = this.normalizedData.clientInfo?.fields || {};
+      const result = [];
+
+      for (const fieldName of zoneFieldNames) {
+        if (clientFields[fieldName] !== undefined && clientFields[fieldName] !== '') {
+          result.push({
+            fieldName,
+            value: clientFields[fieldName],
+            displayLabel: Utils.humanizeFieldName(fieldName)
+          });
+        }
+      }
+
+      return result;
+    },
+
+    /**
+     * Check if zone is using custom configuration
+     */
+    isZoneCustomized(tabId, zoneId) {
+      return LayoutPreferences.isZoneCustomized(tabId, zoneId);
     },
 
     /**
@@ -6055,7 +6477,12 @@
     renderOverviewView() {
       const upcomingEvents = this.events.filter(e => e.urgency !== 'past').slice(0, 5);
 
-      // Short/long narrative toggle
+      // Get zone-configured fields for narrative
+      const narrativeFieldNames = LayoutPreferences.getEffectiveZoneContents('overview', 'narrative');
+      const headerFieldNames = LayoutPreferences.getEffectiveZoneContents('overview', 'header');
+      const isCustomized = LayoutPreferences.isZoneCustomized('overview', 'narrative');
+
+      // Build narrative using zone configuration
       const narrative = this.state.narrativeMode === 'long'
         ? NarrativeComposer.composeLong(
             this.normalizedData.clientInfo,
@@ -6064,21 +6491,28 @@
             upcomingEvents,
             this.applications
           )
-        : NarrativeComposer.composeShort(
+        : NarrativeComposer.composeShortFromZone(
             this.normalizedData.clientInfo,
             this.matters,
-            upcomingEvents
+            upcomingEvents,
+            narrativeFieldNames
           );
 
       return `
-        <div class="narrative-toggle">
-          <button class="${this.state.narrativeMode === 'short' ? 'active' : ''}" data-narrative="short">Summary</button>
-          <button class="${this.state.narrativeMode === 'long' ? 'active' : ''}" data-narrative="long">Full Detail</button>
+        <div class="overview-toolbar">
+          <div class="narrative-toggle">
+            <button class="${this.state.narrativeMode === 'short' ? 'active' : ''}" data-narrative="short">Summary</button>
+            <button class="${this.state.narrativeMode === 'long' ? 'active' : ''}" data-narrative="long">Full Detail</button>
+          </div>
+          <button class="customize-btn" data-action="open-field-canvas" data-tab="overview" title="Customize which fields appear in each section">
+            ⚙️ Customize
+          </button>
         </div>
 
         ${this.state.narrativeMode === 'short' ? `
           <div class="narrative-view">
             <div class="narrative-text">${narrative || '<em>No data available.</em>'}</div>
+            ${!isCustomized ? `<div class="zone-hint">💡 Click Customize to change which fields appear here</div>` : ''}
           </div>
         ` : `
           <div class="narrative-view">
@@ -6164,6 +6598,11 @@
       const activeTab = this.state.activeMainTab;
       const tabData = this.tabData[activeTab];
 
+      // Get zone-configured fields for filtering tuple display
+      const cardBodyFields = LayoutPreferences.getEffectiveZoneContents('matters', 'card-body');
+      const cardDateFields = LayoutPreferences.getEffectiveZoneContents('matters', 'card-dates');
+      const isCustomized = LayoutPreferences.isZoneCustomized('matters', 'card-body');
+
       // Filter tuples by selected matter
       let displayTuples = this.tuples;
       if (this.state.selectedMatter) {
@@ -6178,25 +6617,51 @@
       const showCaseFilter = cases.length > 1;
 
       return `
-        ${showCaseFilter ? this.renderCaseTabs(cases) : ''}
+        <div class="tab-toolbar">
+          <div style="flex: 1;">
+            ${showCaseFilter ? this.renderCaseTabs(cases) : ''}
+          </div>
+          <button class="customize-btn" data-action="open-field-canvas" data-tab="matters" title="Customize which fields appear in matter cards">
+            ⚙️ Customize
+          </button>
+        </div>
 
         <div class="structured-view">
-          ${displayTuples.length > 0 ? displayTuples.map(tuple => this.renderTupleCard(tuple)).join('') : `
+          ${displayTuples.length > 0 ? displayTuples.map(tuple => this.renderTupleCard(tuple, cardBodyFields, cardDateFields)).join('') : `
             <div class="no-data">No data available for ${this.state.selectedMatter ? 'this matter type' : 'matters'}.</div>
           `}
         </div>
+
+        ${!isCustomized && displayTuples.length > 0 ? `<div class="zone-hint">💡 Click Customize to choose which fields appear in each matter card</div>` : ''}
 
         ${tabData && tabData.fields.length > 0 ? this.renderSettingsPanel(activeTab, tabData) : ''}
       `;
     },
 
     /**
-     * Render a semantic tuple card
+     * Render a semantic tuple card with zone-aware field display
      */
-    renderTupleCard(tuple) {
+    renderTupleCard(tuple, cardBodyFields = [], cardDateFields = []) {
       const status = TupleProcessor.getTupleStatus(tuple);
       const statusColor = status ? MatterDetector.getStatusColor(status) : null;
       const matterConfig = tuple.matterType ? CONFIG?.MATTER_TYPES?.[tuple.matterType] : null;
+
+      // Filter fields based on zone configuration if provided
+      let displayFields = tuple.fields.filter(f => f.displayAs !== 'status');
+
+      // If zone config is provided, filter to only those fields
+      const allZoneFields = [...cardBodyFields, ...cardDateFields];
+      if (allZoneFields.length > 0) {
+        displayFields = displayFields.filter(f =>
+          allZoneFields.includes(f.fieldName) ||
+          allZoneFields.some(zf => f.fieldName.toLowerCase().includes(zf.toLowerCase()))
+        );
+      }
+
+      // Separate date fields if configured
+      const dateFieldsSet = new Set(cardDateFields.map(f => f.toLowerCase()));
+      const regularFields = displayFields.filter(f => !dateFieldsSet.has(f.fieldName.toLowerCase()));
+      const dateFields = displayFields.filter(f => dateFieldsSet.has(f.fieldName.toLowerCase()) || f.format === 'date' || f.format === 'datetime');
 
       return `
         <div class="tuple-card">
@@ -6212,29 +6677,39 @@
             ` : ''}
           </div>
           <div class="tuple-card-content">
-            ${tuple.fields.filter(f => f.displayAs !== 'status').map(field => {
-              const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
-              let value = field.rendered || field.value;
-
-              // Format by type
-              if (field.format === 'date') value = Utils.formatDate(value);
-              if (field.format === 'datetime') value = Utils.formatDate(value, true);
-              if (field.format === 'phone') value = Utils.formatPhone(value);
-
-              // Add urgency indicator
-              const urgencyClass = field.urgency ? `event-urgency ${field.urgency}` : '';
-
-              return `
-                <div class="tuple-field-row">
-                  <span class="tuple-field-label">
-                    ${field.urgency ? `<span class="${urgencyClass}" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;"></span>` : ''}
-                    ${Utils.escapeHtml(label)}
-                  </span>
-                  <span class="tuple-field-value">${this.renderFieldValue(field)}</span>
-                </div>
-              `;
-            }).join('')}
+            ${regularFields.map(field => this.renderTupleFieldRow(field)).join('')}
           </div>
+          ${dateFields.length > 0 ? `
+            <div class="tuple-card-dates">
+              ${dateFields.map(field => this.renderTupleFieldRow(field)).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    },
+
+    /**
+     * Render a single tuple field row
+     */
+    renderTupleFieldRow(field) {
+      const label = field.displayLabel || Utils.humanizeFieldName(field.fieldName);
+      let value = field.rendered || field.value;
+
+      // Format by type
+      if (field.format === 'date') value = Utils.formatDate(value);
+      if (field.format === 'datetime') value = Utils.formatDate(value, true);
+      if (field.format === 'phone') value = Utils.formatPhone(value);
+
+      // Add urgency indicator
+      const urgencyClass = field.urgency ? `event-urgency ${field.urgency}` : '';
+
+      return `
+        <div class="tuple-field-row">
+          <span class="tuple-field-label">
+            ${field.urgency ? `<span class="${urgencyClass}" style="display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;"></span>` : ''}
+            ${Utils.escapeHtml(label)}
+          </span>
+          <span class="tuple-field-value">${this.renderFieldValue(field)}</span>
         </div>
       `;
     },
@@ -6399,6 +6874,10 @@
       // Get calendar events (these are already extracted from Google Calendar data)
       let events = [...(this.events || [])];
 
+      // Get zone-configured fields
+      const detailFields = LayoutPreferences.getEffectiveZoneContents('events', 'event-details');
+      const isCustomized = LayoutPreferences.isZoneCustomized('events', 'event-details');
+
       // Filter by matter if selected
       if (this.state.selectedMatter) {
         events = events.filter(e => !e.matter || e.matter === this.state.selectedMatter);
@@ -6416,6 +6895,15 @@
         upcoming: { label: 'Upcoming (Within 30 Days)', color: '#f59e0b', icon: '🟡' },
         scheduled: { label: 'Scheduled (Within 90 Days)', color: '#10b981', icon: '🟢' },
         past: { label: 'Past Events', color: '#6b7280', icon: '⚪' }
+      };
+
+      // Helper to check if a field should be shown based on zone config
+      const shouldShowField = (fieldKey) => {
+        if (detailFields.length === 0) return true; // Show all if no customization
+        return detailFields.some(f =>
+          f.toLowerCase() === fieldKey.toLowerCase() ||
+          fieldKey.toLowerCase().includes(f.toLowerCase())
+        );
       };
 
       // Helper to render a single event card
@@ -6436,20 +6924,20 @@
               ${Utils.escapeHtml(event.title)}
             </div>
 
-            ${event.location ? `
+            ${event.location && shouldShowField('location') ? `
               <div class="event-card-location">
                 <span class="event-location-icon">📍</span>
                 ${Utils.escapeHtml(event.location)}
               </div>
             ` : ''}
 
-            ${event.description ? `
+            ${event.description && shouldShowField('description') ? `
               <div class="event-card-description">
                 ${Utils.escapeHtml(event.description.substring(0, 200))}${event.description.length > 200 ? '...' : ''}
               </div>
             ` : ''}
 
-            ${event.attendees && event.attendees.length > 0 ? `
+            ${event.attendees && event.attendees.length > 0 && shouldShowField('Attendees') ? `
               <div class="event-card-attendees">
                 <span class="event-attendees-icon">👥</span>
                 ${event.attendees.slice(0, 5).map(a => Utils.escapeHtml(a.name || a.email)).join(', ')}
@@ -6457,7 +6945,7 @@
               </div>
             ` : ''}
 
-            ${event.organizer ? `
+            ${event.organizer && shouldShowField('Organizer') ? `
               <div class="event-card-organizer">
                 <span class="event-organizer-label">Organizer:</span> ${Utils.escapeHtml(event.organizer)}
               </div>
@@ -6502,6 +6990,12 @@
       const hasEvents = events.length > 0;
 
       return `
+        <div class="tab-toolbar">
+          <div style="flex: 1;"></div>
+          <button class="customize-btn" data-action="open-field-canvas" data-tab="events" title="Customize which details appear in event cards">
+            ⚙️ Customize
+          </button>
+        </div>
         <div class="events-view">
           ${!hasEvents ? `
             <div class="no-events-message">
@@ -6521,6 +7015,7 @@
               <div class="events-section-divider"></div>
               ${renderEventSection(pastEvents, urgencyConfig.past)}
             ` : ''}
+            ${!isCustomized ? `<div class="zone-hint">💡 Click Customize to choose which event details to display</div>` : ''}
           `}
         </div>
       `;
@@ -6590,12 +7085,32 @@
     renderApplicationsView() {
       let apps = this.applications;
 
+      // Get zone-configured fields
+      const receiptFields = LayoutPreferences.getEffectiveZoneContents('applications', 'app-receipt');
+      const detailFields = LayoutPreferences.getEffectiveZoneContents('applications', 'app-details');
+      const isCustomized = LayoutPreferences.isZoneCustomized('applications', 'app-details');
+
       // Filter by matter if selected
       if (this.state.selectedMatter) {
         apps = apps.filter(a => !a.matter || a.matter === this.state.selectedMatter);
       }
 
+      // Helper to check if field should be shown
+      const shouldShowField = (fieldKey, zoneFields) => {
+        if (zoneFields.length === 0) return true;
+        return zoneFields.some(f =>
+          f.toLowerCase() === fieldKey.toLowerCase() ||
+          fieldKey.toLowerCase().includes(f.toLowerCase())
+        );
+      };
+
       return `
+        <div class="tab-toolbar">
+          <div style="flex: 1;"></div>
+          <button class="customize-btn" data-action="open-field-canvas" data-tab="applications" title="Customize which details appear in application cards">
+            ⚙️ Customize
+          </button>
+        </div>
         <div class="application-cards">
           ${apps.length > 0 ? apps.map(app => {
             const matterConfig = app.matter ? CONFIG?.MATTER_TYPES?.[app.matter] : null;
@@ -6613,16 +7128,40 @@
                   ` : ''}
                 </div>
                 <div class="application-details">
-                  ${app.receiptNumber ? `
+                  ${app.receiptNumber && shouldShowField('Receipt Number', receiptFields) ? `
                     <div class="application-detail">
                       <span class="application-detail-label">Receipt #</span>
                       <span>${Utils.escapeHtml(app.receiptNumber)}</span>
                     </div>
                   ` : ''}
-                  ${app.receiptDate ? `
+                  ${app.receiptDate && shouldShowField('Receipt Date', receiptFields) ? `
                     <div class="application-detail">
                       <span class="application-detail-label">Filed</span>
                       <span>${Utils.formatDate(app.receiptDate)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.decisionDate && shouldShowField('Decision Notice Date', detailFields) ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">Decision</span>
+                      <span>${Utils.formatDate(app.decisionDate)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.primaFacie && shouldShowField('Prima Facie', detailFields) ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">Prima Facie</span>
+                      <span>${Utils.escapeHtml(app.primaFacie)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.rfeDueDate && shouldShowField('RFE Due Date', detailFields) ? `
+                    <div class="application-detail">
+                      <span class="application-detail-label">RFE Due</span>
+                      <span class="urgency-date">${Utils.formatDate(app.rfeDueDate)}</span>
+                    </div>
+                  ` : ''}
+                  ${app.notes && shouldShowField('Notes', detailFields) ? `
+                    <div class="application-detail application-notes">
+                      <span class="application-detail-label">Notes</span>
+                      <span>${Utils.escapeHtml(app.notes.substring(0, 100))}${app.notes.length > 100 ? '...' : ''}</span>
                     </div>
                   ` : ''}
                   ${app.matter ? `
@@ -6638,6 +7177,7 @@
             `;
           }).join('') : '<div class="no-data">No applications found.</div>'}
         </div>
+        ${apps.length > 0 && !isCustomized ? `<div class="zone-hint">💡 Click Customize to choose which application details to display</div>` : ''}
       `;
     },
 
@@ -6870,9 +7410,45 @@
       }).join('');
     },
 
+    /**
+     * Get smart icon info for a URL based on domain
+     */
+    getSmartIconForUrl(url) {
+      const smartIcons = CONFIG?.FIELD_DISPLAY_TYPES?.url?.smartIcons || {
+        'airtable.com': { icon: '🔗', label: 'Airtable' },
+        'softr.io': { icon: '📄', label: 'Softr' },
+        'drive.google.com': { icon: '📁', label: 'Drive' },
+        'docs.google.com': { icon: '📄', label: 'Docs' },
+        'box.com': { icon: '📦', label: 'Box' },
+        'practicepanther': { icon: '📋', label: 'PP' },
+        'calendar.google.com': { icon: '📅', label: 'Calendar' },
+        'github.com': { icon: '🐙', label: 'GitHub' }
+      };
+
+      try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.toLowerCase();
+
+        // Check for exact matches first
+        for (const [domain, config] of Object.entries(smartIcons)) {
+          if (hostname.includes(domain.toLowerCase())) {
+            return config;
+          }
+        }
+      } catch (e) {
+        // Invalid URL, ignore
+      }
+
+      return null;
+    },
+
     renderFieldValue(field) {
       // Handle button fields
       if (field.dataType === 'button' && field.buttonUrl) {
+        const smartIcon = this.getSmartIconForUrl(field.buttonUrl);
+        if (smartIcon) {
+          return `<a href="${Utils.escapeHtml(field.buttonUrl)}" target="_blank" rel="noopener" class="button-link smart-link">${smartIcon.icon} ${Utils.escapeHtml(smartIcon.label)} ↗</a>`;
+        }
         return `<a href="${Utils.escapeHtml(field.buttonUrl)}" target="_blank" rel="noopener" class="button-link">${Utils.escapeHtml(field.buttonLabel || 'Open')} ↗</a>`;
       }
 
@@ -6886,7 +7462,18 @@
 
       // Check if it's a URL
       if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
-        return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link ↗</a>`;
+        const smartIcon = this.getSmartIconForUrl(String(value));
+        if (smartIcon) {
+          return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener" class="smart-link" title="${Utils.escapeHtml(value)}">${smartIcon.icon} ${Utils.escapeHtml(smartIcon.label)} ↗</a>`;
+        }
+        // Show domain for unknown URLs
+        try {
+          const urlObj = new URL(String(value));
+          const domain = urlObj.hostname.replace('www.', '');
+          return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener" title="${Utils.escapeHtml(value)}">🔗 ${Utils.escapeHtml(domain)} ↗</a>`;
+        } catch (e) {
+          return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link ↗</a>`;
+        }
       }
 
       // Truncate long values
@@ -6921,6 +7508,7 @@
       document.querySelectorAll('.narrative-toggle button').forEach(btn => {
         btn.addEventListener('click', (e) => {
           this.state.narrativeMode = e.currentTarget.dataset.narrative;
+          ViewPreferences.setNarrativeMode(this.state.narrativeMode);
           this.render();
         });
       });
@@ -6930,6 +7518,7 @@
         btn.addEventListener('click', (e) => {
           this.state.activeMainTab = e.currentTarget.dataset.mainTab;
           this.state.settingsOpen = false; // Close settings when switching tabs
+          ViewPreferences.setActiveTab(this.state.activeMainTab);
           this.render();
         });
       });
@@ -6943,6 +7532,7 @@
           } else {
             this.state.selectedMatter = matter;
           }
+          ViewPreferences.setSelectedMatter(this.state.selectedMatter);
           this.render();
         });
       });
@@ -6954,6 +7544,8 @@
           if (matter) {
             this.state.selectedMatter = matter;
             this.state.activeMainTab = 'matters';
+            ViewPreferences.setSelectedMatter(this.state.selectedMatter);
+            ViewPreferences.setActiveTab(this.state.activeMainTab);
             this.render();
           }
         });
@@ -7445,8 +8037,8 @@
   Renderer.state.expandedGroups.add('Identity');
   Renderer.state.expandedGroups.add('Contact');
 
-  // Set default tab to overview
-  Renderer.state.activeMainTab = 'overview';
+  // Note: activeMainTab, narrativeMode, and selectedMatter are restored from
+  // ViewPreferences in Renderer.init() to persist across sessions
 
   // Initialize when DOM ready
   if (document.readyState === 'loading') {
