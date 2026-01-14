@@ -416,10 +416,25 @@
     }
 
     /* Case Tabs */
+    .case-tabs-container {
+      margin-bottom: 16px;
+    }
+
+    .case-tabs-header {
+      margin-bottom: 8px;
+    }
+
+    .case-tabs-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .case-tabs {
       display: flex;
       gap: 4px;
-      margin-bottom: 12px;
       padding: 4px;
       background: var(--bg-secondary);
       border-radius: var(--radius);
@@ -6684,15 +6699,20 @@
 
     renderCaseTabs(cases) {
       return `
-        <div class="case-tabs">
-          <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">
-            All Cases<span class="case-count">${cases.length}</span>
-          </button>
-          ${cases.map(c => `
-            <button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">
-              ${Utils.escapeHtml(c)}
+        <div class="case-tabs-container">
+          <div class="case-tabs-header">
+            <span class="case-tabs-label">Case Master View Records</span>
+          </div>
+          <div class="case-tabs">
+            <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">
+              All Records<span class="case-count">${cases.length}</span>
             </button>
-          `).join('')}
+            ${cases.map(c => `
+              <button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">
+                ${Utils.escapeHtml(c)}
+              </button>
+            `).join('')}
+          </div>
         </div>
       `;
     },
