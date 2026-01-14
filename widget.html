@@ -4561,7 +4561,7 @@
         } else {
           // Fallback: field-based heuristics for older response formats
           const clientInfoIndicators = [
-            'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
+            'Full Client Name', 'Full_Name_Normal_Pretty', 'Client Name', 'Address Line 1',
             'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
             'Box_Folder_ID', 'Client Details Page', 'airtable_client_info_id'
           ];
@@ -4618,6 +4618,16 @@
 
       const fields = {};
 
+      // First, directly check for 'Client Name' field from Client Info record
+      if (record['Client Name'] !== undefined && record['Client Name'] !== null && record['Client Name'] !== '') {
+        const normalizedName = this.normalizeValue(record['Client Name'], 'Client Name');
+        if (normalizedName !== null) {
+          fields['Client Name'] = normalizedName;
+          console.log('[DataTransformer] Found Client Name from Client Info:', normalizedName);
+        }
+      }
+
+      // Then process other field mappings
       for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
         if (record[sourceField] !== undefined && !fields[targetField]) {
           const value = this.normalizeValue(record[sourceField], sourceField);
@@ -4635,9 +4645,11 @@
         const nameParts = [firstName, middleName, familyName].filter(p => p);
         if (nameParts.length > 0) {
           fields['Client Name'] = nameParts.join(' ');
+          console.log('[DataTransformer] Composed Client Name from parts:', fields['Client Name']);
         }
       }
 
+      console.log('[DataTransformer] Extracted client fields:', Object.keys(fields));
       return fields;
     },
 
@@ -5209,6 +5221,9 @@
       // Tier 1: Semantic role defined
       if (semanticConfig) {
         const rendered = Utils.applyTemplate(semanticConfig.template, displayValue, semanticConfig.dataType);
+        if (fieldName === 'Client Name') {
+          console.log('[DataProcessor] Processing Client Name field:', { fieldName, value: displayValue, role: semanticConfig.role });
+        }
         return {
           tier: 1,
           fieldName,
@@ -5828,7 +5843,11 @@
       const container = document.getElementById('app');
 
       const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
-      const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
+      const clientNameField = headerFields.find(f => f.role === 'client_name');
+      const clientName = clientNameField?.value || 'Unknown Client';
+      console.log('[Renderer] Header fields:', headerFields.map(f => ({ fieldName: f.fieldName, role: f.role, value: f.value })));
+      console.log('[Renderer] Client name field:', clientNameField);
+      console.log('[Renderer] Display client name:', clientName);
 
       // Get unique cases for the case filter (within Cases tab) - only show cases with actual data
       const cases = [...new Set(this.processedFields.filter(f => f.caseLabel && f.value !== undefined && f.value !== null && f.value !== '').map(f => f.caseLabel))];
