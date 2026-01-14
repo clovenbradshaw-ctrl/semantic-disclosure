@@ -943,7 +943,7 @@
         return `<span class="px-2 py-1 rounded text-xs ${colorClass}">${type}: ${count}</span>`;
       }).join('');
 
-      const viewButtons = ['brief', 'detailed', 'structured'].map(view => {
+      const viewButtons = ['structured', 'brief', 'detailed'].map(view => {
         const label = view.charAt(0).toUpperCase() + view.slice(1);
         const active = currentView === view;
         return `<button onclick="switchView('${view}')" class="px-3 py-1 text-sm rounded transition-colors ${active ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}">${label}</button>`;
