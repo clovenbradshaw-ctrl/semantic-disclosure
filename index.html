@@ -534,7 +534,10 @@
                        data-key="${f.key}"
                        data-view="${settingsCurrentView}"
                        class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800">
-                <span class="text-sm text-slate-300">${f.label}</span>
+                <div class="flex flex-col">
+                  <span class="text-sm text-slate-300">${f.label}</span>
+                  <span class="text-xs text-slate-500 font-mono">[${category}] → ${f.sourceField || f.label} → <em>value</em></span>
+                </div>
               </label>
             </div>
           `;
@@ -573,8 +576,11 @@
             </div>
 
             <div class="p-4 overflow-y-auto max-h-[55vh]">
-              <p class="text-slate-400 text-sm mb-4">
+              <p class="text-slate-400 text-sm mb-2">
                 Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view and their display order.
+              </p>
+              <p class="text-slate-500 text-xs mb-4">
+                Each field shows its semantic tuple: <code class="bg-slate-700/50 px-1 rounded">[source] → predicate → value</code>
               </p>
               ${categoriesHtml}
             </div>
