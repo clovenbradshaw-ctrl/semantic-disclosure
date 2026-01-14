@@ -308,7 +308,57 @@
             { "type": "null" }
           ]
         },
-        "Invoiced Lookup": { "type": ["string", "null"] }
+        "Invoiced Lookup": { "type": ["string", "null"] },
+
+        "DOB & Age": { "type": ["string", "null"] },
+        "Phone Reformat 1 xxxxxxxxxx": { "type": ["string", "null"] },
+        "Copy A#": { "type": ["string", "null"] },
+        "Box ID 2.0": { "type": ["string", "null"] },
+        "box share 2.0": { "type": ["string", "null"] },
+        "Calculation 3": { "type": ["string", "null"] },
+        "ICH_Atty_Changed": { "type": ["string", "null"], "format": "date-time" },
+        "Bahr Client": { "type": ["boolean", "null"] },
+        "clio_contact_id": { "type": ["string", "null"] },
+        "Bahr": { "type": ["string", "null"] },
+        "Description": { "type": ["string", "null"] },
+        "Email (from MCH Attny) (from Case Events)": { "type": ["string", "null"] },
+
+        "ICH Atty": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "MCH Attny (from Events 2.0)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "CM Tags": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "ICH Color": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "ICH email": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Matter_Flatpack (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Hearing Date/Time (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Events List (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Event Ids (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        }
       },
       "required": ["_recordId", "id"],
       "additionalProperties": true
@@ -369,8 +419,14 @@
         },
         "Next Hearing": { "type": ["string", "null"] },
         "Hearing Type": { "type": ["string", "null"] },
-        "Court/Office": { "type": ["string", "null"] },
-        "Judge": { "type": ["string", "null"] },
+        "Court/Office": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Judge": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
 
         "SIJ Case Status": {
           "type": ["array", "null"],
@@ -666,7 +722,69 @@
         "Update Tracker EADs": { "type": ["string", "null"], "format": "date-time" },
 
         "Initial Retainer $": { "type": ["number", "null"] },
-        "Total Contract $": { "type": ["number", "null"] }
+        "Total Contract $": { "type": ["number", "null"] },
+
+        "A#": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "DOB": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Phone Number": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Middle Name": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Age": { "type": ["string", "null"] },
+        "SIJS Notes": { "type": ["string", "null"] },
+        "JDR Ct Date": { "type": ["string", "null"], "format": "date-time" },
+        "Service": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Visa Bulletin Date": { "type": ["string", "null"] },
+        "SIJ Interview Date": { "type": ["string", "null"] },
+        "Name Search Options": { "type": ["string", "null"] },
+        "clio_contact_id": { "type": ["string", "null"] },
+        "clio_matter_id": { "type": ["string", "null"] },
+
+        "ICH Atty (from CI)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Email (from MCH Attny)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Cancelled (from Case Events)": {
+          "type": ["array", "null"],
+          "items": { "type": ["boolean", "null"] }
+        },
+        "Past or Future (from Case Events)": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Event Ids": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "MCH Attny": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Bahr Client": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "ICH Color": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        }
       },
       "required": ["_recordId", "id"],
       "additionalProperties": true
