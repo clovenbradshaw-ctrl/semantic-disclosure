@@ -782,7 +782,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     border-radius: var(--radius);
   }
 
-  #widget-frame .view-toggle button {
+  #widget-frame .view-btn {
     padding: 6px 12px;
     border: none;
     background: transparent;
@@ -794,13 +794,13 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     transition: all 0.15s ease;
   }
 
-  #widget-frame .view-toggle button.active {
+  #widget-frame .view-btn.active {
     background: var(--bg-card);
     color: var(--text-primary);
     box-shadow: var(--shadow-sm);
   }
 
-  #widget-frame .view-toggle button:hover:not(.active) { color: var(--text-primary); }
+  #widget-frame .view-btn:hover:not(.active) { color: var(--text-primary); }
 
   #widget-frame .client-header {
     background: var(--bg-card);
@@ -2081,8 +2081,8 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           <div class="widget-header">
             <span class="widget-title">Client At-a-Glance</span>
             <div class="view-toggle">
-              <button class="${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
-              <button class="${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
+              <button class="view-btn ${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
+              <button class="view-btn ${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
             </div>
           </div>
           ${this.renderClientHeader(headerFields, clientName)}
@@ -2234,7 +2234,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           const target = e.target;
 
           // View toggle buttons (Structured/Narrative)
-          const viewBtn = target.closest('.view-toggle button');
+          const viewBtn = target.closest('.view-btn');
           if (viewBtn && viewBtn.dataset.view) {
             e.preventDefault();
             this.state.viewMode = viewBtn.dataset.view;
