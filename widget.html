@@ -4557,6 +4557,7 @@
       // Map Client Info table field names to standard display names
       const fieldMappings = {
         'Full Client Name': 'Client Name',
+        'Full_Name_Normal_Pretty': 'Client Name',
         'Client Name': 'Client Name',
         'First Name': 'First Name',
         'Family Name': 'Family Name',
@@ -4587,6 +4588,17 @@
         }
       }
 
+      // Compose Client Name from First Name + Family Name if not already set
+      if (!fields['Client Name']) {
+        const firstName = fields['First Name'] || '';
+        const familyName = fields['Family Name'] || '';
+        const middleName = fields['Middle Name'] || '';
+        const nameParts = [firstName, middleName, familyName].filter(p => p);
+        if (nameParts.length > 0) {
+          fields['Client Name'] = nameParts.join(' ');
+        }
+      }
+
       return fields;
     },
 
@@ -4595,7 +4607,7 @@
      */
     extractClientFields(record) {
       const clientFieldNames = [
-        'Client Name', 'First Name', 'Family Name', 'Middle Name',
+        'Client Name', 'Full_Name_Normal_Pretty', 'First Name', 'Family Name', 'Middle Name',
         'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
         'Address', 'Gender', 'Pronouns'
       ];
@@ -4605,10 +4617,26 @@
         if (record[fieldName] !== undefined) {
           const value = this.normalizeValue(record[fieldName], fieldName);
           if (value !== null) {
-            fields[fieldName] = value;
+            // Map Full_Name_Normal_Pretty to Client Name
+            const targetField = fieldName === 'Full_Name_Normal_Pretty' ? 'Client Name' : fieldName;
+            if (!fields[targetField]) {
+              fields[targetField] = value;
+            }
           }
         }
       }
+
+      // Compose Client Name from First Name + Family Name if not already set
+      if (!fields['Client Name']) {
+        const firstName = fields['First Name'] || '';
+        const familyName = fields['Family Name'] || '';
+        const middleName = fields['Middle Name'] || '';
+        const nameParts = [firstName, middleName, familyName].filter(p => p);
+        if (nameParts.length > 0) {
+          fields['Client Name'] = nameParts.join(' ');
+        }
+      }
+
       return fields;
     },
 
@@ -5438,15 +5466,8 @@
           if (seenDates.has(uniqueKey)) continue;
           seenDates.add(uniqueKey);
 
-          // Generate semantic title using template or fallback
-          let title;
-          if (semantic.template) {
-            // Apply template formatting
-            title = Utils.applyTemplate(semantic.template, field.value, semantic.dataType);
-          } else {
-            // Fallback: humanize field name
-            title = `${Utils.humanizeFieldName(field.fieldName)}: ${Utils.formatDate(field.value)}`;
-          }
+          // Always show the field name clearly in the title
+          const title = Utils.humanizeFieldName(field.fieldName);
 
           dateEntries.push({
             date: field.value,
@@ -5768,15 +5789,18 @@
             // Different count logic per tab type
             let count = '';
             if (tabId === 'matters') {
-              count = this.normalizedData?.cases?.length || 0;
+              // Count unique matter types (e.g., SIJ, Asylum, Family), not total case records
+              const uniqueMatterTypes = [...new Set((this.matters || []).map(m => m.type))];
+              count = uniqueMatterTypes.length || 0;
             } else if (tabId === 'events') {
               count = this.events?.filter(e => e.urgency !== 'past').length || 0;
             } else if (tabId === 'applications') {
               count = this.applications?.length || 0;
             } else if (tabId === 'notes') {
-              // Count actual note entries with content
-              const noteFields = CONFIG?.MAIN_TABS?.notes?.noteFields || ['Case Notes', 'Hearing Notes', 'Notes'];
-              count = this.processedFields?.filter(f => noteFields.includes(f.fieldName) && f.value).length || 0;
+              // Count fields that have "note" in the field name (case-insensitive)
+              count = this.processedFields?.filter(f =>
+                f.fieldName && f.fieldName.toLowerCase().includes('note') && f.value
+              ).length || 0;
             } else if (tabId === 'client') {
               // Count client info fields with values
               count = this.tabData[tabId]?.fields?.filter(f => f.value).length || 0;
@@ -6322,12 +6346,11 @@
      * Render Notes view - unified feed with matter labels
      */
     renderNotesView() {
-      const noteFields = CONFIG?.MAIN_TABS?.notes?.noteFields || ['Case Notes', 'Hearing Notes', 'Notes'];
       const notes = [];
 
-      // Extract notes from all sources
+      // Extract notes from all sources - any field with "note" in the name (case-insensitive)
       for (const field of this.processedFields) {
-        if (noteFields.includes(field.fieldName) && field.value) {
+        if (field.fieldName && field.fieldName.toLowerCase().includes('note') && field.value) {
           notes.push({
             content: field.value,
             fieldName: field.fieldName,
