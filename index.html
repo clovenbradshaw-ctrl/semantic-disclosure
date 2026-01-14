@@ -147,7 +147,7 @@
         { key: 'address', label: 'Address', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'sijStatus', label: 'SIJ Status', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'tags', label: 'Tags', views: { structured: false, brief: false, detailed: true, timeline: false } },
-        { key: 'flatpack', label: 'Matter Details (Flatpack)', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'flatpack', label: 'Matter Details (Flatpack)', views: { structured: false, brief: false, detailed: false, timeline: false } },
       ],
       cases: [
         { key: 'type', label: 'Case Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
@@ -157,7 +157,7 @@
         { key: 'daysToHearing', label: 'Days to Hearing', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'oyd', label: 'One-Year Deadline (OYD)', views: { structured: false, brief: false, detailed: true, timeline: true } },
         { key: 'notes', label: 'Case Notes', views: { structured: false, brief: false, detailed: true, timeline: false } },
-        { key: 'flatpack', label: 'Case Flatpack Data', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'flatpack', label: 'Case Flatpack Data', views: { structured: false, brief: false, detailed: false, timeline: false } },
       ],
       applications: [
         { key: 'type', label: 'Application Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
@@ -1146,6 +1146,10 @@
       if (isFieldVisible('client', 'flatpack') && client._flatpack && Object.keys(client._flatpack).length > 0) {
         const flatpackSummary = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+          .filter(([key]) => {
+            const lowerKey = key.toLowerCase();
+            return !lowerKey.includes('flatpack') && !/merge[_.\s-]*history/i.test(lowerKey);
+          })
           .slice(0, 3) // Show first 3 fields in brief view
           .map(([key, value]) => {
             const formattedKey = formatFlatpackKey(key);
@@ -1350,6 +1354,10 @@
         sections.push(`<br><span class="text-lg font-semibold text-gray-800">Additional Matter Details</span>`);
         const flatpackItems = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+          .filter(([key]) => {
+            const lowerKey = key.toLowerCase();
+            return !lowerKey.includes('flatpack') && !/merge[_.\s-]*history/i.test(lowerKey);
+          })
           .map(([key, value]) => {
             const formattedKey = formatFlatpackKey(key);
             const formattedValue = formatFlatpackValue(value);
@@ -1434,6 +1442,10 @@
             if (isFieldVisible('cases', 'flatpack') && c._flatpack && Object.keys(c._flatpack).length > 0) {
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => key !== 'description' && value !== null && value !== undefined && value !== '')
+                .filter(([key]) => {
+                  const lowerKey = key.toLowerCase();
+                  return !lowerKey.includes('flatpack') && !/merge[_.\s-]*history/i.test(lowerKey);
+                })
                 .map(([key, value]) => {
                   const formattedKey = formatFlatpackKey(key);
                   const formattedValue = formatFlatpackValue(value);
@@ -1721,6 +1733,13 @@
 
       const fieldsHtml = Object.entries(flatpackData)
         .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+        .filter(([key]) => {
+          // Hide fields containing 'flatpack' or 'merge history' by default
+          const lowerKey = key.toLowerCase();
+          const hasFlatpack = lowerKey.includes('flatpack');
+          const hasMergeHistory = /merge[_.\s-]*history/i.test(lowerKey);
+          return !hasFlatpack && !hasMergeHistory;
+        })
         .map(([key, value]) => {
           // Format the key using centralized helper
           const formattedKey = formatFlatpackKey(key);
@@ -1891,6 +1910,10 @@
             if (isFieldVisible('cases', 'flatpack') && c._flatpack && Object.keys(c._flatpack).length > 0) {
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                .filter(([key]) => {
+                  const lowerKey = key.toLowerCase();
+                  return !lowerKey.includes('flatpack') && !/merge[_.\s-]*history/i.test(lowerKey);
+                })
                 .map(([key, value]) => {
                   const formattedKey = formatFlatpackKey(key);
                   const formattedValue = formatFlatpackValue(value);
