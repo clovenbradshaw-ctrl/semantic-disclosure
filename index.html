@@ -8,6 +8,17 @@
   <style>
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin { animation: spin 1s linear infinite; }
+
+    /* Settings modal transitions */
+    #settings-modal [data-field-key] {
+      transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+    #settings-modal [data-field-key]:hover {
+      background-color: rgba(51, 65, 85, 0.3);
+    }
+    #settings-modal .group:hover .opacity-50 {
+      opacity: 1;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-900 text-slate-100">
@@ -22,63 +33,75 @@
 
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
-    const STORAGE_KEY = 'semantic-disclosure-field-prefs';
+    const STORAGE_KEY = 'semantic-disclosure-field-prefs-v2';
 
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
     let currentView = 'structured';
 
+    // Available views
+    const VIEWS = ['structured', 'brief', 'detailed', 'timeline'];
+
     // ═══════════════════════════════════════════════════════════════
     // FIELD REGISTRY - All available fields organized by category
+    // Each field defines which views it's relevant to and default visibility per view
     // ═══════════════════════════════════════════════════════════════
     const FIELD_REGISTRY = {
       client: [
-        { key: 'name', label: 'Name', default: true },
-        { key: 'aNumber', label: 'Alien Number (A#)', default: true },
-        { key: 'dob', label: 'Date of Birth / Age', default: true },
-        { key: 'country', label: 'Country', default: true },
-        { key: 'phone', label: 'Phone Number', default: true },
-        { key: 'address', label: 'Address', default: true },
-        { key: 'sijStatus', label: 'SIJ Status', default: true },
-        { key: 'tags', label: 'Tags', default: false },
+        { key: 'name', label: 'Name', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'aNumber', label: 'Alien Number (A#)', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'dob', label: 'Date of Birth / Age', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'country', label: 'Country', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'phone', label: 'Phone Number', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'address', label: 'Address', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'sijStatus', label: 'SIJ Status', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'tags', label: 'Tags', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'flatpack', label: 'Matter Details (Flatpack)', views: { structured: true, brief: true, detailed: true, timeline: false } },
       ],
       cases: [
-        { key: 'type', label: 'Case Type', default: true },
-        { key: 'court', label: 'Court/Office', default: true },
-        { key: 'judge', label: 'Judge', default: true },
-        { key: 'hearingDate', label: 'Hearing Date', default: true },
-        { key: 'daysToHearing', label: 'Days to Hearing', default: true },
-        { key: 'notes', label: 'Case Notes', default: false },
+        { key: 'type', label: 'Case Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'court', label: 'Court/Office', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'judge', label: 'Judge', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'hearingDate', label: 'Hearing Date', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'daysToHearing', label: 'Days to Hearing', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'oyd', label: 'One-Year Deadline (OYD)', views: { structured: false, brief: false, detailed: true, timeline: true } },
+        { key: 'notes', label: 'Case Notes', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'flatpack', label: 'Case Flatpack Data', views: { structured: true, brief: false, detailed: true, timeline: false } },
       ],
       applications: [
-        { key: 'type', label: 'Application Type', default: true },
-        { key: 'name', label: 'Name/Matter', default: true },
-        { key: 'status', label: 'Status', default: true },
-        { key: 'receiptNumber', label: 'Receipt Number', default: true },
-        { key: 'certCounty', label: 'County/State', default: false },
-        { key: 'notes', label: 'Notes', default: false },
+        { key: 'type', label: 'Application Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'name', label: 'Name/Matter', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'status', label: 'Status', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'receiptNumber', label: 'Receipt Number', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'filedDate', label: 'Filed Date', views: { structured: false, brief: false, detailed: true, timeline: true } },
+        { key: 'certCounty', label: 'County/State', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'notes', label: 'Notes', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ],
       events: [
-        { key: 'title', label: 'Title', default: true },
-        { key: 'dateTime', label: 'Date/Time', default: true },
-        { key: 'location', label: 'Location', default: true },
-        { key: 'calendarType', label: 'Calendar Type', default: true },
-        { key: 'meetLink', label: 'Video Link', default: true },
-        { key: 'description', label: 'Description', default: false },
-        { key: 'attendees', label: 'Attendees', default: false },
+        { key: 'title', label: 'Title', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'dateTime', label: 'Date/Time', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'location', label: 'Location', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'calendarType', label: 'Calendar Type', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'meetLink', label: 'Video Link', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'description', label: 'Description', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'attendees', label: 'Attendees', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ]
     };
 
     // ═══════════════════════════════════════════════════════════════
-    // FIELD PREFERENCES - localStorage persistence
+    // FIELD PREFERENCES - Per-view localStorage persistence with ordering
+    // Structure: { view: { category: [{ key, visible }, ...] } }
     // ═══════════════════════════════════════════════════════════════
     function buildDefaultPrefs() {
       const prefs = {};
-      for (const [category, fields] of Object.entries(FIELD_REGISTRY)) {
-        prefs[category] = {};
-        fields.forEach(f => {
-          prefs[category][f.key] = f.default;
-        });
-      }
+      VIEWS.forEach(view => {
+        prefs[view] = {};
+        for (const [category, fields] of Object.entries(FIELD_REGISTRY)) {
+          prefs[view][category] = fields.map(f => ({
+            key: f.key,
+            visible: f.views[view] ?? false
+          }));
+        }
+      });
       return prefs;
     }
 
@@ -87,13 +110,27 @@
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          // Merge with defaults to handle new fields
+          // Merge with defaults to handle new fields and views
           const defaults = buildDefaultPrefs();
-          for (const category of Object.keys(defaults)) {
-            if (!parsed[category]) parsed[category] = {};
-            for (const key of Object.keys(defaults[category])) {
-              if (parsed[category][key] === undefined) {
-                parsed[category][key] = defaults[category][key];
+          for (const view of VIEWS) {
+            if (!parsed[view]) parsed[view] = {};
+            for (const [category, fields] of Object.entries(FIELD_REGISTRY)) {
+              if (!parsed[view][category] || !Array.isArray(parsed[view][category])) {
+                parsed[view][category] = defaults[view][category];
+              } else {
+                // Ensure all fields from registry exist in prefs
+                const existingKeys = new Set(parsed[view][category].map(f => f.key));
+                fields.forEach(f => {
+                  if (!existingKeys.has(f.key)) {
+                    parsed[view][category].push({
+                      key: f.key,
+                      visible: f.views[view] ?? false
+                    });
+                  }
+                });
+                // Remove fields that no longer exist in registry
+                const registryKeys = new Set(fields.map(f => f.key));
+                parsed[view][category] = parsed[view][category].filter(f => registryKeys.has(f.key));
               }
             }
           }
@@ -113,15 +150,63 @@
       }
     }
 
-    function isFieldVisible(category, key) {
+    // Get visible fields for a category in the current view, in order
+    function getVisibleFields(category, view = currentView) {
       const prefs = loadFieldPrefs();
-      return prefs[category]?.[key] !== false;
+      const viewPrefs = prefs[view]?.[category] || [];
+      return viewPrefs.filter(f => f.visible).map(f => f.key);
     }
 
-    function setFieldVisibility(category, key, visible) {
+    // Get all fields for a category in the current view, in order (with visibility info)
+    function getFieldsInOrder(category, view = currentView) {
       const prefs = loadFieldPrefs();
-      if (!prefs[category]) prefs[category] = {};
-      prefs[category][key] = visible;
+      const viewPrefs = prefs[view]?.[category] || [];
+      const registry = FIELD_REGISTRY[category] || [];
+
+      return viewPrefs.map(f => {
+        const regField = registry.find(r => r.key === f.key);
+        return {
+          key: f.key,
+          label: regField?.label || f.key,
+          visible: f.visible
+        };
+      });
+    }
+
+    function isFieldVisible(category, key, view = currentView) {
+      const prefs = loadFieldPrefs();
+      const viewPrefs = prefs[view]?.[category] || [];
+      const field = viewPrefs.find(f => f.key === key);
+      return field?.visible ?? false;
+    }
+
+    function setFieldVisibility(category, key, visible, view = currentView) {
+      const prefs = loadFieldPrefs();
+      if (!prefs[view]) prefs[view] = {};
+      if (!prefs[view][category]) prefs[view][category] = [];
+
+      const fieldIdx = prefs[view][category].findIndex(f => f.key === key);
+      if (fieldIdx >= 0) {
+        prefs[view][category][fieldIdx].visible = visible;
+      } else {
+        prefs[view][category].push({ key, visible });
+      }
+      saveFieldPrefs(prefs);
+    }
+
+    function moveField(category, key, direction, view = currentView) {
+      const prefs = loadFieldPrefs();
+      if (!prefs[view]?.[category]) return;
+
+      const fields = prefs[view][category];
+      const idx = fields.findIndex(f => f.key === key);
+      if (idx < 0) return;
+
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= fields.length) return;
+
+      // Swap fields
+      [fields[idx], fields[newIdx]] = [fields[newIdx], fields[idx]];
       saveFieldPrefs(prefs);
     }
 
@@ -131,11 +216,29 @@
       return defaults;
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // SETTINGS MODAL
-    // ═══════════════════════════════════════════════════════════════
-    function openSettingsModal() {
+    function resetViewPrefs(view) {
       const prefs = loadFieldPrefs();
+      const defaults = buildDefaultPrefs();
+      prefs[view] = defaults[view];
+      saveFieldPrefs(prefs);
+      return prefs;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SETTINGS MODAL - Per-view field configuration with reordering
+    // ═══════════════════════════════════════════════════════════════
+    let settingsCurrentView = 'structured';
+
+    function openSettingsModal() {
+      settingsCurrentView = currentView;
+      renderSettingsModal();
+    }
+
+    function renderSettingsModal() {
+      // Remove existing modal if present
+      const existingModal = document.getElementById('settings-modal');
+      if (existingModal) existingModal.remove();
+
       const categoryLabels = {
         client: 'Client Fields',
         cases: 'Case Fields',
@@ -143,47 +246,112 @@
         events: 'Event & Hearing Fields'
       };
 
-      const categoriesHtml = Object.entries(FIELD_REGISTRY).map(([category, fields]) => {
-        const fieldsHtml = fields.map(f => {
-          const checked = prefs[category]?.[f.key] !== false ? 'checked' : '';
+      const viewLabels = {
+        structured: 'Structured',
+        brief: 'Brief',
+        detailed: 'Detailed',
+        timeline: 'Timeline'
+      };
+
+      // View tabs
+      const viewTabsHtml = VIEWS.map(view => {
+        const active = settingsCurrentView === view;
+        return `
+          <button onclick="switchSettingsView('${view}')"
+                  class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${active
+                    ? 'bg-slate-700 text-slate-100 border-b-2 border-blue-500'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}">
+            ${viewLabels[view]}
+          </button>
+        `;
+      }).join('');
+
+      // Build categories for the selected view
+      const categoriesHtml = Object.entries(FIELD_REGISTRY).map(([category, registryFields]) => {
+        const fields = getFieldsInOrder(category, settingsCurrentView);
+
+        const fieldsHtml = fields.map((f, idx) => {
+          const isFirst = idx === 0;
+          const isLast = idx === fields.length - 1;
+
           return `
-            <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-700/30 p-1 rounded">
-              <input type="checkbox" ${checked}
-                     data-category="${category}"
-                     data-key="${f.key}"
-                     class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800">
-              <span class="text-sm text-slate-300">${f.label}</span>
-            </label>
+            <div class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-slate-700/30 group" data-field-key="${f.key}">
+              <div class="flex flex-col gap-0.5 opacity-50 group-hover:opacity-100">
+                <button onclick="handleMoveField('${category}', '${f.key}', 'up', event)"
+                        class="p-0.5 hover:bg-slate-600/50 rounded ${isFirst ? 'invisible' : ''}"
+                        title="Move up">
+                  <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+                  </svg>
+                </button>
+                <button onclick="handleMoveField('${category}', '${f.key}', 'down', event)"
+                        class="p-0.5 hover:bg-slate-600/50 rounded ${isLast ? 'invisible' : ''}"
+                        title="Move down">
+                  <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+              </div>
+              <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                <input type="checkbox" ${f.visible ? 'checked' : ''}
+                       data-category="${category}"
+                       data-key="${f.key}"
+                       data-view="${settingsCurrentView}"
+                       class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800">
+                <span class="text-sm text-slate-300">${f.label}</span>
+              </label>
+            </div>
           `;
         }).join('');
 
         return `
-          <div class="mb-4">
-            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">${categoryLabels[category]}</h3>
-            <div class="grid grid-cols-2 gap-1">${fieldsHtml}</div>
+          <div class="mb-5">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+              ${categoryLabels[category]}
+              <span class="text-slate-600 font-normal normal-case">(drag to reorder)</span>
+            </h3>
+            <div class="space-y-0.5 bg-slate-800/50 rounded-lg p-1" id="fields-${category}">
+              ${fieldsHtml}
+            </div>
           </div>
         `;
       }).join('');
 
       const modalHtml = `
         <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
-          <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+          <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-slate-700">
-              <h2 class="text-lg font-semibold text-slate-100">Field Settings</h2>
+              <div>
+                <h2 class="text-lg font-semibold text-slate-100">Field Settings</h2>
+                <p class="text-slate-500 text-xs mt-0.5">Customize fields for each view</p>
+              </div>
               <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-200 p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
-            <div class="p-4 overflow-y-auto max-h-[60vh]">
-              <p class="text-slate-400 text-sm mb-4">Choose which fields to display in each section. Changes are saved automatically.</p>
+
+            <div class="border-b border-slate-700 bg-slate-800/80">
+              <div class="flex gap-1 px-4 pt-2">${viewTabsHtml}</div>
+            </div>
+
+            <div class="p-4 overflow-y-auto max-h-[55vh]">
+              <p class="text-slate-400 text-sm mb-4">
+                Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view and their display order.
+              </p>
               ${categoriesHtml}
             </div>
+
             <div class="flex items-center justify-between p-4 border-t border-slate-700 bg-slate-800/50">
-              <button onclick="resetAndRefresh()" class="text-sm text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded hover:bg-slate-700/50 transition-colors">
-                Reset to Defaults
-              </button>
+              <div class="flex gap-2">
+                <button onclick="resetViewAndRefresh()" class="text-sm text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded hover:bg-slate-700/50 transition-colors">
+                  Reset This View
+                </button>
+                <button onclick="resetAllAndRefresh()" class="text-sm text-red-400/70 hover:text-red-400 px-3 py-1.5 rounded hover:bg-red-900/20 transition-colors">
+                  Reset All Views
+                </button>
+              </div>
               <button onclick="closeSettingsModal()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded transition-colors">
                 Done
               </button>
@@ -193,19 +361,39 @@
       `;
 
       document.body.insertAdjacentHTML('beforeend', modalHtml);
+      attachSettingsListeners();
+    }
 
-      // Add change listeners to checkboxes
+    function attachSettingsListeners() {
+      // Checkbox listeners
       document.querySelectorAll('#settings-modal input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', (e) => {
           const category = e.target.dataset.category;
           const key = e.target.dataset.key;
-          setFieldVisibility(category, key, e.target.checked);
-          // Re-render the view
-          if (window.currentData) {
+          const view = e.target.dataset.view;
+          setFieldVisibility(category, key, e.target.checked, view);
+          // Re-render the main view if we're editing the current view
+          if (view === currentView && window.currentData) {
             renderData(window.currentData);
           }
         });
       });
+    }
+
+    function handleMoveField(category, key, direction, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      moveField(category, key, direction, settingsCurrentView);
+      renderSettingsModal();
+      // Re-render the main view if we're editing the current view
+      if (settingsCurrentView === currentView && window.currentData) {
+        renderData(window.currentData);
+      }
+    }
+
+    function switchSettingsView(view) {
+      settingsCurrentView = view;
+      renderSettingsModal();
     }
 
     function closeSettingsModal() {
@@ -213,10 +401,17 @@
       if (modal) modal.remove();
     }
 
-    function resetAndRefresh() {
+    function resetViewAndRefresh() {
+      resetViewPrefs(settingsCurrentView);
+      renderSettingsModal();
+      if (settingsCurrentView === currentView && window.currentData) {
+        renderData(window.currentData);
+      }
+    }
+
+    function resetAllAndRefresh() {
       resetFieldPrefs();
-      closeSettingsModal();
-      openSettingsModal();
+      renderSettingsModal();
       if (window.currentData) {
         renderData(window.currentData);
       }
@@ -446,8 +641,8 @@
 
       lines.push(intro);
 
-      // Client flatpack data summary
-      if (client._flatpack && Object.keys(client._flatpack).length > 0) {
+      // Client flatpack data summary (controlled by visibility)
+      if (isFieldVisible('client', 'flatpack') && client._flatpack && Object.keys(client._flatpack).length > 0) {
         const flatpackSummary = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
           .slice(0, 3) // Show first 3 fields in brief view
@@ -665,8 +860,8 @@
         sections.push(`Case management notes: ${tagSpans}`);
       }
 
-      // ─── Client Flatpack Data ───
-      if (client._flatpack && Object.keys(client._flatpack).length > 0) {
+      // ─── Client Flatpack Data (controlled by visibility) ───
+      if (isFieldVisible('client', 'flatpack') && client._flatpack && Object.keys(client._flatpack).length > 0) {
         sections.push(`<br><span class="text-lg font-semibold text-slate-200">Additional Matter Details</span>`);
         const flatpackItems = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
@@ -746,8 +941,8 @@
 
             sections.push(caseText);
 
-            // Flatpack fields for this case
-            if (c._flatpack && Object.keys(c._flatpack).length > 0) {
+            // Flatpack fields for this case (controlled by visibility)
+            if (isFieldVisible('cases', 'flatpack') && c._flatpack && Object.keys(c._flatpack).length > 0) {
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => key !== 'description' && value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
@@ -1066,48 +1261,44 @@
           ? [client['Address Line 1'], client.City, client['State Formula'], client['Zip (5)']].filter(Boolean).join(', ')
           : '—';
 
-        // Build client fields grid based on visibility
-        const clientFields = [];
-        if (isFieldVisible('client', 'aNumber')) {
-          clientFields.push(`
+        // Build client fields grid based on visibility and order
+        const clientFieldRenderers = {
+          aNumber: () => `
             <div>
               <p class="text-slate-500 text-xs uppercase tracking-wide">A#</p>
               <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
             </div>
-          `);
-        }
-        if (isFieldVisible('client', 'dob')) {
-          clientFields.push(`
+          `,
+          dob: () => `
             <div>
               <p class="text-slate-500 text-xs uppercase tracking-wide">DOB / Age</p>
               <p class="text-slate-200 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
             </div>
-          `);
-        }
-        if (isFieldVisible('client', 'country')) {
-          clientFields.push(`
+          `,
+          country: () => `
             <div>
               <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
               <p class="text-slate-200 text-sm">${escapeHtml(client.Country) || '—'}</p>
             </div>
-          `);
-        }
-        if (isFieldVisible('client', 'phone')) {
-          clientFields.push(`
+          `,
+          phone: () => `
             <div>
               <p class="text-slate-500 text-xs uppercase tracking-wide">Phone</p>
               <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
             </div>
-          `);
-        }
-        if (isFieldVisible('client', 'address')) {
-          clientFields.push(`
+          `,
+          address: () => `
             <div class="col-span-2">
               <p class="text-slate-500 text-xs uppercase tracking-wide">Address</p>
               <p class="text-slate-200 text-sm">${escapeHtml(address)}</p>
             </div>
-          `);
-        }
+          `
+        };
+
+        // Get ordered visible fields for client (excluding special sections like name, sijStatus, tags, flatpack)
+        const gridFields = ['aNumber', 'dob', 'country', 'phone', 'address'];
+        const orderedClientFields = getVisibleFields('client').filter(key => gridFields.includes(key));
+        const clientFields = orderedClientFields.map(key => clientFieldRenderers[key]?.() || '').filter(Boolean);
 
         const clientName = isFieldVisible('client', 'name')
           ? escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown')
@@ -1129,8 +1320,8 @@
               ${clientFields.length > 0 ? `<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">${clientFields.join('')}</div>` : ''}
               ${sijStatus}
               ${tagsSection}
-              ${client._flatpack ? renderFlatpackFields(client._flatpack, 'Matter Details (from Flatpack)') : ''}
-              ${client._bahr_flatpack ? renderFlatpackFields(client._bahr_flatpack, 'Bahr Import Data') : ''}
+              ${(client._flatpack && isFieldVisible('client', 'flatpack')) ? renderFlatpackFields(client._flatpack, 'Matter Details (from Flatpack)') : ''}
+              ${(client._bahr_flatpack && isFieldVisible('client', 'flatpack')) ? renderFlatpackFields(client._bahr_flatpack, 'Bahr Import Data') : ''}
             </div>
           </div>
         `;
@@ -1140,16 +1331,19 @@
       if (cases && cases.length > 0) {
         const caseTypesHtml = Object.entries(casesByType).map(([type, typeCases]) => {
           const caseItemsHtml = typeCases.map(c => {
-            const caseFields = [];
-            if (isFieldVisible('cases', 'court') && c['Court/Office']) {
-              caseFields.push(`<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>`);
-            }
-            if (isFieldVisible('cases', 'judge') && c['Judge text']) {
-              caseFields.push(`<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>`);
-            }
-            if (isFieldVisible('cases', 'hearingDate') && c['Hearing Date/Time']) {
-              caseFields.push(`<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>`);
-            }
+            // Build case fields using ordered visibility
+            const caseFieldRenderers = {
+              court: () => c['Court/Office'] ? `<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>` : null,
+              judge: () => c['Judge text'] ? `<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>` : null,
+              hearingDate: () => c['Hearing Date/Time'] ? `<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>` : null,
+              oyd: () => {
+                const oyd = c['OYD '] || c['OYD'];
+                return oyd ? `<span class="text-amber-400">OYD: ${formatDate(oyd)}</span>` : null;
+              }
+            };
+
+            const orderedCaseFields = getVisibleFields('cases').filter(key => ['court', 'judge', 'hearingDate', 'oyd'].includes(key));
+            const caseFields = orderedCaseFields.map(key => caseFieldRenderers[key]?.()).filter(Boolean);
 
             let daysBadge = '';
             const days = c['Days to Next Hearing'];
@@ -1164,9 +1358,9 @@
               notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
             }
 
-            // Flatpack fields for case
+            // Flatpack fields for case (now controlled by visibility)
             let flatpackHtml = '';
-            if (c._flatpack && Object.keys(c._flatpack).length > 0) {
+            if (isFieldVisible('cases', 'flatpack') && c._flatpack && Object.keys(c._flatpack).length > 0) {
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
@@ -1248,8 +1442,6 @@
 
           const appType = isFieldVisible('applications', 'type') ? (app.Application || 'Application') : '';
           const name = isFieldVisible('applications', 'name') ? (app.Name || '—') : '';
-          const receiptNum = app['Receipt Number'];
-          const certCounty = app['Cert County/State'];
           const notes = app.Notes;
 
           let notesHtml = '';
@@ -1257,13 +1449,15 @@
             notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
           }
 
-          const detailFields = [];
-          if (isFieldVisible('applications', 'receiptNumber') && receiptNum) {
-            detailFields.push(`<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(receiptNum)}</span></div>`);
-          }
-          if (isFieldVisible('applications', 'certCounty') && certCounty) {
-            detailFields.push(`<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(certCounty)}</span></div>`);
-          }
+          // Build detail fields using ordered visibility
+          const detailFieldRenderers = {
+            receiptNumber: () => app['Receipt Number'] ? `<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(app['Receipt Number'])}</span></div>` : null,
+            certCounty: () => app['Cert County/State'] ? `<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(app['Cert County/State'])}</span></div>` : null,
+            filedDate: () => app.createdTime ? `<div><span class="text-slate-500">Filed:</span> <span class="text-slate-300">${formatDate(app.createdTime)}</span></div>` : null
+          };
+
+          const orderedDetailFields = getVisibleFields('applications').filter(key => ['receiptNumber', 'certCounty', 'filedDate'].includes(key));
+          const detailFields = orderedDetailFields.map(key => detailFieldRenderers[key]?.()).filter(Boolean);
 
           return `
             <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0">
@@ -1347,17 +1541,15 @@
             attendeesHtml = `<div class="text-xs text-slate-500 mt-1">Attendees: ${escapeHtml(attendeeList)}</div>`;
           }
 
-          // Build detail fields based on visibility
-          const detailFields = [];
-          if (isFieldVisible('events', 'dateTime')) {
-            detailFields.push(`<div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>`);
-          }
-          if (isFieldVisible('events', 'location') && location) {
-            detailFields.push(`<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>`);
-          }
-          if (isFieldVisible('events', 'meetLink') && meetLink) {
-            detailFields.push(`<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>`);
-          }
+          // Build detail fields using ordered visibility
+          const eventDetailRenderers = {
+            dateTime: () => `<div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>`,
+            location: () => location ? `<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>` : null,
+            meetLink: () => meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>` : null
+          };
+
+          const orderedEventFields = getVisibleFields('events').filter(key => ['dateTime', 'location', 'meetLink'].includes(key));
+          const detailFields = orderedEventFields.map(key => eventDetailRenderers[key]?.()).filter(Boolean);
 
           const titleHtml = isFieldVisible('events', 'title')
             ? `<span class="text-slate-200 font-medium text-sm">${escapeHtml(eventTitle)}</span>`
