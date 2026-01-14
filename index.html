@@ -870,6 +870,51 @@
       return String(value);
     }
 
+    // Clean up flatpack field keys for display
+    function formatFlatpackKey(key) {
+      // Label mappings for cleaner display
+      const keyMappings = {
+        'matter matterid': 'Matter ID',
+        'matter displaynumber': 'Display #',
+        'matter clientid': 'Client ID',
+        'matter clientname': 'Client',
+        'matter airtablerecordid': 'Record ID',
+        'matter description': 'Description',
+        'matter status': 'Status',
+        'matter mappedstatus': 'Mapped Status',
+        'matter opendate': 'Open Date',
+        'matter closedate': 'Close Date',
+        'matter notes': 'Notes',
+        'matter notecount': 'Note Count',
+        'bahr import matterid': 'BAHR Matter ID',
+        'bahr import displaynumber': 'BAHR Display #',
+        'bahr import clientid': 'BAHR Client ID',
+        'bahr import clientname': 'BAHR Client',
+        'bahr import description': 'BAHR Description',
+        'bahr import status': 'BAHR Status',
+      };
+
+      // Normalize the key for lookup
+      const normalizedKey = key.replace(/[_.]/g, ' ').toLowerCase().trim();
+
+      // Check for exact mapping
+      if (keyMappings[normalizedKey]) {
+        return keyMappings[normalizedKey];
+      }
+
+      // Fallback: clean up the key
+      let cleaned = key
+        .replace(/[_.]/g, ' ')           // Replace underscores/dots with spaces
+        .replace(/\b(matter|bahr import)\s+/gi, '')  // Remove redundant prefixes
+        .replace(/\s+/g, ' ')            // Normalize whitespace
+        .trim();
+
+      // Title case
+      cleaned = cleaned.replace(/\b\w/g, l => l.toUpperCase());
+
+      return cleaned || key;
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // FLATPACK JSON PARSING - Extract nested JSON into unique fields
     // ═══════════════════════════════════════════════════════════════
@@ -1056,7 +1101,7 @@
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
           .slice(0, 3) // Show first 3 fields in brief view
           .map(([key, value]) => {
-            const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const formattedKey = formatFlatpackKey(key);
             const formattedValue = formatFlatpackValue(value);
             return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
           })
@@ -1259,11 +1304,15 @@
         const flatpackItems = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
           .map(([key, value]) => {
-            const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const formattedKey = formatFlatpackKey(key);
             const formattedValue = formatFlatpackValue(value);
-            return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: <span class="text-gray-800">${escapeHtml(formattedValue)}</span>`;
+            return `
+              <div class="grid grid-cols-[auto_1fr] gap-x-3 py-1">
+                <span class="text-cyan-600 font-medium whitespace-nowrap">${escapeHtml(formattedKey)}</span>
+                <span class="text-gray-800">${escapeHtml(formattedValue)}</span>
+              </div>`;
           });
-        sections.push(flatpackItems.join(' · '));
+        sections.push(`<div class="mt-2 border-l-2 border-cyan-200 pl-3">${flatpackItems.join('')}</div>`);
       }
 
       // ─── Cases ───
@@ -1339,7 +1388,7 @@
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => key !== 'description' && value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
-                  const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                  const formattedKey = formatFlatpackKey(key);
                   const formattedValue = formatFlatpackValue(value);
                   return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
                 });
@@ -1620,10 +1669,8 @@
       const fieldsHtml = Object.entries(flatpackData)
         .filter(([key, value]) => value !== null && value !== undefined && value !== '')
         .map(([key, value]) => {
-          // Format the key for display (replace underscores and dots with spaces, title case)
-          const formattedKey = key
-            .replace(/[_.]/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
+          // Format the key using centralized helper
+          const formattedKey = formatFlatpackKey(key);
 
           // Format the value using centralized helper
           const formattedValue = formatFlatpackValue(value);
@@ -1792,7 +1839,7 @@
               const flatpackFields = Object.entries(c._flatpack)
                 .filter(([key, value]) => value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
-                  const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                  const formattedKey = formatFlatpackKey(key);
                   const formattedValue = formatFlatpackValue(value);
                   return `<span class="text-gray-500"><span class="text-gray-400">${escapeHtml(formattedKey)}:</span> ${escapeHtml(formattedValue)}</span>`;
                 })
