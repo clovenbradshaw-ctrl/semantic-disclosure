@@ -915,6 +915,77 @@
       return cleaned || key;
     }
 
+    // Check if a flatpack key represents a notes field
+    function isNotesField(key) {
+      const normalizedKey = key.replace(/[_.]/g, ' ').toLowerCase().trim();
+      return normalizedKey.includes('notes') && !normalizedKey.includes('notecount');
+    }
+
+    // Format notes as individual cards instead of one long text block
+    function formatNotesAsCards(notesText) {
+      if (!notesText || typeof notesText !== 'string') return null;
+
+      // Remove horizontal line characters (underscores or dashes repeated)
+      let cleaned = notesText
+        .replace(/[_]{3,}/g, '')  // Remove ___ lines
+        .replace(/[-]{3,}/g, '')  // Remove --- lines
+        .replace(/[─]{3,}/g, '')  // Remove ─── lines
+        .replace(/[═]{3,}/g, ''); // Remove ═══ lines
+
+      // Split notes by date pattern [MM/DD/YYYY] or [M/D/YYYY]
+      const notePattern = /\[(\d{1,2}\/\d{1,2}\/\d{4})\]\s*[-–]\s*/g;
+      const parts = cleaned.split(notePattern).filter(p => p && p.trim());
+
+      if (parts.length < 2) {
+        // No date patterns found, return as single card
+        const trimmed = cleaned.trim();
+        if (!trimmed) return null;
+        return `
+          <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <p class="text-gray-700 text-sm whitespace-pre-wrap">${escapeHtml(trimmed)}</p>
+          </div>`;
+      }
+
+      // Parse into note objects (date, content pairs)
+      const notes = [];
+      for (let i = 0; i < parts.length; i += 2) {
+        const date = parts[i];
+        const content = parts[i + 1];
+        if (date && content) {
+          // Try to extract author from first line (e.g., "Pago By: Name")
+          const lines = content.trim().split('\n');
+          const firstLine = lines[0] || '';
+          const byMatch = firstLine.match(/^(.+?)\s+[Bb]y:\s*(.+)$/);
+
+          let title = '';
+          let author = '';
+          let body = content.trim();
+
+          if (byMatch) {
+            title = byMatch[1].trim();
+            author = byMatch[2].trim();
+            body = lines.slice(1).join('\n').trim();
+          }
+
+          notes.push({ date, title, author, body });
+        }
+      }
+
+      if (notes.length === 0) return null;
+
+      // Render as cards
+      return notes.map(note => `
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-medium text-gray-500">${escapeHtml(note.date)}</span>
+            ${note.author ? `<span class="text-xs text-gray-400">${escapeHtml(note.author)}</span>` : ''}
+          </div>
+          ${note.title ? `<p class="text-sm font-medium text-gray-700 mb-1">${escapeHtml(note.title)}</p>` : ''}
+          ${note.body ? `<p class="text-gray-600 text-sm whitespace-pre-wrap">${escapeHtml(note.body)}</p>` : ''}
+        </div>
+      `).join('');
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // FLATPACK JSON PARSING - Extract nested JSON into unique fields
     // ═══════════════════════════════════════════════════════════════
@@ -1301,9 +1372,16 @@
       // ─── Client Flatpack Data (controlled by visibility) ───
       if (isFieldVisible('client', 'flatpack') && client._flatpack && Object.keys(client._flatpack).length > 0) {
         sections.push(`<br><span class="text-lg font-semibold text-gray-800">Additional Matter Details</span>`);
-        const flatpackItems = Object.entries(client._flatpack)
-          .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-          .map(([key, value]) => {
+
+        // Separate notes from regular fields
+        const entries = Object.entries(client._flatpack)
+          .filter(([key, value]) => value !== null && value !== undefined && value !== '');
+        const regularFields = entries.filter(([key]) => !isNotesField(key));
+        const notesFields = entries.filter(([key]) => isNotesField(key));
+
+        // Render regular fields in grid
+        if (regularFields.length > 0) {
+          const flatpackItems = regularFields.map(([key, value]) => {
             const formattedKey = formatFlatpackKey(key);
             const formattedValue = formatFlatpackValue(value);
             return `
@@ -1312,7 +1390,23 @@
                 <span class="text-gray-800">${escapeHtml(formattedValue)}</span>
               </div>`;
           });
-        sections.push(`<div class="mt-2 border-l-2 border-cyan-200 pl-3">${flatpackItems.join('')}</div>`);
+          sections.push(`<div class="mt-2 border-l-2 border-cyan-200 pl-3">${flatpackItems.join('')}</div>`);
+        }
+
+        // Render notes as cards
+        if (notesFields.length > 0) {
+          notesFields.forEach(([key, value]) => {
+            const notesHtml = formatNotesAsCards(value);
+            if (notesHtml) {
+              const formattedKey = formatFlatpackKey(key);
+              sections.push(`
+                <div class="mt-4">
+                  <span class="text-cyan-600 font-medium text-sm">${escapeHtml(formattedKey)}</span>
+                  <div class="mt-2 flex flex-col gap-2">${notesHtml}</div>
+                </div>`);
+            }
+          });
+        }
       }
 
       // ─── Cases ───
@@ -1666,15 +1760,16 @@
     function renderFlatpackFields(flatpackData, title = 'Extracted Data') {
       if (!flatpackData || Object.keys(flatpackData).length === 0) return '';
 
-      const fieldsHtml = Object.entries(flatpackData)
-        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+      // Separate notes from regular fields
+      const entries = Object.entries(flatpackData)
+        .filter(([key, value]) => value !== null && value !== undefined && value !== '');
+      const regularFields = entries.filter(([key]) => !isNotesField(key));
+      const notesFields = entries.filter(([key]) => isNotesField(key));
+
+      const fieldsHtml = regularFields
         .map(([key, value]) => {
-          // Format the key using centralized helper
           const formattedKey = formatFlatpackKey(key);
-
-          // Format the value using centralized helper
           const formattedValue = formatFlatpackValue(value);
-
           return `
             <div>
               <p class="text-gray-400 text-xs uppercase tracking-wide">${escapeHtml(formattedKey)}</p>
@@ -1684,13 +1779,28 @@
         })
         .join('');
 
-      if (!fieldsHtml) return '';
+      const notesHtml = notesFields
+        .map(([key, value]) => {
+          const formattedKey = formatFlatpackKey(key);
+          const cardsHtml = formatNotesAsCards(value);
+          if (!cardsHtml) return '';
+          return `
+            <div class="col-span-full mt-2">
+              <p class="text-gray-400 text-xs uppercase tracking-wide mb-2">${escapeHtml(formattedKey)}</p>
+              <div class="flex flex-col gap-2">${cardsHtml}</div>
+            </div>
+          `;
+        })
+        .join('');
+
+      if (!fieldsHtml && !notesHtml) return '';
 
       return `
         <div class="mt-4 pt-4 border-t border-gray-200/30">
           <p class="text-gray-500 text-xs uppercase tracking-wide mb-3 font-medium">${escapeHtml(title)}</p>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             ${fieldsHtml}
+            ${notesHtml}
           </div>
         </div>
       `;
