@@ -1659,7 +1659,7 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         // Handle flat array of records
         if (!Array.isArray(rawData) || rawData.length === 0) {
           DebugLogger.warn('DataTransformer: Empty or invalid data received');
-          return { clientInfo: { fields: {} }, cases: [] };
+          return { clientInfo: { fields: {} }, cases: [], events: [] };
         }
 
         // Filter out empty objects from the array
@@ -1669,13 +1669,13 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
         if (records.length === 0) {
           DebugLogger.warn('DataTransformer: No valid records after filtering');
-          return { clientInfo: { fields: {} }, cases: [] };
+          return { clientInfo: { fields: {} }, cases: [], events: [] };
         }
 
         DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: records.length });
 
-        // Identify Client Info record vs Case records
-        const { clientInfoRecord, caseRecords } = this.separateRecordTypes(records);
+        // Identify Client Info record vs Case records vs Event records
+        const { clientInfoRecord, caseRecords, eventRecords } = this.separateRecordTypes(records);
 
         // Extract client fields from the appropriate source
         const clientFields = clientInfoRecord
@@ -1685,6 +1685,12 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         // Transform case records
         const cases = caseRecords.map((record, index) => this.transformCase(record, index));
 
+        // Transform event records (clean up _sourceTable from events)
+        const events = eventRecords.map(record => {
+          const { _sourceTable, ...eventData } = record;
+          return eventData;
+        });
+
         const result = {
           clientInfo: {
             recordId: clientInfoRecord?.id ||
@@ -1693,12 +1699,14 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
                       caseRecords[0]?.id,
             fields: clientFields
           },
-          cases
+          cases,
+          events
         };
 
         DebugLogger.success('DataTransformer: Transformation complete', {
           clientFieldCount: Object.keys(clientFields).length,
           caseCount: cases.length,
+          eventCount: events.length,
           hasClientInfoRecord: !!clientInfoRecord
         });
 
@@ -1706,12 +1714,13 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
       },
 
       /**
-       * Separate Client Info records from Case Master View records
+       * Separate Client Info records from Case Master View records and Events
        * Uses _sourceTable field when available, falls back to field-based heuristics
        */
       separateRecordTypes(records) {
         let clientInfoRecord = null;
         const caseRecords = [];
+        const eventRecords = [];
 
         for (const record of records) {
           const sourceTable = record._sourceTable;
@@ -1722,6 +1731,12 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
               clientInfoRecord = record;
               DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
+              continue;
+            }
+            // Extract Google Calendar events (labeled as 'Events' by n8n webhook)
+            if (tableLower === 'events' || tableLower.includes('google calendar')) {
+              eventRecords.push(record);
+              DebugLogger.info(`DataTransformer: Event record via _sourceTable: ${sourceTable}`);
               continue;
             }
           } else {
@@ -1735,6 +1750,15 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
               'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
               'Case Master View Record ID', 'Appeal Engagement Deadline'
             ];
+            // Detect Google Calendar event records by their characteristic fields
+            const eventIndicators = ['summary', 'start', 'end', 'htmlLink', 'organizer'];
+            const hasEventFields = eventIndicators.filter(f => record[f] !== undefined).length >= 3;
+
+            if (hasEventFields) {
+              eventRecords.push(record);
+              DebugLogger.info('DataTransformer: Event record via field heuristics');
+              continue;
+            }
 
             const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
             const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
@@ -1750,8 +1774,8 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           caseRecords.push(record);
         }
 
-        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
-        return { clientInfoRecord, caseRecords };
+        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, ${eventRecords.length} event records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
+        return { clientInfoRecord, caseRecords, eventRecords };
       },
 
       /**
