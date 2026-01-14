@@ -4979,20 +4979,30 @@
 
       const fields = {};
 
-      // Field name mappings from new schema to widget expected names
+      // Field name mappings from various schema versions to widget expected names
+      // Maps source field name → target field name (preserves both variants)
       const fieldMappings = {
         'Client Name': 'Client Name',
+        'Full Client Name': 'Full Client Name',
         'First Name': 'First Name',
         'Last Name': 'Family Name',
+        'Family Name': 'Family Name',
         'A#': 'A#',
         'DOB': 'DOB',
         'Country of Origin': 'Country',
-        'Phone': 'Phone Number',
-        'Email': 'Client Email',
+        'Country': 'Country',
+        'Phone': 'Phone',
+        'Phone Number': 'Phone Number',
+        'Email': 'Email',
+        'Client Email': 'Client Email',
         'Address': 'Address',
         'Emergency Contact': 'Emergency Contact',
         'Gender': 'Gender',
-        'Pronouns': 'Pronouns'
+        'Pronouns': 'Pronouns',
+        'Detained': 'Detained',
+        'Detainment Status / Location': 'Detainment Status / Location',
+        '# of EADs': '# of EADs',
+        'Assigned Users Emails': 'Assigned Users Emails'
       };
 
       for (const [sourceField, targetField] of Object.entries(fieldMappings)) {

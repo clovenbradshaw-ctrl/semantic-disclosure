@@ -298,6 +298,9 @@ const ClientGlanceConfig = {
       /^airtable_/i,
       /^PPID$/i,
       /Record ID$/i,
+      /^Client ID$/i,
+      /^ID$/,  // Integer ID field
+      /^Unique ID/i,
 
       // Link fields (navigation, not data)
       /^Link to /i,
@@ -305,6 +308,9 @@ const ClientGlanceConfig = {
       /^View /i,
       /^Open /i,
       /^Go to /i,
+      /^New.*URL$/i,
+      /^New.*UTM$/i,
+      /Tab Link$/i,
 
       // Sync/automation fields
       /sync$/i,
@@ -313,16 +319,62 @@ const ClientGlanceConfig = {
       /Calculator$/i,
       /^calc$/i,
       /calc$/i,
+      /Trigger$/i,
+      /^xano/i,
+      /^Last.*Update$/i,
 
-      // Internal URLs
+      // Internal URLs and pages
       /Softr.*Page/i,
       /Kenect/i,
       /Box.*Link/i,
       /Gmail.*Search/i,
       /Practice.*Panther/i,
+      /Details Page$/i,
+      /^box_/i,
+      /^Box_/i,
 
-      // Lookup references (usually just IDs)
+      // Lookup/rollup references (usually just IDs or duplicates)
       /\(from.*\)$/,
+      /Rollup$/i,
+      /Lookup$/i,
+
+      // Search/matching fields
+      /Search.*Options/i,
+      /Search.*Terms/i,
+      /^.*search.*$/i,
+      /Message Match$/i,
+      /Email Matching$/i,
+
+      // Calculation/formula fields
+      /^Calculation/i,
+      /^Formula/i,
+      /Formula$/i,
+
+      // Sorting/ordering fields
+      /^Sorting/i,
+      /^sorting/i,
+
+      // HTML/embed fields
+      /HTML$/i,
+      /^.*embed$/i,
+      /Import HTML$/i,
+      /Profile HTML$/i,
+
+      // Count/aggregate fields
+      /^COUNT/i,
+
+      // SMS/folder fields
+      /^sms/i,
+      /Folder$/i,
+
+      // Quarter/period fields (usually for reporting)
+      /Quarter$/i,
+
+      // Calendar automation fields
+      /Calendar Event Create$/i,
+      /Compare Address$/i,
+      /Concat Relationship$/i,
+      /Address Formula$/i,
 
       // Testing/audit fields
       /^TESTER/i,
@@ -331,7 +383,12 @@ const ClientGlanceConfig = {
 
       // Auto-generated
       /^Table \d+/,
-      /^Field \d+$/
+      /^Field \d+$/,
+
+      // Pretty/URL variants (duplicates of real fields)
+      /Pretty.*URL$/i,
+      /URL.*Pretty$/i,
+      /_Pretty$/i
     ],
 
     // Airtable field types that are structural
@@ -445,21 +502,39 @@ const ClientGlanceConfig = {
       template: "{value}",
       priority: 1
     },
+    "Full Client Name": {
+      role: "client_name_full",
+      group: "Identity",
+      template: "{value}",
+      priority: 1
+    },
+    "Family Name": {
+      role: "family_name",
+      group: "Identity",
+      template: "{value}",
+      priority: 1
+    },
     "A#": {
-      role: "a_number", 
+      role: "a_number",
       group: "Identity",
       template: "A# {value}",
       priority: 2
     },
     "DOB": {
       role: "date_of_birth",
-      group: "Identity", 
+      group: "Identity",
       template: "born {value:date}",
       dataType: "date",
       priority: 3
     },
     "Country": {
       role: "country_of_origin",
+      group: "Identity",
+      template: "from {value}",
+      priority: 4
+    },
+    "Country of Origin": {
+      role: "country_of_origin_alt",
       group: "Identity",
       template: "from {value}",
       priority: 4
@@ -692,6 +767,12 @@ const ClientGlanceConfig = {
       dataType: "date",
       priority: 5
     },
+    "# of EADs": {
+      role: "ead_count",
+      group: "EAD",
+      template: "{value} EADs",
+      priority: 6
+    },
 
     // --- FOIA ---
     "FOIA Receipt": {
@@ -866,32 +947,110 @@ const ClientGlanceConfig = {
     },
 
     // --- Applications (generic) ---
+    "Name": {
+      role: "app_name",
+      group: "Applications",
+      template: "{value}",
+      priority: 1
+    },
+    "Application": {
+      role: "app_form",
+      group: "Applications",
+      template: "{value}",
+      priority: 2
+    },
+    "Application Type": {
+      role: "app_type",
+      group: "Applications",
+      template: "{value}",
+      priority: 2
+    },
+    "Receipt Number": {
+      role: "receipt_number",
+      group: "Applications",
+      template: "receipt #{value}",
+      priority: 3
+    },
     "Receipt Date": {
       role: "app_receipt_date",
-      group: "USCIS",
-      template: "application received {value:date}",
+      group: "Applications",
+      template: "received {value:date}",
       dataType: "date",
-      priority: 12
+      priority: 4
     },
-    "Decision Notice Date": {
-      role: "decision_notice_date",
-      group: "USCIS",
-      template: "decision notice {value:date}",
+    "Filing Date": {
+      role: "filing_date",
+      group: "Applications",
+      template: "filed {value:date}",
       dataType: "date",
-      priority: 13
-    },
-    "Prima Facie": {
-      role: "prima_facie_date",
-      group: "USCIS",
-      template: "prima facie {value:date}",
-      dataType: "date",
-      priority: 14
+      priority: 5
     },
     "Sent Out": {
       role: "app_sent_date",
-      group: "USCIS",
+      group: "Applications",
       template: "sent {value:date}",
       dataType: "date",
+      priority: 6
+    },
+    "Decision": {
+      role: "app_decision",
+      group: "Applications",
+      template: "decision: {value}",
+      priority: 7
+    },
+    "Decision Notice Date": {
+      role: "decision_notice_date",
+      group: "Applications",
+      template: "decision {value:date}",
+      dataType: "date",
+      priority: 8
+    },
+    "Prima Facie": {
+      role: "prima_facie_date",
+      group: "Applications",
+      template: "prima facie {value:date}",
+      dataType: "date",
+      priority: 9
+    },
+    "RFE Date": {
+      role: "rfe_date",
+      group: "Applications",
+      template: "RFE issued {value:date}",
+      dataType: "date",
+      priority: 10
+    },
+    "RFE Response Due": {
+      role: "rfe_response_due",
+      group: "Applications",
+      template: "RFE due {value:date}",
+      dataType: "date",
+      priority: 11,
+      narrativePosition: "temporal"
+    },
+    "RFE/RFI (Topic)": {
+      role: "rfe_topic_app",
+      group: "Applications",
+      template: "RFE: {value}",
+      priority: 12
+    },
+    "Biometrics Date": {
+      role: "biometrics_date",
+      group: "Applications",
+      template: "biometrics {value:date}",
+      dataType: "date",
+      priority: 13
+    },
+    "Status": {
+      role: "app_status",
+      group: "Applications",
+      template: "{value}",
+      priority: 14,
+      narrativePosition: "status"
+    },
+    "Active": {
+      role: "app_active",
+      group: "Applications",
+      template: "active: {value}",
       priority: 15
     },
 
@@ -958,7 +1117,7 @@ const ClientGlanceConfig = {
       priority: 13
     },
 
-    // --- Bond ---
+    // --- Bond/Detention ---
     "Bond Stage": {
       role: "bond_stage",
       group: "Bond",
@@ -984,10 +1143,29 @@ const ClientGlanceConfig = {
       template: "bond {value:lowercase}",
       priority: 4
     },
+    "Detained": {
+      role: "detained_status",
+      group: "Bond",
+      template: "detained: {value}",
+      priority: 5
+    },
+    "Detainment Status / Location": {
+      role: "detention_location",
+      group: "Bond",
+      template: "at {value}",
+      priority: 6
+    },
 
     // --- Contact ---
     "Phone Number": {
       role: "phone",
+      group: "Contact",
+      template: "{value:phone}",
+      dataType: "phone",
+      priority: 1
+    },
+    "Phone": {
+      role: "phone_alt",
       group: "Contact",
       template: "{value:phone}",
       dataType: "phone",
@@ -999,11 +1177,23 @@ const ClientGlanceConfig = {
       template: "{value}",
       priority: 2
     },
+    "Email": {
+      role: "email_alt",
+      group: "Contact",
+      template: "{value}",
+      priority: 2
+    },
     "Address": {
       role: "address",
       group: "Contact",
       template: "{value}",
       priority: 3
+    },
+    "Assigned Users Emails": {
+      role: "assigned_staff",
+      group: "Contact",
+      template: "assigned to {value}",
+      priority: 4
     },
 
     // --- Case Management ---
@@ -1295,6 +1485,7 @@ const ClientGlanceConfig = {
     "Court",
     "SIJ",
     "USCIS",
+    "Applications",
     "EAD",
     "Asylum",
     "U-Visa",
@@ -1325,25 +1516,35 @@ const ClientGlanceConfig = {
       // Record metadata
       "Record ID",
       "Case Master View Record ID",
+      "Case Master View // Activities",
       "Created At",
       "Created date",
+      "Created Date",
       "Created Airtable Record",
       "createdTime",
+      "Created",
       "Last Modified",
       "Last Modified By",
       "Airtable_Last_Modified",
+      "Created Quarter",
 
       // Internal IDs and references
       /^.*_ID.*$/i,
       /_id$/,
       /^Edit Client Info/,
       /^Client_ID/,
+      /^Client ID$/,
       /^PP ID/,
+      /^PPID$/,
       /^Hearing Event ID/,
       /^Event Ids/,
       /^Case Events$/,
       /^Data Test/,
       /^Table \d+/,
+      /^ID$/,
+      /^Unique ID/,
+      "recordId",
+      "airtable_client_info_id",
 
       // Computed/formula fields
       /^Calculation/,
@@ -1353,22 +1554,66 @@ const ClientGlanceConfig = {
       /Calculator$/,
       /^Est\./,
       /calc$/i,
+      "Email Blank Formula",
+      "Address Formula",
+      "Compare Address",
+      "Concat Relationship",
 
       // Internal URLs and generators
       /Gen$/,
       /Track Link$/,
       /Email Writer$/,
+      "Client Details Page",
+      "Open Client Page",
+      "Softr Client Page",
+      "New case note URL",
+      "New Client Event UTM",
+      "Relationship Tab Link",
+      "Calendar Event Create",
+
+      // Box/external storage
+      /^box_/,
+      /^Box_/,
+      "box_shared_link",
+      "box_embed",
+      "Box_Folder_ID",
+      "Last Box URL Update",
 
       // Rollup/lookup duplicates
       /\(from.*\)$/,
+      /Rollup$/,
+      /Lookup$/,
+
+      // Search/matching fields
+      "Name Search Options",
+      "name search 2.0",
+      "Phone search options",
+      "Gmail_Search_Terms",
+      "JSON for Email Matching",
+      "SMS Message Match",
+      "smsFolder",
+
+      // Sorting/pretty/URL variants
+      /Pretty$/,
+      /Pretty.*URL$/,
+      "Full_Name_Pretty_URL",
+      "Full_Name_Normal_Pretty",
+      "sortingLastModAndFamily",
+      "Sorting 5 day + -",
+
+      // HTML/embed fields
+      "Profile HTML",
+      "Bahr Import HTML",
+      "Address Rich Text Formatted",
+
+      // Sync/trigger fields
+      "Sync Date",
+      "xanoSyncTrigger",
 
       // Error-prone computed fields
       "Family Name (Pretty)",
       "Client Name (Pretty)",
       "Good Date Field",
-
-      // Search/internal fields
-      "Name Search Options",
 
       // Timestamps that duplicate other fields
       "Today Date",
@@ -1378,10 +1623,22 @@ const ClientGlanceConfig = {
       "Compiled Notes",
       "Soonest Event",
       "Recent Hearing",
+      "Calculation 5",
+      "Calculation 12",
 
-      // Tester fields
+      // Tester/audit fields
       /^TESTER/,
-      /^Audit/
+      /^Audit/,
+
+      // Count/aggregate fields
+      "COUNT as one",
+
+      // Kenect/communication internal
+      "Kenect Link",
+      "Kenect Thread",
+
+      // Invoice/lookup
+      "Invoiced Lookup"
     ],
 
     // Maximum fields to show per group before collapsing
