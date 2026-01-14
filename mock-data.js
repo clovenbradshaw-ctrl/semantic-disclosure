@@ -20,12 +20,11 @@ window.MOCK_DATA = {
   "_meta": {
     "generatedAt": "2026-01-14T00:20:24.500Z",
     "recordCounts": {
-      "clientInfo": 1,
+      "client": 1,
       "cases": 3,
       "applications": 2,
       "hearings": 2,
-      "events": 3,
-      "unknown": 0
+      "events": 3
     }
   },
 
@@ -33,18 +32,31 @@ window.MOCK_DATA = {
   "client": {
     "_recordId": "recCLIENT123",
     "id": "recCLIENT123",
+    "createdTime": "2024-06-15T14:30:00.000Z",
     "Client Name": "Rodriguez Garcia, Maria Elena",
     "First Name": "Maria",
-    "Last Name": "Rodriguez Garcia",
+    "Family Name": "Rodriguez Garcia",
+    "Full Client Name": "Maria Elena Rodriguez Garcia",
     "A#": "234-567-890",
     "DOB": "1995-03-22",
-    "Country of Origin": "Guatemala",
+    "Country": "Guatemala",
     "Phone": "(615) 555-1234",
     "Email": "maria.rodriguez@email.com",
     "Address": "123 Main Street, Nashville, TN 37203",
     "Emergency Contact": "Jose Rodriguez - (615) 555-5678",
     "Gender": "Female",
-    "Pronouns": "she/her"
+    "Pronouns": "she/her",
+    "Detained": "No",
+    "# of EADs": 2,
+    "FOIA Stage": ["Received", "Pending"],
+    "Case Master View Record ID": ["recCASE001", "recCASE002", "recCASE003"],
+    "Assigned Users Emails": "sarah.johnson@lawfirm.com",
+    "AMINO": {
+      "label": "View in AMINO",
+      "url": "https://amino.example.com/client/recCLIENT123"
+    },
+    "PracticePanther": "https://app.practicepanther.com/matters/12345",
+    "Link to Practice Panther": "https://app.practicepanther.com/matters/12345"
   },
 
   // Cases - from Case Master View table
@@ -52,11 +64,14 @@ window.MOCK_DATA = {
     {
       "_recordId": "recCASE001",
       "id": "recCASE001",
+      "createdTime": "2024-06-20T10:00:00.000Z",
       "Client_ID_Airtable": "recCLIENT123",
       "Matter Type": "SIJ - Davidson County",
       "Case Status": "Active",
       "Court": "Memphis Immigration Court",
+      "Court/Office": "Memphis Immigration Court",
       "Judge": "Hon. Patricia Williams",
+      "Hearing Date/Time": "2025-02-15T09:00:00.000Z",
       "Next Hearing": "2025-02-15T09:00:00.000Z",
       "Filing Deadline": "2025-02-01",
       "Case Number": "A234-567-890",
@@ -73,11 +88,13 @@ window.MOCK_DATA = {
       "FOIA Receipt": "2024-09-15",
       "FOIA #": "2024-FOI-12345",
       "USCIS FOIA Stage": "Received",
-      "FBI Record Stage": "Requested"
+      "FBI Record Stage": "Requested",
+      "Pleadings Due Date": "2025-01-20"
     },
     {
       "_recordId": "recCASE002",
       "id": "recCASE002",
+      "createdTime": "2024-10-15T14:00:00.000Z",
       "Client_ID_Airtable": "recCLIENT123",
       "Matter Type": "USCIS - I-360",
       "Case Status": "Active",
@@ -99,6 +116,7 @@ window.MOCK_DATA = {
     {
       "_recordId": "recCASE003",
       "id": "recCASE003",
+      "createdTime": "2025-01-05T09:00:00.000Z",
       "Client_ID_Airtable": "recCLIENT123",
       "Matter Type": "Appeal - BIA",
       "Case Status": "Active",
@@ -115,33 +133,48 @@ window.MOCK_DATA = {
   "applications": [
     {
       "_recordId": "recAPP001",
-      "_parentCaseId": "recCASE002",
       "id": "recAPP001",
+      "createdTime": "2024-11-15T10:00:00.000Z",
+      "_parentCaseId": "recCASE002",
       "Case Master": ["recCASE002"],
       "Application Type": "I-360",
+      "Application": "I-360",
+      "Name": "I-360 (SIJ Petition)",
       "Form Number": "I-360",
       "Filing Date": "2024-11-15",
       "Receipt Number": "SRC2411234567",
+      "Receipt Date": "2024-11-20",
+      "Sent Out": "2024-11-15",
       "Decision": null,
-      "Decision Date": null,
+      "Decision Notice Date": null,
+      "Prima Facie": null,
       "RFE Date": "2025-02-01",
       "RFE Response Due": "2025-03-01",
+      "RFE Due Date": "2025-03-01",
+      "RFE/RFI (Topic)": "Birth Certificate Authentication",
       "Biometrics Date": "2024-12-05",
       "Status": "Pending",
+      "Active": true,
       "Notes": "Initial SIJ petition filed. Awaiting biometrics completion."
     },
     {
       "_recordId": "recAPP002",
-      "_parentCaseId": "recCASE002",
       "id": "recAPP002",
+      "createdTime": "2024-11-18T14:00:00.000Z",
+      "_parentCaseId": "recCASE002",
       "Case Master": ["recCASE002"],
       "Application Type": "I-765",
+      "Application": "I-765",
+      "Name": "I-765 (EAD)",
       "Form Number": "I-765",
       "Filing Date": "2024-11-18",
       "Receipt Number": "SRC2411234568",
+      "Receipt Date": "2024-11-25",
+      "Sent Out": "2024-11-18",
       "Decision": null,
-      "Decision Date": null,
+      "Decision Notice Date": null,
       "Status": "Pending",
+      "Active": true,
       "Notes": "EAD application filed concurrently with I-360."
     }
   ],
