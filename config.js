@@ -1412,10 +1412,11 @@ const ClientGlanceConfig = {
       id: 'matters',
       label: 'Matters',
       icon: '📁',
-      description: 'Case details organized by matter type (tupelized)',
+      description: 'Case Master View records organized by matter type',
       sourceTables: ['Case Master View'],
       viewType: 'tupelized', // Display using SEMANTIC_TUPLES
-      // Submenu for filtering by matter type
+      // Matters are directly tied to Case Master View records
+      // Each case tab represents a distinct Case Master View record
       hasSubmenu: true,
       submenuOptions: 'matterTypes', // Dynamically populated from detected matters
       defaultFields: [
