@@ -429,6 +429,129 @@
         flex-wrap: wrap;
       }
     }
+
+    /* Debug Modal */
+    .debug-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .debug-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .debug-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .debug-modal-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .debug-modal-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .debug-modal-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      transition: all 0.15s;
+    }
+
+    .debug-modal-btn:hover {
+      background: var(--border);
+    }
+
+    .debug-modal-btn.primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    .debug-modal-btn.primary:hover {
+      background: #2563eb;
+    }
+
+    .debug-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .debug-modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .debug-modal-body {
+      flex: 1;
+      overflow: auto;
+      padding: 16px 20px;
+    }
+
+    .debug-output {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .debug-modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .quick-btn.debug-btn {
+      background: #7c3aed;
+      border-color: #7c3aed;
+      color: white;
+    }
+
+    .quick-btn.debug-btn:hover {
+      background: #6d28d9;
+    }
   </style>
 </head>
 <body>
@@ -517,6 +640,7 @@
         <button class="quick-btn" onclick="logMockData()">Log Mock Data</button>
         <button class="quick-btn" onclick="logSchema()">Log Schema</button>
         <button class="quick-btn" onclick="toggleDebug()">Toggle Debug</button>
+        <button class="quick-btn debug-btn" onclick="debugWebhook()">Debug Webhook</button>
         <button class="quick-btn" onclick="copyUrl()">Copy URL</button>
         <button class="quick-btn" onclick="openInNewTab()">Open in Tab</button>
         <span id="schemaStatus" class="schema-status">Schema: <span id="schemaStatusText">Ready</span></span>
@@ -1424,6 +1548,148 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
     window.open(url, '_blank');
   };
 
+  // Debug Webhook Functions
+  function redactValue(value, key = '') {
+    if (value === null) return '[null]';
+    if (value === undefined) return '[undefined]';
+
+    const type = typeof value;
+
+    if (type === 'string') {
+      if (value === '') return '[empty_string]';
+      // Check for common patterns and show type hints
+      if (/^rec[A-Za-z0-9]+$/.test(value)) return '[record_id]';
+      if (/^https?:\/\//.test(value)) return '[url]';
+      if (/^\d{4}-\d{2}-\d{2}/.test(value)) return '[date_string]';
+      if (/^[^@]+@[^@]+\.[^@]+$/.test(value)) return '[email]';
+      if (/^\+?\d[\d\s-]{8,}$/.test(value)) return '[phone]';
+      return `[string:${value.length}chars]`;
+    }
+
+    if (type === 'number') {
+      if (Number.isInteger(value)) return '[integer]';
+      return '[float]';
+    }
+
+    if (type === 'boolean') return `[boolean:${value}]`;
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '[]';
+      return value.map((item, i) => redactValue(item, `${key}[${i}]`));
+    }
+
+    if (type === 'object') {
+      const redacted = {};
+      for (const [k, v] of Object.entries(value)) {
+        redacted[k] = redactValue(v, k);
+      }
+      return redacted;
+    }
+
+    return `[${type}]`;
+  }
+
+  window.debugWebhook = async function() {
+    const recordId = document.getElementById('recordIdInput').value.trim();
+
+    if (!recordId) {
+      showStatus('Please enter a recordId first', 'error');
+      return;
+    }
+
+    const modal = document.getElementById('debugModal');
+    const output = document.getElementById('debugOutput');
+
+    modal.style.display = 'flex';
+    output.textContent = 'Fetching from webhook...';
+
+    try {
+      const response = await fetch(`${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+
+      const responseText = await response.text();
+
+      let displayData;
+
+      if (!response.ok) {
+        displayData = {
+          _debug_info: {
+            status: response.status,
+            statusText: response.statusText,
+            error: true
+          },
+          _raw_response: responseText.substring(0, 1000) + (responseText.length > 1000 ? '...[truncated]' : '')
+        };
+      } else {
+        try {
+          const jsonData = JSON.parse(responseText);
+          const redacted = redactValue(jsonData);
+          displayData = {
+            _debug_info: {
+              status: response.status,
+              recordId: recordId,
+              timestamp: new Date().toISOString(),
+              responseType: Array.isArray(jsonData) ? 'array' : typeof jsonData,
+              topLevelKeys: Array.isArray(jsonData) ? `[${jsonData.length} items]` : Object.keys(jsonData)
+            },
+            _redacted_data: redacted
+          };
+        } catch (parseError) {
+          displayData = {
+            _debug_info: {
+              status: response.status,
+              parseError: parseError.message,
+              error: true
+            },
+            _raw_response: responseText.substring(0, 2000) + (responseText.length > 2000 ? '...[truncated]' : '')
+          };
+        }
+      }
+
+      output.textContent = JSON.stringify(displayData, null, 2);
+      showStatus('Debug data loaded - values redacted', 'success');
+
+    } catch (error) {
+      output.textContent = JSON.stringify({
+        _debug_info: {
+          error: true,
+          message: error.message,
+          type: error.name
+        }
+      }, null, 2);
+      showStatus('Error fetching webhook', 'error');
+    }
+  };
+
+  window.closeDebugModal = function() {
+    document.getElementById('debugModal').style.display = 'none';
+  };
+
+  window.copyDebugOutput = function() {
+    const output = document.getElementById('debugOutput').textContent;
+    navigator.clipboard.writeText(output).then(() => {
+      showStatus('Debug output copied to clipboard', 'success');
+    }).catch(() => {
+      showStatus('Failed to copy to clipboard', 'error');
+    });
+  };
+
+  // Close modal on overlay click
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'debugModal') {
+      closeDebugModal();
+    }
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('debugModal').style.display !== 'none') {
+      closeDebugModal();
+    }
+  });
+
   function showStatus(message, type = 'info') {
     const statusBar = document.getElementById('statusBar');
     const statusText = document.getElementById('statusText');
@@ -2318,6 +2584,30 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
   }
 })();
 </script>
+
+<!-- Debug Modal -->
+<div class="debug-modal-overlay" id="debugModal" style="display: none;">
+  <div class="debug-modal">
+    <div class="debug-modal-header">
+      <h2>Webhook Response (Values Redacted)</h2>
+      <div class="debug-modal-actions">
+        <button class="debug-modal-btn primary" onclick="copyDebugOutput()">Copy to Clipboard</button>
+        <button class="debug-modal-close" onclick="closeDebugModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="debug-modal-body">
+      <pre class="debug-output" id="debugOutput">Loading...</pre>
+    </div>
+    <div class="debug-modal-footer">
+      All values have been replaced with placeholders showing the data type. Share this structure to debug data format issues.
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
