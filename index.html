@@ -22,9 +22,205 @@
 
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
+    const STORAGE_KEY = 'semantic-disclosure-field-prefs';
 
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
     let currentView = 'structured';
+
+    // ═══════════════════════════════════════════════════════════════
+    // FIELD REGISTRY - All available fields organized by category
+    // ═══════════════════════════════════════════════════════════════
+    const FIELD_REGISTRY = {
+      client: [
+        { key: 'name', label: 'Name', default: true },
+        { key: 'aNumber', label: 'Alien Number (A#)', default: true },
+        { key: 'dob', label: 'Date of Birth / Age', default: true },
+        { key: 'country', label: 'Country', default: true },
+        { key: 'phone', label: 'Phone Number', default: true },
+        { key: 'address', label: 'Address', default: true },
+        { key: 'sijStatus', label: 'SIJ Status', default: true },
+        { key: 'tags', label: 'Tags', default: false },
+      ],
+      cases: [
+        { key: 'type', label: 'Case Type', default: true },
+        { key: 'court', label: 'Court/Office', default: true },
+        { key: 'judge', label: 'Judge', default: true },
+        { key: 'hearingDate', label: 'Hearing Date', default: true },
+        { key: 'daysToHearing', label: 'Days to Hearing', default: true },
+        { key: 'notes', label: 'Case Notes', default: false },
+      ],
+      applications: [
+        { key: 'type', label: 'Application Type', default: true },
+        { key: 'name', label: 'Name/Matter', default: true },
+        { key: 'status', label: 'Status', default: true },
+        { key: 'receiptNumber', label: 'Receipt Number', default: true },
+        { key: 'certCounty', label: 'County/State', default: false },
+        { key: 'notes', label: 'Notes', default: false },
+      ],
+      events: [
+        { key: 'title', label: 'Title', default: true },
+        { key: 'dateTime', label: 'Date/Time', default: true },
+        { key: 'location', label: 'Location', default: true },
+        { key: 'calendarType', label: 'Calendar Type', default: true },
+        { key: 'meetLink', label: 'Video Link', default: true },
+        { key: 'description', label: 'Description', default: false },
+        { key: 'attendees', label: 'Attendees', default: false },
+      ]
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // FIELD PREFERENCES - localStorage persistence
+    // ═══════════════════════════════════════════════════════════════
+    function buildDefaultPrefs() {
+      const prefs = {};
+      for (const [category, fields] of Object.entries(FIELD_REGISTRY)) {
+        prefs[category] = {};
+        fields.forEach(f => {
+          prefs[category][f.key] = f.default;
+        });
+      }
+      return prefs;
+    }
+
+    function loadFieldPrefs() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Merge with defaults to handle new fields
+          const defaults = buildDefaultPrefs();
+          for (const category of Object.keys(defaults)) {
+            if (!parsed[category]) parsed[category] = {};
+            for (const key of Object.keys(defaults[category])) {
+              if (parsed[category][key] === undefined) {
+                parsed[category][key] = defaults[category][key];
+              }
+            }
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.warn('Failed to load field preferences:', e);
+      }
+      return buildDefaultPrefs();
+    }
+
+    function saveFieldPrefs(prefs) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+      } catch (e) {
+        console.warn('Failed to save field preferences:', e);
+      }
+    }
+
+    function isFieldVisible(category, key) {
+      const prefs = loadFieldPrefs();
+      return prefs[category]?.[key] !== false;
+    }
+
+    function setFieldVisibility(category, key, visible) {
+      const prefs = loadFieldPrefs();
+      if (!prefs[category]) prefs[category] = {};
+      prefs[category][key] = visible;
+      saveFieldPrefs(prefs);
+    }
+
+    function resetFieldPrefs() {
+      const defaults = buildDefaultPrefs();
+      saveFieldPrefs(defaults);
+      return defaults;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SETTINGS MODAL
+    // ═══════════════════════════════════════════════════════════════
+    function openSettingsModal() {
+      const prefs = loadFieldPrefs();
+      const categoryLabels = {
+        client: 'Client Fields',
+        cases: 'Case Fields',
+        applications: 'Application Fields',
+        events: 'Event & Hearing Fields'
+      };
+
+      const categoriesHtml = Object.entries(FIELD_REGISTRY).map(([category, fields]) => {
+        const fieldsHtml = fields.map(f => {
+          const checked = prefs[category]?.[f.key] !== false ? 'checked' : '';
+          return `
+            <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-700/30 p-1 rounded">
+              <input type="checkbox" ${checked}
+                     data-category="${category}"
+                     data-key="${f.key}"
+                     class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800">
+              <span class="text-sm text-slate-300">${f.label}</span>
+            </label>
+          `;
+        }).join('');
+
+        return `
+          <div class="mb-4">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">${categoryLabels[category]}</h3>
+            <div class="grid grid-cols-2 gap-1">${fieldsHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      const modalHtml = `
+        <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
+          <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+              <h2 class="text-lg font-semibold text-slate-100">Field Settings</h2>
+              <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-200 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[60vh]">
+              <p class="text-slate-400 text-sm mb-4">Choose which fields to display in each section. Changes are saved automatically.</p>
+              ${categoriesHtml}
+            </div>
+            <div class="flex items-center justify-between p-4 border-t border-slate-700 bg-slate-800/50">
+              <button onclick="resetAndRefresh()" class="text-sm text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded hover:bg-slate-700/50 transition-colors">
+                Reset to Defaults
+              </button>
+              <button onclick="closeSettingsModal()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded transition-colors">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      // Add change listeners to checkboxes
+      document.querySelectorAll('#settings-modal input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const category = e.target.dataset.category;
+          const key = e.target.dataset.key;
+          setFieldVisibility(category, key, e.target.checked);
+          // Re-render the view
+          if (window.currentData) {
+            renderData(window.currentData);
+          }
+        });
+      });
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      if (modal) modal.remove();
+    }
+
+    function resetAndRefresh() {
+      resetFieldPrefs();
+      closeSettingsModal();
+      openSettingsModal();
+      if (window.currentData) {
+        renderData(window.currentData);
+      }
+    }
 
     function getRecordId() {
       const params = new URLSearchParams(window.location.search);
@@ -68,6 +264,108 @@
     function list(v) {
       if (Array.isArray(v)) return v.join(', ');
       return v;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FLATPACK JSON PARSING - Extract nested JSON into unique fields
+    // ═══════════════════════════════════════════════════════════════
+    function parseFlatpack(value) {
+      // Handle null/undefined
+      if (!value) return null;
+
+      // If it's an array, parse each element and merge results
+      if (Array.isArray(value)) {
+        const results = value
+          .map(v => parseFlatpack(v))
+          .filter(Boolean);
+        if (results.length === 0) return null;
+        if (results.length === 1) return results[0];
+        // Merge multiple flatpack objects
+        return results.reduce((acc, obj) => ({ ...acc, ...obj }), {});
+      }
+
+      // If already an object, return as-is
+      if (typeof value === 'object') return value;
+
+      // If string, try to parse as JSON
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          if (typeof parsed === 'object' && parsed !== null) {
+            return parsed;
+          }
+        } catch (e) {
+          // Not valid JSON, return null
+        }
+      }
+
+      return null;
+    }
+
+    function extractFlatpackFields(record, flatpackFieldName, prefix = '') {
+      // Extract and parse flatpack field
+      const flatpackValue = record[flatpackFieldName];
+      const parsed = parseFlatpack(flatpackValue);
+
+      if (!parsed) return {};
+
+      // Flatten nested objects with dot notation for keys
+      const extracted = {};
+      const flatten = (obj, parentKey = '') => {
+        for (const [key, value] of Object.entries(obj)) {
+          const newKey = parentKey ? `${parentKey}.${key}` : (prefix ? `${prefix}_${key}` : key);
+          if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+            flatten(value, newKey);
+          } else {
+            extracted[newKey] = value;
+          }
+        }
+      };
+
+      flatten(parsed);
+      return extracted;
+    }
+
+    function processDataWithFlatpack(data) {
+      // Process client flatpack fields
+      if (data.client) {
+        // Extract Matter_Flatpack from client (from Case Master View // Activities)
+        const clientFlatpack = extractFlatpackFields(
+          data.client,
+          'Matter_Flatpack (from Case Master View // Activities)',
+          'matter'
+        );
+        if (Object.keys(clientFlatpack).length > 0) {
+          data.client._flatpack = clientFlatpack;
+        }
+
+        // Also check for bahr_import_flatpack_data
+        const bahrFlatpack = extractFlatpackFields(
+          data.client,
+          'bahr_import_flatpack_data',
+          'bahr_import'
+        );
+        if (Object.keys(bahrFlatpack).length > 0) {
+          data.client._bahr_flatpack = bahrFlatpack;
+        }
+      }
+
+      // Process case flatpack fields
+      if (data.cases && Array.isArray(data.cases)) {
+        data.cases = data.cases.map(caseRecord => {
+          const caseFlatpack = extractFlatpackFields(
+            caseRecord,
+            'Matter_Flatpack',
+            ''
+          );
+          if (Object.keys(caseFlatpack).length > 0) {
+            caseRecord._flatpack = caseFlatpack;
+          }
+          return caseRecord;
+        });
+      }
+
+      return data;
     }
 
     function pluralize(n, singular, plural) {
@@ -129,62 +427,87 @@
       const country = client.Country;
       const aNum = client['A#'];
 
-      let intro = `<strong class="text-slate-100">${escapeHtml(name)}</strong>`;
+      let intro = isFieldVisible('client', 'name')
+        ? `<strong class="text-slate-100">${escapeHtml(name)}</strong>`
+        : '<strong class="text-slate-100">Client</strong>';
+
       const details = [];
-      if (age) details.push(`${age}yo`);
-      if (country) details.push(`from ${escapeHtml(country)}`);
-      if (aNum) details.push(`A# <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`);
+      if (isFieldVisible('client', 'dob') && age) details.push(`${age}yo`);
+      if (isFieldVisible('client', 'country') && country) details.push(`from ${escapeHtml(country)}`);
+      if (isFieldVisible('client', 'aNumber') && aNum) details.push(`A# <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`);
       if (details.length) intro += ` (${details.join(', ')})`;
 
       // SIJ status inline if present
       const sijStatus = client['SIJ Case Status'];
-      if (sijStatus) {
+      if (isFieldVisible('client', 'sijStatus') && sijStatus) {
         const statusText = list(sijStatus);
         intro += ` — SIJ: <span class="text-amber-300">${escapeHtml(statusText)}</span>`;
       }
 
       lines.push(intro);
 
+      // Client flatpack data summary
+      if (client._flatpack && Object.keys(client._flatpack).length > 0) {
+        const flatpackSummary = Object.entries(client._flatpack)
+          .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+          .slice(0, 3) // Show first 3 fields in brief view
+          .map(([key, value]) => {
+            const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+            return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
+          })
+          .join(' · ');
+        if (flatpackSummary) {
+          lines.push(`<span class="text-slate-400 text-sm">${flatpackSummary}</span>`);
+        }
+      }
+
       // Cases summary
       if (cases && cases.length > 0) {
         const casesByType = {};
         cases.forEach(c => {
-          const type = c.Description || 'Other';
+          // Use flatpack description if available, otherwise fall back to Description field
+          const type = (c._flatpack && c._flatpack.description) || c.Description || 'Other';
           if (!casesByType[type]) casesByType[type] = [];
           casesByType[type].push(c);
         });
 
-        const typeSummary = Object.entries(casesByType)
-          .map(([type, arr]) => `${arr.length} ${escapeHtml(type)}`)
-          .join(', ');
-
-        lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>: ${typeSummary}`);
+        if (isFieldVisible('cases', 'type')) {
+          const typeSummary = Object.entries(casesByType)
+            .map(([type, arr]) => `${arr.length} ${escapeHtml(type)}`)
+            .join(', ');
+          lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>: ${typeSummary}`);
+        } else {
+          lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>`);
+        }
 
         // Urgent hearings
-        const urgent = cases.filter(c => {
-          const days = c['Days to Next Hearing'];
-          return typeof days === 'number' && days <= 30;
-        }).sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
+        if (isFieldVisible('cases', 'daysToHearing')) {
+          const urgent = cases.filter(c => {
+            const days = c['Days to Next Hearing'];
+            return typeof days === 'number' && days <= 30;
+          }).sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
 
-        if (urgent.length > 0) {
-          const next = urgent[0];
-          const days = next['Days to Next Hearing'];
-          const urgency = getDaysUrgency(days);
-          const hearingDate = formatDate(val(next['Hearing Date/Time']));
-          const caseType = next.Description || 'case';
+          if (urgent.length > 0) {
+            const next = urgent[0];
+            const days = next['Days to Next Hearing'];
+            const urgency = getDaysUrgency(days);
+            const hearingDate = isFieldVisible('cases', 'hearingDate') ? formatDate(val(next['Hearing Date/Time'])) : null;
+            const caseType = isFieldVisible('cases', 'type') ? (next.Description || 'case') : 'case';
 
-          let urgentLine = `<span class="${urgency.class}">Next hearing in ${days} ${pluralize(days, 'day')}</span>`;
-          if (hearingDate) urgentLine += ` (${hearingDate})`;
-          urgentLine += ` for ${escapeHtml(caseType)}`;
+            let urgentLine = `<span class="${urgency.class}">Next hearing in ${days} ${pluralize(days, 'day')}</span>`;
+            if (hearingDate) urgentLine += ` (${hearingDate})`;
+            urgentLine += ` for ${escapeHtml(caseType)}`;
 
-          const court = val(next['Court/Office']);
-          if (court) urgentLine += ` at ${escapeHtml(court)}`;
+            const court = val(next['Court/Office']);
+            if (isFieldVisible('cases', 'court') && court) urgentLine += ` at ${escapeHtml(court)}`;
 
-          if (urgent.length > 1) {
-            urgentLine += `. <span class="text-slate-400">${urgent.length - 1} other ${pluralize(urgent.length - 1, 'hearing')} within 30 days.</span>`;
+            if (urgent.length > 1) {
+              urgentLine += `. <span class="text-slate-400">${urgent.length - 1} other ${pluralize(urgent.length - 1, 'hearing')} within 30 days.</span>`;
+            }
+
+            lines.push(urgentLine);
           }
-
-          lines.push(urgentLine);
         }
       } else {
         lines.push('<span class="text-slate-500">No active cases.</span>');
@@ -199,15 +522,20 @@
           appsByType[type].push(app);
         });
 
-        const appTypeSummary = Object.entries(appsByType)
-          .map(([type, arr]) => {
-            const statuses = [...new Set(arr.map(a => a.Status).filter(Boolean))];
-            const statusStr = statuses.length > 0 ? ` (${statuses.join(', ')})` : '';
-            return `<span class="text-purple-300">${escapeHtml(type)}</span>${statusStr}`;
-          })
-          .join(', ');
-
-        lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>: ${appTypeSummary}`);
+        if (isFieldVisible('applications', 'type')) {
+          const appTypeSummary = Object.entries(appsByType)
+            .map(([type, arr]) => {
+              const statuses = isFieldVisible('applications', 'status')
+                ? [...new Set(arr.map(a => a.Status).filter(Boolean))]
+                : [];
+              const statusStr = statuses.length > 0 ? ` (${statuses.join(', ')})` : '';
+              return `<span class="text-purple-300">${escapeHtml(type)}</span>${statusStr}`;
+            })
+            .join(', ');
+          lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>: ${appTypeSummary}`);
+        } else {
+          lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>`);
+        }
       }
 
       // Events summary (calendar events)
@@ -218,9 +546,12 @@
 
         if (upcomingEvents.length > 0) {
           const nextEvent = upcomingEvents[0];
-          const eventDate = formatDate(nextEvent.startDateTime);
-          const eventTitle = nextEvent.title || nextEvent.summary || 'Upcoming event';
-          lines.push(`<span class="text-rose-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)} on ${eventDate}`);
+          const eventDate = isFieldVisible('events', 'dateTime') ? formatDate(nextEvent.startDateTime) : '';
+          const eventTitle = isFieldVisible('events', 'title') ? (nextEvent.title || nextEvent.summary || 'Upcoming event') : 'Event';
+
+          let eventLine = `<span class="text-rose-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)}`;
+          if (eventDate) eventLine += ` on ${eventDate}`;
+          lines.push(eventLine);
 
           if (upcomingEvents.length > 1) {
             lines.push(`<span class="text-slate-400">${upcomingEvents.length - 1} more upcoming ${pluralize(upcomingEvents.length - 1, 'event')}.</span>`);
@@ -238,10 +569,14 @@
 
         if (upcomingHearings.length > 0) {
           const nextHearing = upcomingHearings[0];
-          const hearingDate = formatDate(nextHearing.startDateTime);
-          const hearingTitle = nextHearing.title || nextHearing.summary || 'Hearing';
-          const location = nextHearing.location ? ` at ${escapeHtml(nextHearing.location)}` : '';
-          lines.push(`<span class="text-amber-400 font-medium">Scheduled hearing:</span> ${escapeHtml(hearingTitle)} on ${hearingDate}${location}`);
+          const hearingDate = isFieldVisible('events', 'dateTime') ? formatDate(nextHearing.startDateTime) : '';
+          const hearingTitle = isFieldVisible('events', 'title') ? (nextHearing.title || nextHearing.summary || 'Hearing') : 'Hearing';
+          const location = (isFieldVisible('events', 'location') && nextHearing.location) ? ` at ${escapeHtml(nextHearing.location)}` : '';
+
+          let hearingLine = `<span class="text-amber-400 font-medium">Scheduled hearing:</span> ${escapeHtml(hearingTitle)}`;
+          if (hearingDate) hearingLine += ` on ${hearingDate}`;
+          hearingLine += location;
+          lines.push(hearingLine);
         }
       }
 
@@ -266,21 +601,26 @@
       const country = client.Country;
       const aNum = client['A#'];
 
-      let profile = `<strong class="text-slate-100">${escapeHtml(name)}</strong>`;
+      let profile = isFieldVisible('client', 'name')
+        ? `<strong class="text-slate-100">${escapeHtml(name)}</strong>`
+        : '<strong class="text-slate-100">The client</strong>';
 
-      if (age && country) {
+      const showAge = isFieldVisible('client', 'dob') && age;
+      const showCountry = isFieldVisible('client', 'country') && country;
+
+      if (showAge && showCountry) {
         profile += ` is a ${age}-year-old national of ${escapeHtml(country)}`;
-      } else if (age) {
+      } else if (showAge) {
         profile += ` is ${age} years old`;
-      } else if (country) {
+      } else if (showCountry) {
         profile += ` is a national of ${escapeHtml(country)}`;
       }
 
-      if (dob) {
+      if (isFieldVisible('client', 'dob') && dob) {
         profile += `, born ${dob}`;
       }
 
-      if (aNum) {
+      if (isFieldVisible('client', 'aNumber') && aNum) {
         profile += `. Their Alien Registration Number is <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`;
       }
 
@@ -294,14 +634,17 @@
       const state = client['State Formula'];
       const zip = client['Zip (5)'];
 
-      if (phone || addr) {
+      const showPhone = isFieldVisible('client', 'phone') && phone;
+      const showAddr = isFieldVisible('client', 'address') && addr;
+
+      if (showPhone || showAddr) {
         let contact = '';
-        if (phone) {
+        if (showPhone) {
           contact += `They can be contacted at <span class="font-mono text-emerald-300">${escapeHtml(phone)}</span>`;
         }
-        if (addr) {
+        if (showAddr) {
           const fullAddr = [addr, city, state, zip].filter(Boolean).join(', ');
-          contact += phone ? ` and reside` : 'They reside';
+          contact += showPhone ? ` and reside` : 'They reside';
           contact += ` at ${escapeHtml(fullAddr)}`;
         }
         contact += '.';
@@ -312,35 +655,55 @@
       const sijStatus = client['SIJ Case Status'];
       const tags = (client['CM Tags'] || []).filter(Boolean);
 
-      if (sijStatus) {
+      if (isFieldVisible('client', 'sijStatus') && sijStatus) {
         const statusText = list(sijStatus);
         sections.push(`Their Special Immigrant Juvenile (SIJ) case status is <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded">${escapeHtml(statusText)}</span>.`);
       }
 
-      if (tags.length > 0) {
+      if (isFieldVisible('client', 'tags') && tags.length > 0) {
         const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
         sections.push(`Case management notes: ${tagSpans}`);
+      }
+
+      // ─── Client Flatpack Data ───
+      if (client._flatpack && Object.keys(client._flatpack).length > 0) {
+        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Additional Matter Details</span>`);
+        const flatpackItems = Object.entries(client._flatpack)
+          .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+          .map(([key, value]) => {
+            const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+            return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: <span class="text-slate-200">${escapeHtml(formattedValue)}</span>`;
+          });
+        sections.push(flatpackItems.join(' · '));
       }
 
       // ─── Cases ───
       if (cases && cases.length > 0) {
         const casesByType = {};
         cases.forEach(c => {
-          const type = c.Description || 'Other';
+          // Use flatpack description if available, otherwise fall back to Description field
+          const type = (c._flatpack && c._flatpack.description) || c.Description || 'Other';
           if (!casesByType[type]) casesByType[type] = [];
           casesByType[type].push(c);
         });
 
         const typeCount = Object.keys(casesByType).length;
         sections.push(`<br><span class="text-lg font-semibold text-slate-200">Case Portfolio</span>`);
-        sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span> across ${typeCount} ${pluralize(typeCount, 'category', 'categories')}.`);
+
+        if (isFieldVisible('cases', 'type')) {
+          sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span> across ${typeCount} ${pluralize(typeCount, 'category', 'categories')}.`);
+        } else {
+          sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span>.`);
+        }
 
         // Detail each case type
         for (const [type, typeCases] of Object.entries(casesByType)) {
-          sections.push(`<br><span class="text-slate-200 font-medium border-b border-slate-600 pb-1">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeCases.length})</span>`);
+          if (isFieldVisible('cases', 'type')) {
+            sections.push(`<br><span class="text-slate-200 font-medium border-b border-slate-600 pb-1">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeCases.length})</span>`);
+          }
 
           typeCases.forEach((c, idx) => {
-            const parts = [];
             const court = val(c['Court/Office']);
             const judge = c['Judge text'];
             const hearing = val(c['Hearing Date/Time']);
@@ -349,24 +712,24 @@
             // Build case narrative
             let caseText = '';
 
-            if (court) {
+            if (isFieldVisible('cases', 'court') && court) {
               caseText += `Case pending at <span class="text-slate-200">${escapeHtml(court)}</span>`;
             } else {
               caseText += 'Case pending';
             }
 
-            if (judge) {
+            if (isFieldVisible('cases', 'judge') && judge) {
               caseText += ` before <span class="text-slate-200">Judge ${escapeHtml(judge)}</span>`;
             }
 
             caseText += '.';
 
             // Hearing info
-            if (hearing) {
+            if (isFieldVisible('cases', 'hearingDate') && hearing) {
               const hearingDate = formatDateLong(hearing);
               const urgency = getDaysUrgency(days);
 
-              if (typeof days === 'number') {
+              if (isFieldVisible('cases', 'daysToHearing') && typeof days === 'number') {
                 if (days <= 14) {
                   caseText += ` <span class="${urgency.class}">Hearing in ${days} ${pluralize(days, 'day')} (${hearingDate})</span> — immediate preparation required.`;
                 } else if (days <= 30) {
@@ -383,37 +746,53 @@
 
             sections.push(caseText);
 
+            // Flatpack fields for this case
+            if (c._flatpack && Object.keys(c._flatpack).length > 0) {
+              const flatpackFields = Object.entries(c._flatpack)
+                .filter(([key, value]) => key !== 'description' && value !== null && value !== undefined && value !== '')
+                .map(([key, value]) => {
+                  const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                  const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+                  return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
+                });
+              if (flatpackFields.length > 0) {
+                sections.push(`<span class="text-sm text-slate-400 ml-2">${flatpackFields.join(' · ')}</span>`);
+              }
+            }
+
             // Notes
-            if (c['Case Notes'] && c['Case Notes'].trim()) {
+            if (isFieldVisible('cases', 'notes') && c['Case Notes'] && c['Case Notes'].trim()) {
               sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Case notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`);
             }
           });
         }
 
         // ─── Timeline Summary ───
-        const allWithHearings = cases
-          .filter(c => typeof c['Days to Next Hearing'] === 'number')
-          .sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
+        if (isFieldVisible('cases', 'daysToHearing')) {
+          const allWithHearings = cases
+            .filter(c => typeof c['Days to Next Hearing'] === 'number')
+            .sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
 
-        const critical = allWithHearings.filter(c => c['Days to Next Hearing'] <= 14);
-        const urgent = allWithHearings.filter(c => c['Days to Next Hearing'] > 14 && c['Days to Next Hearing'] <= 30);
-        const upcoming = allWithHearings.filter(c => c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
+          const critical = allWithHearings.filter(c => c['Days to Next Hearing'] <= 14);
+          const urgent = allWithHearings.filter(c => c['Days to Next Hearing'] > 14 && c['Days to Next Hearing'] <= 30);
+          const upcoming = allWithHearings.filter(c => c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
 
-        if (critical.length > 0 || urgent.length > 0 || upcoming.length > 0) {
-          sections.push(`<br><span class="text-lg font-semibold text-slate-200">Timeline Overview</span>`);
+          if (critical.length > 0 || urgent.length > 0 || upcoming.length > 0) {
+            sections.push(`<br><span class="text-lg font-semibold text-slate-200">Timeline Overview</span>`);
 
-          const alerts = [];
-          if (critical.length > 0) {
-            alerts.push(`<span class="text-red-400 font-bold">${critical.length} ${pluralize(critical.length, 'hearing')} within 2 weeks requiring immediate attention</span>`);
+            const alerts = [];
+            if (critical.length > 0) {
+              alerts.push(`<span class="text-red-400 font-bold">${critical.length} ${pluralize(critical.length, 'hearing')} within 2 weeks requiring immediate attention</span>`);
+            }
+            if (urgent.length > 0) {
+              alerts.push(`<span class="text-red-400">${urgent.length} ${pluralize(urgent.length, 'hearing')} within 30 days</span>`);
+            }
+            if (upcoming.length > 0) {
+              alerts.push(`<span class="text-amber-400">${upcoming.length} ${pluralize(upcoming.length, 'hearing')} within 60 days</span>`);
+            }
+
+            sections.push(alerts.join(' · '));
           }
-          if (urgent.length > 0) {
-            alerts.push(`<span class="text-red-400">${urgent.length} ${pluralize(urgent.length, 'hearing')} within 30 days</span>`);
-          }
-          if (upcoming.length > 0) {
-            alerts.push(`<span class="text-amber-400">${upcoming.length} ${pluralize(upcoming.length, 'hearing')} within 60 days</span>`);
-          }
-
-          sections.push(alerts.join(' · '));
         }
       } else {
         sections.push(`<br><span class="text-slate-500">No active cases currently on file for this client.</span>`);
@@ -431,18 +810,20 @@
         });
 
         for (const [type, typeApps] of Object.entries(appsByType)) {
-          sections.push(`<span class="text-purple-300 font-medium">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeApps.length})</span>`);
+          if (isFieldVisible('applications', 'type')) {
+            sections.push(`<span class="text-purple-300 font-medium">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeApps.length})</span>`);
+          }
 
           typeApps.forEach(app => {
             const parts = [];
 
             // Application name/matter
-            if (app.Name) {
+            if (isFieldVisible('applications', 'name') && app.Name) {
               parts.push(`<span class="text-slate-200">${escapeHtml(app.Name)}</span>`);
             }
 
             // Status with color coding
-            if (app.Status) {
+            if (isFieldVisible('applications', 'status') && app.Status) {
               const statusColors = {
                 'Engaged': 'text-green-400',
                 'Potential': 'text-amber-400',
@@ -456,12 +837,12 @@
             }
 
             // Receipt number
-            if (app['Receipt Number']) {
+            if (isFieldVisible('applications', 'receiptNumber') && app['Receipt Number']) {
               parts.push(`Receipt: <span class="font-mono text-blue-300">${escapeHtml(app['Receipt Number'])}</span>`);
             }
 
             // Cert County/State
-            if (app['Cert County/State']) {
+            if (isFieldVisible('applications', 'certCounty') && app['Cert County/State']) {
               parts.push(`County/State: ${escapeHtml(app['Cert County/State'])}`);
             }
 
@@ -470,7 +851,7 @@
             }
 
             // Notes
-            if (app.Notes && app.Notes.trim()) {
+            if (isFieldVisible('applications', 'notes') && app.Notes && app.Notes.trim()) {
               sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Application notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(app.Notes)}</pre></details>`);
             }
           });
@@ -495,27 +876,39 @@
           sections.push(`<span class="text-amber-300 font-medium">Upcoming (${upcomingItems.length})</span>`);
 
           upcomingItems.forEach(item => {
-            const title = item.title || item.summary || 'Event';
+            const eventTitle = item.title || item.summary || 'Event';
             const dateStr = formatDateLong(item.startDateTime);
-            const location = item.location ? ` at <span class="text-slate-300">${escapeHtml(item.location)}</span>` : '';
-            const calType = item._calendarType ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-400 rounded">${escapeHtml(item._calendarType)}</span> ` : '';
 
-            let eventLine = `${calType}<span class="text-slate-200">${escapeHtml(title)}</span> on ${dateStr}${location}`;
+            const locationStr = (isFieldVisible('events', 'location') && item.location)
+              ? ` at <span class="text-slate-300">${escapeHtml(item.location)}</span>`
+              : '';
+            const calType = (isFieldVisible('events', 'calendarType') && item._calendarType)
+              ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-400 rounded">${escapeHtml(item._calendarType)}</span> `
+              : '';
+
+            let eventLine = calType;
+            if (isFieldVisible('events', 'title')) {
+              eventLine += `<span class="text-slate-200">${escapeHtml(eventTitle)}</span>`;
+            }
+            if (isFieldVisible('events', 'dateTime')) {
+              eventLine += ` on ${dateStr}`;
+            }
+            eventLine += locationStr;
 
             // Meet link
-            if (item.meetLink) {
+            if (isFieldVisible('events', 'meetLink') && item.meetLink) {
               eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
 
             // Description
-            if (item.description && item.description.trim()) {
+            if (isFieldVisible('events', 'description') && item.description && item.description.trim()) {
               sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Event details</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
             }
 
             // Attendees
-            if (item.attendees && item.attendees.length > 0) {
+            if (isFieldVisible('events', 'attendees') && item.attendees && item.attendees.length > 0) {
               const attendeeList = item.attendees.map(a => a.email || a.displayName || a).join(', ');
               sections.push(`<span class="text-xs text-slate-500 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
             }
@@ -562,6 +955,12 @@
             <h1 class="text-lg font-semibold text-slate-100">Client Record</h1>
             <div class="flex items-center gap-3">
               <div class="flex gap-1 bg-slate-700/30 p-1 rounded-lg">${viewButtons}</div>
+              <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors" title="Field Settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </button>
             </div>
           </div>
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-700/30">
@@ -589,6 +988,48 @@
       `;
     }
 
+    function renderFlatpackFields(flatpackData, title = 'Extracted Data') {
+      if (!flatpackData || Object.keys(flatpackData).length === 0) return '';
+
+      const fieldsHtml = Object.entries(flatpackData)
+        .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+        .map(([key, value]) => {
+          // Format the key for display (replace underscores and dots with spaces, title case)
+          const formattedKey = key
+            .replace(/[_.]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+          // Format the value
+          let formattedValue = value;
+          if (Array.isArray(value)) {
+            formattedValue = value.join(', ');
+          } else if (typeof value === 'boolean') {
+            formattedValue = value ? 'Yes' : 'No';
+          } else if (typeof value === 'object') {
+            formattedValue = JSON.stringify(value);
+          }
+
+          return `
+            <div>
+              <p class="text-slate-500 text-xs uppercase tracking-wide">${escapeHtml(formattedKey)}</p>
+              <p class="text-slate-200 text-sm">${escapeHtml(String(formattedValue))}</p>
+            </div>
+          `;
+        })
+        .join('');
+
+      if (!fieldsHtml) return '';
+
+      return `
+        <div class="mt-4 pt-4 border-t border-slate-700/30">
+          <p class="text-slate-400 text-xs uppercase tracking-wide mb-3 font-medium">${escapeHtml(title)}</p>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            ${fieldsHtml}
+          </div>
+        </div>
+      `;
+    }
+
     function renderStructuredView(data) {
       const { client, cases, applications, hearings, events } = data;
 
@@ -607,14 +1048,14 @@
           `<span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">${escapeHtml(tag)}</span>`
         ).join('');
 
-        const sijStatus = client['SIJ Case Status']
+        const sijStatus = (client['SIJ Case Status'] && isFieldVisible('client', 'sijStatus'))
           ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
               <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">SIJ Status</p>
               <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-sm">${escapeHtml(list(client['SIJ Case Status']))}</span>
             </div>`
           : '';
 
-        const tagsSection = tags
+        const tagsSection = (tags && isFieldVisible('client', 'tags'))
           ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
               <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">Tags</p>
               <div class="flex flex-wrap gap-2">${tags}</div>
@@ -625,6 +1066,53 @@
           ? [client['Address Line 1'], client.City, client['State Formula'], client['Zip (5)']].filter(Boolean).join(', ')
           : '—';
 
+        // Build client fields grid based on visibility
+        const clientFields = [];
+        if (isFieldVisible('client', 'aNumber')) {
+          clientFields.push(`
+            <div>
+              <p class="text-slate-500 text-xs uppercase tracking-wide">A#</p>
+              <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
+            </div>
+          `);
+        }
+        if (isFieldVisible('client', 'dob')) {
+          clientFields.push(`
+            <div>
+              <p class="text-slate-500 text-xs uppercase tracking-wide">DOB / Age</p>
+              <p class="text-slate-200 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
+            </div>
+          `);
+        }
+        if (isFieldVisible('client', 'country')) {
+          clientFields.push(`
+            <div>
+              <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
+              <p class="text-slate-200 text-sm">${escapeHtml(client.Country) || '—'}</p>
+            </div>
+          `);
+        }
+        if (isFieldVisible('client', 'phone')) {
+          clientFields.push(`
+            <div>
+              <p class="text-slate-500 text-xs uppercase tracking-wide">Phone</p>
+              <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
+            </div>
+          `);
+        }
+        if (isFieldVisible('client', 'address')) {
+          clientFields.push(`
+            <div class="col-span-2">
+              <p class="text-slate-500 text-xs uppercase tracking-wide">Address</p>
+              <p class="text-slate-200 text-sm">${escapeHtml(address)}</p>
+            </div>
+          `);
+        }
+
+        const clientName = isFieldVisible('client', 'name')
+          ? escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown')
+          : 'Client';
+
         clientHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
@@ -632,36 +1120,17 @@
                 <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">C</span>
                 <div class="text-left">
                   <h2 class="font-medium text-slate-100">Client</h2>
-                  <p class="text-slate-400 text-sm">${escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown')}</p>
+                  <p class="text-slate-400 text-sm">${clientName}</p>
                 </div>
               </div>
               <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
             <div id="content-client" class="px-4 pb-4 border-t border-slate-700/50">
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                <div>
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">A#</p>
-                  <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
-                </div>
-                <div>
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">DOB / Age</p>
-                  <p class="text-slate-200 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
-                </div>
-                <div>
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
-                  <p class="text-slate-200 text-sm">${escapeHtml(client.Country) || '—'}</p>
-                </div>
-                <div>
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">Phone</p>
-                  <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
-                </div>
-                <div class="col-span-2">
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">Address</p>
-                  <p class="text-slate-200 text-sm">${escapeHtml(address)}</p>
-                </div>
-              </div>
+              ${clientFields.length > 0 ? `<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">${clientFields.join('')}</div>` : ''}
               ${sijStatus}
               ${tagsSection}
+              ${client._flatpack ? renderFlatpackFields(client._flatpack, 'Matter Details (from Flatpack)') : ''}
+              ${client._bahr_flatpack ? renderFlatpackFields(client._bahr_flatpack, 'Bahr Import Data') : ''}
             </div>
           </div>
         `;
@@ -671,21 +1140,44 @@
       if (cases && cases.length > 0) {
         const caseTypesHtml = Object.entries(casesByType).map(([type, typeCases]) => {
           const caseItemsHtml = typeCases.map(c => {
-            const court = c['Court/Office'] ? `<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>` : '';
-            const judge = c['Judge text'] ? `<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>` : '';
-            const hearing = c['Hearing Date/Time'] ? `<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>` : '';
+            const caseFields = [];
+            if (isFieldVisible('cases', 'court') && c['Court/Office']) {
+              caseFields.push(`<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>`);
+            }
+            if (isFieldVisible('cases', 'judge') && c['Judge text']) {
+              caseFields.push(`<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>`);
+            }
+            if (isFieldVisible('cases', 'hearingDate') && c['Hearing Date/Time']) {
+              caseFields.push(`<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>`);
+            }
 
             let daysBadge = '';
             const days = c['Days to Next Hearing'];
-            if (typeof days === 'number') {
+            if (isFieldVisible('cases', 'daysToHearing') && typeof days === 'number') {
               const urgency = getDaysUrgency(days);
               const bgClass = days <= 14 ? 'bg-red-500/30' : days <= 30 ? 'bg-red-500/20' : days <= 60 ? 'bg-amber-500/20' : 'bg-slate-700/50';
               daysBadge = `<span class="shrink-0 px-2 py-1 rounded text-xs ${bgClass} ${urgency.class}">${days}d</span>`;
             }
 
             let notesHtml = '';
-            if (c['Case Notes'] && c['Case Notes'].trim()) {
+            if (isFieldVisible('cases', 'notes') && c['Case Notes'] && c['Case Notes'].trim()) {
               notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
+            }
+
+            // Flatpack fields for case
+            let flatpackHtml = '';
+            if (c._flatpack && Object.keys(c._flatpack).length > 0) {
+              const flatpackFields = Object.entries(c._flatpack)
+                .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+                .map(([key, value]) => {
+                  const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                  let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+                  return `<span class="text-slate-400"><span class="text-slate-500">${escapeHtml(formattedKey)}:</span> ${escapeHtml(formattedValue)}</span>`;
+                })
+                .join(' · ');
+              if (flatpackFields) {
+                flatpackHtml = `<div class="mt-2 text-xs">${flatpackFields}</div>`;
+              }
             }
 
             return `
@@ -693,8 +1185,9 @@
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm">
-                      ${court}${judge}${hearing}
+                      ${caseFields.join('')}
                     </div>
+                    ${flatpackHtml}
                   </div>
                   ${daysBadge}
                 </div>
@@ -749,17 +1242,27 @@
         const itemsHtml = items.map(app => {
           const status = app.Status;
           const statusClass = statusColors[status] || 'bg-slate-700/50 text-slate-400';
-          const statusBadge = status ? `<span class="px-2 py-1 rounded text-xs ${statusClass}">${escapeHtml(status)}</span>` : '';
+          const statusBadge = (isFieldVisible('applications', 'status') && status)
+            ? `<span class="px-2 py-1 rounded text-xs ${statusClass}">${escapeHtml(status)}</span>`
+            : '';
 
-          const appType = app.Application || 'Application';
-          const name = app.Name || '—';
+          const appType = isFieldVisible('applications', 'type') ? (app.Application || 'Application') : '';
+          const name = isFieldVisible('applications', 'name') ? (app.Name || '—') : '';
           const receiptNum = app['Receipt Number'];
           const certCounty = app['Cert County/State'];
           const notes = app.Notes;
 
           let notesHtml = '';
-          if (notes && notes.trim()) {
+          if (isFieldVisible('applications', 'notes') && notes && notes.trim()) {
             notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
+          }
+
+          const detailFields = [];
+          if (isFieldVisible('applications', 'receiptNumber') && receiptNum) {
+            detailFields.push(`<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(receiptNum)}</span></div>`);
+          }
+          if (isFieldVisible('applications', 'certCounty') && certCounty) {
+            detailFields.push(`<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(certCounty)}</span></div>`);
           }
 
           return `
@@ -767,14 +1270,11 @@
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-purple-300 font-medium text-sm">${escapeHtml(appType)}</span>
+                    ${appType ? `<span class="text-purple-300 font-medium text-sm">${escapeHtml(appType)}</span>` : ''}
                     ${statusBadge}
                   </div>
-                  <p class="text-slate-200 text-sm">${escapeHtml(name)}</p>
-                  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
-                    ${receiptNum ? `<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(receiptNum)}</span></div>` : ''}
-                    ${certCounty ? `<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(certCounty)}</span></div>` : ''}
-                  </div>
+                  ${name ? `<p class="text-slate-200 text-sm">${escapeHtml(name)}</p>` : ''}
+                  ${detailFields.length > 0 ? `<div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">${detailFields.join('')}</div>` : ''}
                 </div>
               </div>
               ${notesHtml}
@@ -806,7 +1306,7 @@
         const now = new Date();
 
         const itemsHtml = items.map(event => {
-          const title = event.title || event.summary || 'Event';
+          const eventTitle = event.title || event.summary || 'Event';
           const startDate = event.startDateTime;
           const endDate = event.endDateTime;
           const location = event.location;
@@ -832,33 +1332,47 @@
           }
 
           const pastClass = isPast ? 'opacity-60' : '';
-          const calTypeBadge = calType ? `<span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-xs">${escapeHtml(calType)}</span>` : '';
+          const calTypeBadge = (isFieldVisible('events', 'calendarType') && calType)
+            ? `<span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-xs">${escapeHtml(calType)}</span>`
+            : '';
 
           let descHtml = '';
-          if (description && description.trim()) {
+          if (isFieldVisible('events', 'description') && description && description.trim()) {
             descHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View details</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
           }
 
           let attendeesHtml = '';
-          if (attendees.length > 0) {
+          if (isFieldVisible('events', 'attendees') && attendees.length > 0) {
             const attendeeList = attendees.map(a => a.email || a.displayName || a).join(', ');
             attendeesHtml = `<div class="text-xs text-slate-500 mt-1">Attendees: ${escapeHtml(attendeeList)}</div>`;
           }
+
+          // Build detail fields based on visibility
+          const detailFields = [];
+          if (isFieldVisible('events', 'dateTime')) {
+            detailFields.push(`<div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>`);
+          }
+          if (isFieldVisible('events', 'location') && location) {
+            detailFields.push(`<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>`);
+          }
+          if (isFieldVisible('events', 'meetLink') && meetLink) {
+            detailFields.push(`<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>`);
+          }
+
+          const titleHtml = isFieldVisible('events', 'title')
+            ? `<span class="text-slate-200 font-medium text-sm">${escapeHtml(eventTitle)}</span>`
+            : '';
 
           return `
             <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0 ${pastClass}">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="text-slate-200 font-medium text-sm">${escapeHtml(title)}</span>
+                    ${titleHtml}
                     ${calTypeBadge}
                     ${isPast ? '<span class="text-xs text-slate-500">(past)</span>' : ''}
                   </div>
-                  <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                    <div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>
-                    ${location ? `<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>` : ''}
-                    ${meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>` : ''}
-                  </div>
+                  ${detailFields.length > 0 ? `<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">${detailFields.join('')}</div>` : ''}
                   ${attendeesHtml}
                 </div>
               </div>
@@ -1219,7 +1733,9 @@
           throw new Error('No data returned for this record');
         }
 
-        renderData(json[0]);
+        // Process flatpack JSON fields into individual fields
+        const processedData = processDataWithFlatpack(json[0]);
+        renderData(processedData);
       } catch (err) {
         renderError(err.message);
       }
