@@ -551,6 +551,7 @@
 
     function openSettingsModal() {
       settingsCurrentView = currentView;
+      document.body.style.overflow = 'hidden';
       renderSettingsModal();
     }
 
@@ -709,7 +710,7 @@
 
       const modalHtml = `
         <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
-          <div class="bg-white rounded-xl border border-gray-200 shadow-xl w-full sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-xl w-full sm:max-w-xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
               <div>
                 <h2 class="text-lg font-semibold text-gray-900">Field Settings</h2>
@@ -808,6 +809,7 @@
     function closeSettingsModal() {
       const modal = document.getElementById('settings-modal');
       if (modal) modal.remove();
+      document.body.style.overflow = '';
     }
 
     function resetViewAndRefresh() {
