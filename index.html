@@ -33,8 +33,9 @@
 
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
+    const SCHEMA_URL = 'https://n8n.intelechia.com/webhook/843d64c9-d353-41cf-911f-2f184e211296';
     const SOFTR_BASE_URL = 'https://rklacylaw.softr.app/client-info';
-    const STORAGE_KEY = 'semantic-disclosure-field-prefs-v2';
+    const STORAGE_KEY = 'semantic-disclosure-field-prefs-v3';
 
     // ═══════════════════════════════════════════════════════════════
     // EXTERNAL LINK HELPERS - Generate URLs for Softr and Google Calendar
@@ -84,10 +85,12 @@
     const VIEWS = ['structured', 'brief', 'detailed', 'timeline'];
 
     // ═══════════════════════════════════════════════════════════════
-    // FIELD REGISTRY - All available fields organized by category
+    // FIELD REGISTRY - Dynamically populated from schema, with fallback defaults
     // Each field defines which views it's relevant to and default visibility per view
     // ═══════════════════════════════════════════════════════════════
-    const FIELD_REGISTRY = {
+
+    // Default field registry (used as fallback if schema fetch fails)
+    const DEFAULT_FIELD_REGISTRY = {
       client: [
         { key: 'name', label: 'Name', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'aNumber', label: 'Alien Number (A#)', views: { structured: true, brief: true, detailed: true, timeline: false } },
@@ -128,6 +131,197 @@
         { key: 'attendees', label: 'Attendees', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ]
     };
+
+    // Dynamic field registry - will be populated from schema
+    let FIELD_REGISTRY = JSON.parse(JSON.stringify(DEFAULT_FIELD_REGISTRY));
+
+    // Map table names from schema to our category names
+    const TABLE_TO_CATEGORY = {
+      'clients': 'client',
+      'client': 'client',
+      'client info': 'client',
+      'clientinfo': 'client',
+      'cases': 'cases',
+      'case': 'cases',
+      'case master view': 'cases',
+      'casemasterview': 'cases',
+      'matter': 'cases',
+      'applications': 'applications',
+      'application': 'applications',
+      'events': 'events',
+      'event': 'events',
+      'calendar': 'events',
+      'hearings': 'events'
+    };
+
+    // Fields to exclude from the field list (internal/system fields)
+    const EXCLUDED_FIELDS = new Set([
+      'id', 'recordId', 'createdTime', 'createdBy', 'modifiedTime', 'modifiedBy',
+      '_rawJson', '_table', 'fields'
+    ]);
+
+    // Fields that are already handled specially in rendering (mapped to our internal keys)
+    const SPECIAL_FIELD_MAPPINGS = {
+      client: {
+        'Full Name': 'name',
+        'First Name': 'name',
+        'Last Name': 'name',
+        'A#': 'aNumber',
+        'A Number': 'aNumber',
+        'Alien Number': 'aNumber',
+        'DOB': 'dob',
+        'Date of Birth': 'dob',
+        'Country': 'country',
+        'Country of Origin': 'country',
+        'Phone': 'phone',
+        'Phone Number': 'phone',
+        'Address': 'address',
+        'Address Line 1': 'address',
+        'SIJ Status': 'sijStatus',
+        'Tags': 'tags',
+        'Matter_Flatpack': 'flatpack',
+        'Matter_Flatpack (from Case Master View // Activities)': 'flatpack',
+        'bahr_import_flatpack_data': 'flatpack'
+      },
+      cases: {
+        'Case Type': 'type',
+        'Type': 'type',
+        'Court': 'court',
+        'Court/Office': 'court',
+        'Office': 'court',
+        'Judge': 'judge',
+        'Hearing Date': 'hearingDate',
+        'Next Hearing': 'hearingDate',
+        'Days to Hearing': 'daysToHearing',
+        'OYD': 'oyd',
+        'One-Year Deadline': 'oyd',
+        'Notes': 'notes',
+        'Case Notes': 'notes',
+        'Matter_Flatpack': 'flatpack'
+      },
+      applications: {
+        'Application Type': 'type',
+        'Type': 'type',
+        'Name': 'name',
+        'Matter': 'name',
+        'Status': 'status',
+        'Receipt Number': 'receiptNumber',
+        'Receipt #': 'receiptNumber',
+        'Filed Date': 'filedDate',
+        'Date Filed': 'filedDate',
+        'County': 'certCounty',
+        'State': 'certCounty',
+        'Notes': 'notes'
+      },
+      events: {
+        'Title': 'title',
+        'Summary': 'title',
+        'Event Title': 'title',
+        'Date': 'dateTime',
+        'Time': 'dateTime',
+        'Start': 'dateTime',
+        'Start Time': 'dateTime',
+        'Location': 'location',
+        'Where': 'location',
+        'Calendar': 'calendarType',
+        'Calendar Type': 'calendarType',
+        'Meet Link': 'meetLink',
+        'Video Link': 'meetLink',
+        'Hangout Link': 'meetLink',
+        'Description': 'description',
+        'Details': 'description',
+        'Attendees': 'attendees',
+        'Guests': 'attendees'
+      }
+    };
+
+    // Fetch schema and build dynamic field registry
+    async function fetchSchemaAndBuildRegistry() {
+      try {
+        const response = await fetch(SCHEMA_URL);
+        if (!response.ok) throw new Error(`Schema fetch failed: ${response.status}`);
+        const schema = await response.json();
+
+        console.log('Schema loaded:', schema);
+
+        // Build registry from schema
+        const newRegistry = { client: [], cases: [], applications: [], events: [] };
+
+        // Track which internal keys we've already added per category
+        const addedKeys = {
+          client: new Set(),
+          cases: new Set(),
+          applications: new Set(),
+          events: new Set()
+        };
+
+        // First, add all the default fields to preserve ordering and special handling
+        for (const [category, fields] of Object.entries(DEFAULT_FIELD_REGISTRY)) {
+          for (const field of fields) {
+            newRegistry[category].push({ ...field });
+            addedKeys[category].add(field.key);
+          }
+        }
+
+        // Process schema - handle both array of tables and single table object
+        const tables = Array.isArray(schema) ? schema : (schema.tables || [schema]);
+
+        for (const table of tables) {
+          const tableName = (table.name || table.tableName || '').toLowerCase().trim();
+          const category = TABLE_TO_CATEGORY[tableName];
+
+          if (!category) {
+            console.log(`Skipping unknown table: ${tableName}`);
+            continue;
+          }
+
+          // Get fields from table - support various schema formats
+          const fields = table.fields || table.columns || [];
+
+          for (const field of fields) {
+            const fieldName = field.name || field.fieldName || field;
+            if (typeof fieldName !== 'string') continue;
+
+            // Skip excluded fields
+            if (EXCLUDED_FIELDS.has(fieldName)) continue;
+
+            // Check if this field maps to a special internal key
+            const specialKey = SPECIAL_FIELD_MAPPINGS[category]?.[fieldName];
+            if (specialKey && addedKeys[category].has(specialKey)) {
+              continue; // Already have this field with special handling
+            }
+
+            // Create a key from the field name (camelCase)
+            const key = specialKey || fieldName
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .replace(/\s+(.)/g, (_, c) => c.toUpperCase())
+              .replace(/^\w/, c => c.toLowerCase());
+
+            // Skip if we already have this key
+            if (addedKeys[category].has(key)) continue;
+
+            // Add new field with all views visible by default
+            newRegistry[category].push({
+              key: key,
+              label: fieldName,
+              views: { structured: true, brief: true, detailed: true, timeline: true },
+              // Store original field name for data access
+              sourceField: fieldName
+            });
+            addedKeys[category].add(key);
+          }
+        }
+
+        // Update the global registry
+        FIELD_REGISTRY = newRegistry;
+        console.log('Dynamic field registry built:', FIELD_REGISTRY);
+
+        return true;
+      } catch (err) {
+        console.warn('Failed to fetch schema, using default registry:', err);
+        return false;
+      }
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // FIELD PREFERENCES - Per-view localStorage persistence with ordering
@@ -1987,6 +2181,10 @@
       }
 
       try {
+        // Fetch schema first to build dynamic field registry
+        // This runs in parallel with data fetch for faster loading
+        const schemaPromise = fetchSchemaAndBuildRegistry();
+
         const response = await fetch(`${DATA_URL}?recordId=${recordId}`);
         if (!response.ok) throw new Error(`Request failed (${response.status})`);
         const json = await response.json();
@@ -1994,6 +2192,9 @@
         if (!json || !json[0]) {
           throw new Error('No data returned for this record');
         }
+
+        // Wait for schema to finish (if not already done)
+        await schemaPromise;
 
         // Process flatpack JSON fields into individual fields
         const processedData = processDataWithFlatpack(json[0]);
