@@ -4,21 +4,17 @@ This document describes the data structure returned by the n8n "Client Summary" 
 
 ## Overview
 
-The webhook fetches data from **4 sources** and returns a flat array of records, each labeled with its source table.
+The webhook fetches data from **5 sources** and returns a pre-grouped master record with separate buckets for each data type.
 
 ## Data Sources
 
-| Source | Type | Table/Calendar ID | Lookup Method |
-|--------|------|-------------------|---------------|
-| **Client Info** | Airtable | `tbl0uHmtLkGyDnSP9` | Direct record by ID |
-| **Case Master View** | Airtable | `tblgynOzESGvAXAsK` | Filter by `Client_ID_Airtable` |
-| **Applications** | Airtable | `tbl6XtHs9g5iwd7qi` | Filter by `Case Master` (from Case Master View) |
-| **Events** | Google Calendar | 2 calendars (see below) | Query by client record ID |
-
-### Google Calendar Sources
-
-1. **Hearings-Interviews**: `c_2117d3d5346290d1f9769d5d8a60b1a82da31ecb4080f981cfb0b9f25590a298@group.calendar.google.com`
-2. **RK Lacy Law Events**: `c_ae631b2171ddcf4f882cd2e6d11a39e19480876fac7794206fca70e734ab9d1f@group.calendar.google.com`
+| Source | Type | Table/Calendar ID | Bucket |
+|--------|------|-------------------|--------|
+| **Client Info** | Airtable | `tbl0uHmtLkGyDnSP9` | `client` |
+| **Case Master View** | Airtable | `tblgynOzESGvAXAsK` | `cases` |
+| **Applications** | Airtable | `tbl6XtHs9g5iwd7qi` | `applications` |
+| **Hearings-Interviews** | Google Calendar | `c_2117d3d5...` | `hearings` |
+| **RK Lacy Law Events** | Google Calendar | `c_ae631b21...` | `events` |
 
 ## Data Flow
 
@@ -33,8 +29,8 @@ Webhook Request (with record ID)
        ├────────────────┬────────────────┬─────────────────┐
        ▼                ▼                ▼                 ▼
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│ Case Master │  │ Calendar 1  │  │ Calendar 2  │  │             │
-│ View        │  │ (Hearings)  │  │ (Events)    │  │             │
+│ Case Master │  │ Hearings    │  │ Events      │  │             │
+│ View        │  │ Calendar    │  │ Calendar    │  │             │
 └─────────────┘  └─────────────┘  └─────────────┘  │             │
        │                │                │         │             │
        │                └────────────────┴─────────┘             │
@@ -44,74 +40,235 @@ Webhook Request (with record ID)
 └─────────────┘                                                  │
        │                                                         │
        └─────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-                     ┌──────────────────────────────┐
-                     │  Label and Filter Data       │
-                     │  (adds _sourceTable, filters │
-                     │   empty fields)              │
-                     └──────────────────────────────┘
-                                    │
-                                    ▼
-                          Webhook Response
+                                   │
+                                   ▼
+                    ┌──────────────────────────────┐
+                    │  Label and Filter Data       │
+                    │  (groups by source,          │
+                    │   normalizes calendar data)  │
+                    └──────────────────────────────┘
+                                   │
+                                   ▼
+                         Master Record Response
 ```
 
-## Response Format
+## Response Format (5-Bucket Master Record)
 
-The webhook returns a **flat array** of JSON objects. Each object includes:
-
-- `_sourceTable`: String identifying the data source
-- All non-empty fields from the source record
-
-### Example Response
+The webhook returns a **single master record** with data pre-grouped into 5 buckets:
 
 ```json
-[
-  {
-    "_sourceTable": "Client Info",
-    "id": "recCLIENT123",
-    "Client Name": "Rodriguez Garcia, Maria Elena",
-    "First Name": ["Maria"],
-    "Family Name": ["Rodriguez Garcia"],
-    "A#": ["234-567-890"],
-    "DOB": ["1995-03-22"],
-    "Country": ["Guatemala"],
-    "Phone Number": ["(615) 555-1234"]
+{
+  "_meta": {
+    "generatedAt": "2026-01-14T12:00:00.000Z",
+    "recordCounts": {
+      "clientInfo": 1,
+      "cases": 3,
+      "applications": 2,
+      "hearings": 2,
+      "events": 3,
+      "unknown": 0
+    }
   },
-  {
-    "_sourceTable": "Case Master View",
-    "id": "recCASE001",
-    "Description": "SIJ - Davidson County (0)",
-    "Relief Sought": ["SIJ"],
-    "Hearing Date/Time": ["2025-02-15T09:00:00.000Z"],
-    "Court/Office": ["Memphis Immigration Court"],
-    "SIJ Case Status": "Pending Custody Order"
-  },
-  {
-    "_sourceTable": "Events",
-    "id": "evt001",
-    "summary": "Individual Hearing - Immigration Court",
-    "start": { "dateTime": "2025-02-15T09:00:00-06:00" },
-    "end": { "dateTime": "2025-02-15T11:00:00-06:00" },
-    "location": "Memphis Immigration Court"
-  },
-  {
-    "_sourceTable": "Applications",
-    "id": "recAPP001",
-    "Application Type": "I-360",
-    "Status": "Pending"
-  }
-]
+  "client": { ... },
+  "cases": [ ... ],
+  "applications": [ ... ],
+  "hearings": [ ... ],
+  "events": [ ... ]
+}
 ```
 
-### `_sourceTable` Values
+### Bucket Structure
 
-| Value | Description |
-|-------|-------------|
-| `"Client Info"` | Base client record from Airtable |
-| `"Case Master View"` | Case records linked to this client |
-| `"Events"` | Google Calendar events from either calendar |
-| `"Applications"` | Application records linked to cases |
+| Bucket | Type | Description |
+|--------|------|-------------|
+| `_meta` | Object | Metadata including generation time and record counts |
+| `client` | Object | Single client info record |
+| `cases` | Array | Case Master View records |
+| `applications` | Array | Application records with `_parentCaseId` links |
+| `hearings` | Array | Normalized calendar events from Hearings-Interviews |
+| `events` | Array | Normalized calendar events from RK Lacy Law Events |
+
+## Client Bucket
+
+Single object with client information:
+
+```json
+{
+  "_recordId": "recCLIENT123",
+  "id": "recCLIENT123",
+  "Client Name": "Rodriguez Garcia, Maria Elena",
+  "First Name": "Maria",
+  "Last Name": "Rodriguez Garcia",
+  "A#": "234-567-890",
+  "DOB": "1995-03-22",
+  "Country of Origin": "Guatemala",
+  "Phone": "(615) 555-1234",
+  "Email": "maria.rodriguez@email.com",
+  "Address": "123 Main Street, Nashville, TN 37203",
+  "Emergency Contact": "Jose Rodriguez - (615) 555-5678"
+}
+```
+
+### Key Client Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_recordId` | String | Airtable record ID (provenance) |
+| `Client Name` | String | Full display name |
+| `First Name` | String | First name |
+| `Last Name` | String | Family/last name |
+| `A#` | String | Alien number |
+| `DOB` | String (date) | Date of birth |
+| `Country of Origin` | String | Country of origin |
+| `Phone` | String | Phone number |
+| `Email` | String | Email address |
+
+## Cases Bucket
+
+Array of case records from Case Master View:
+
+```json
+{
+  "_recordId": "recCASE001",
+  "id": "recCASE001",
+  "Client_ID_Airtable": "recCLIENT123",
+  "Matter Type": "SIJ - Davidson County",
+  "Case Status": "Active",
+  "Court": "Memphis Immigration Court",
+  "Judge": "Hon. Patricia Williams",
+  "Next Hearing": "2025-02-15T09:00:00.000Z",
+  "Filing Deadline": "2025-02-01",
+  "Case Number": "A234-567-890",
+  "SIJ Case Status": "Pending Custody Order",
+  "SIJ County": "Davidson"
+}
+```
+
+### Key Case Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_recordId` | String | Airtable record ID (provenance) |
+| `Client_ID_Airtable` | String | Link to client record |
+| `Matter Type` | String | Case type description |
+| `Case Status` | String | Current status |
+| `Court` | String | Court name |
+| `Judge` | String | Assigned judge |
+| `Next Hearing` | String (datetime) | Next hearing date/time |
+
+## Applications Bucket
+
+Array of USCIS applications with parent case links:
+
+```json
+{
+  "_recordId": "recAPP001",
+  "_parentCaseId": "recCASE002",
+  "id": "recAPP001",
+  "Case Master": ["recCASE002"],
+  "Application Type": "I-360",
+  "Form Number": "I-360",
+  "Filing Date": "2024-11-15",
+  "Receipt Number": "SRC2411234567",
+  "Status": "Pending",
+  "RFE Date": "2025-02-01",
+  "RFE Response Due": "2025-03-01",
+  "Biometrics Date": "2024-12-05"
+}
+```
+
+### Key Application Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_recordId` | String | Airtable record ID (provenance) |
+| `_parentCaseId` | String | Link to parent case (extracted from Case Master) |
+| `Application Type` | String | Application type (e.g., I-360, I-765) |
+| `Form Number` | String | USCIS form number |
+| `Receipt Number` | String | USCIS receipt number |
+| `Status` | String | Application status |
+| `Filing Date` | String (date) | Date filed |
+
+## Hearings Bucket
+
+Array of normalized calendar events from Hearings-Interviews calendar:
+
+```json
+{
+  "_id": "evt001",
+  "_calendarType": "hearing",
+  "title": "Individual Hearing - Immigration Court",
+  "description": "Individual hearing for Maria Rodriguez",
+  "location": "Memphis Immigration Court, 80 Monroe Ave, Memphis, TN 38103",
+  "startDateTime": "2025-02-15T09:00:00-06:00",
+  "endDateTime": "2025-02-15T11:00:00-06:00",
+  "isAllDay": false,
+  "htmlLink": "https://calendar.google.com/event?eid=evt001",
+  "meetLink": null,
+  "status": "confirmed",
+  "attendees": [
+    {
+      "email": "attorney@lawfirm.com",
+      "name": "Sarah Johnson",
+      "responseStatus": "accepted"
+    }
+  ],
+  "created": "2024-12-01T10:00:00.000Z",
+  "updated": "2024-12-01T10:00:00.000Z"
+}
+```
+
+## Events Bucket
+
+Array of normalized calendar events from RK Lacy Law Events calendar:
+
+```json
+{
+  "_id": "evt003",
+  "_calendarType": "general",
+  "title": "Biometrics Appointment - USCIS",
+  "description": "Biometrics appointment for I-360 application.",
+  "location": "USCIS Nashville Field Office",
+  "startDateTime": "2025-02-05T10:30:00-06:00",
+  "endDateTime": "2025-02-05T11:00:00-06:00",
+  "isAllDay": false,
+  "htmlLink": "https://calendar.google.com/event?eid=evt003",
+  "status": "confirmed",
+  "attendees": []
+}
+```
+
+### Normalized Calendar Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | String | Google Calendar event ID (provenance) |
+| `_calendarType` | String | `"hearing"` or `"general"` |
+| `title` | String | Event title (from `summary`) |
+| `description` | String | Event description |
+| `location` | String | Event location |
+| `startDateTime` | String (datetime) | Start date/time |
+| `endDateTime` | String (datetime) | End date/time |
+| `isAllDay` | Boolean | Whether event is all-day |
+| `htmlLink` | String (URL) | Link to Google Calendar event |
+| `meetLink` | String (URL) | Google Meet link if available |
+| `status` | String | Event status (confirmed, tentative, cancelled) |
+| `attendees` | Array | List of attendees with email, name, responseStatus |
+
+### All-Day Events
+
+All-day events have `isAllDay: true` and date-only strings in startDateTime/endDateTime:
+
+```json
+{
+  "_id": "evt004",
+  "_calendarType": "general",
+  "title": "RFE Response Deadline",
+  "startDateTime": "2025-03-01",
+  "endDateTime": "2025-03-02",
+  "isAllDay": true
+}
+```
 
 ## Field Filtering
 
@@ -123,80 +280,20 @@ The webhook automatically filters out fields with:
 - Empty arrays (`[]`)
 - Empty objects (`{}`)
 
-This keeps the response payload minimal and focused on meaningful data.
+## Triplet Conversion
 
-## Airtable Field Format Notes
+Each field can be converted to a triplet with full provenance:
 
-### Array-Wrapped Values
-
-Many Airtable fields come wrapped in arrays, even for single values:
-
-```json
+```javascript
 {
-  "First Name": ["Maria"],           // Array with single value
-  "Country": ["Guatemala"],          // Array with single value
-  "Case Tags": ["SIJ", "Priority"]   // Array with multiple values
-}
-```
-
-### Button/Link Fields
-
-Button fields from Airtable come as objects:
-
-```json
-{
-  "box link": { "label": "Box", "url": "https://app.box.com/..." },
-  "AMINO": { "label": "AMINO", "url": "https://rklacylaw.softr.app/..." }
-}
-```
-
-### Error Values
-
-Some formula fields may contain error values that should be filtered:
-
-```json
-{
-  "SIJ Visa Availability": { "specialValue": "NaN" },
-  "Appeal Deadline": { "error": "#ERROR" }
-}
-```
-
-## Google Calendar Event Format
-
-Events follow the Google Calendar API format:
-
-```json
-{
-  "_sourceTable": "Events",
-  "id": "evt001",
-  "summary": "Event Title",
-  "start": {
-    "dateTime": "2025-02-15T09:00:00-06:00"
-  },
-  "end": {
-    "dateTime": "2025-02-15T11:00:00-06:00"
-  },
-  "location": "Location string",
-  "description": "Event description",
-  "htmlLink": "https://calendar.google.com/calendar/event?eid=...",
-  "attendees": [
-    {
-      "email": "user@example.com",
-      "displayName": "User Name",
-      "responseStatus": "accepted"
-    }
-  ]
-}
-```
-
-### All-Day Events
-
-All-day events use `date` instead of `dateTime`:
-
-```json
-{
-  "start": { "date": "2025-03-01" },
-  "end": { "date": "2025-03-02" }
+  subject: "recCASE001",           // Which record
+  predicate: "SIJ Case Status",    // Which field
+  object: "Pending Custody Order", // The value
+  provenance: {
+    source: "cases",               // Which bucket
+    table: "Case Master View",     // Original table name
+    recordId: "recCASE001"         // ID to trace back
+  }
 }
 ```
 
@@ -209,119 +306,55 @@ All-day events use `date` instead of `dateTime`:
 ### Key Nodes
 
 1. **Webhook** - Entry point, receives `recordId` parameter
-2. **Get a record1** - Fetches Client Info by ID
-3. **Search records3** - Finds Case Master View records by `Client_ID_Airtable`
-4. **Search records5** - Finds Applications by `Case Master` (linked from Case Master View)
-5. **Get many events / Get many events1** - Fetches from both Google Calendars
-6. **Label and Filter Data** - JavaScript node that combines and labels all data
-7. **Respond to Webhook1** - Returns the combined array
+2. **Get Client** - Fetches Client Info by ID
+3. **Get Cases** - Finds Case Master View records by `Client_ID_Airtable`
+4. **Get Applications** - Finds Applications by `Case Master`
+5. **Get Hearings** - Fetches from Hearings-Interviews calendar
+6. **Get Events** - Fetches from RK Lacy Law Events calendar
+7. **Merge Airtable** - Combines Airtable data
+8. **Merge Calendars** - Combines calendar data
+9. **Merge All** - Combines all sources
+10. **Label and Filter Data** - Groups data into 5 buckets and normalizes
+11. **Respond to Webhook1** - Returns the master record
 
-## Usage in Widget
+## Widget Processing
 
-The widget should handle this flat array format by:
-
-1. Grouping records by `_sourceTable`
-2. Unwrapping array values for display
-3. Filtering out error/NaN values
-4. Rendering appropriate UI for each source type
-
-### Example Client-Side Processing
+The widget detects and handles both the new master record format and the legacy flat array format:
 
 ```javascript
-function processWebhookResponse(data) {
-  const grouped = {
-    clientInfo: null,
-    cases: [],
-    events: [],
-    applications: []
-  };
+// Detect master record format
+function isMasterRecordFormat(data) {
+  const hasClient = data.client && typeof data.client === 'object';
+  const hasCases = Array.isArray(data.cases);
+  const hasMeta = data._meta && typeof data._meta === 'object';
+  return (hasClient && hasCases) || hasMeta;
+}
 
-  for (const record of data) {
-    switch (record._sourceTable) {
-      case 'Client Info':
-        grouped.clientInfo = record;
-        break;
-      case 'Case Master View':
-        grouped.cases.push(record);
-        break;
-      case 'Events':
-        grouped.events.push(record);
-        break;
-      case 'Applications':
-        grouped.applications.push(record);
-        break;
-    }
-  }
-
-  return grouped;
+// Transform to normalized widget format
+if (isMasterRecordFormat(rawData)) {
+  return transformMasterRecord(rawData);
+} else {
+  return transformFlatArray(rawData);
 }
 ```
 
-## JSON Schemas
+## Legacy Format (for backwards compatibility)
 
-Two JSON Schema files are available for development and validation:
+The widget also supports the older flat array format with `_sourceTable` labels:
 
-### Airtable Export Schema
-
-**File:** [`airtable-export-schema.json`](./airtable-export-schema.json)
-
-Validates the webhook response data structure. Key features:
-
-- **Separate subschemas** for each source table (`clientInfoRecord`, `caseMasterViewRecord`, `applicationRecord`, `eventRecord`)
-- **Discriminated union** using `oneOf` with `_sourceTable` as the discriminator
-- **Reusable definitions** for common patterns:
-  - `valueOrError` - Formula fields that may contain `{ specialValue: "NaN" }` or `{ error: "#ERROR" }`
-  - `linkObject` - Button/link fields with `label` and `url`
-  - `personObject` - Collaborator fields with `id`, `email`, and `name`
-  - `attachmentObject` - File attachment metadata
-  - `dateTimeObject` - Google Calendar date/time format
-- **Explicit nullable fields** using `"type": ["string", "null"]` syntax
-- **Extensible** with `additionalProperties: true` to allow new fields without breaking validation
-
-### n8n Workflow Schema
-
-**File:** [`n8n-workflow-schema.json`](./n8n-workflow-schema.json)
-
-Validates n8n workflow JSON exports. Key features:
-
-- **Node type discrimination** using `oneOf` for specific node types:
-  - `webhookNode` - Webhook trigger configuration
-  - `codeNode` - JavaScript/Python code execution
-  - `airtableNode` - Airtable CRUD operations
-  - `googleCalendarNode` - Google Calendar operations
-  - `respondToWebhookNode` - Webhook response configuration
-  - `genericNode` - Fallback for other node types
-- **Connection validation** ensuring proper node linking
-- **Resource locator objects** for dynamic field selections
-- **Credential reference validation**
-
-### Using the Schemas
-
-```javascript
-// Validate webhook response
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
-import airtableSchema from './docs/airtable-export-schema.json';
-
-const ajv = new Ajv({ allErrors: true });
-addFormats(ajv);
-const validate = ajv.compile(airtableSchema);
-
-const webhookData = await fetchWebhookData();
-if (!validate(webhookData)) {
-  console.error('Validation errors:', validate.errors);
+```json
+{
+  "records": [
+    { "_sourceTable": "Client Info", ... },
+    { "_sourceTable": "Case Master View", ... },
+    { "_sourceTable": "Applications", ... },
+    { "_sourceTable": "Events", ... }
+  ]
 }
 ```
-
-### Schema Design Principles
-
-1. **DRY (Don't Repeat Yourself)** - Common patterns extracted to `definitions`
-2. **Explicit nullability** - Fields that can be `null` are explicitly typed
-3. **Discriminated unions** - `_sourceTable` distinguishes record types
-4. **Extensibility** - `additionalProperties: true` allows schema evolution
-5. **Self-documenting** - Descriptions on all definitions and key properties
 
 ## Version History
 
-- **2025-01-14**: Added JSON Schema files for webhook response and n8n workflow validation
-- **2025-01-14**: Initial documentation based on n8n workflow `jstKXUSVFd3o8eOh`
+- **2026-01-14**: Updated to 5-bucket master record format with separate hearings
+- **2025-01-14**: Added JSON Schema files for webhook response validation
+- **2025-01-14**: Initial documentation

@@ -4426,7 +4426,7 @@
     /**
      * Transform raw API response (flat array of case records) into normalized format
      * @param {Array|Object} rawData - Raw webhook response
-     * @returns {Object} Normalized { clientInfo, cases } structure
+     * @returns {Object} Normalized { clientInfo, cases, events, applications, hearings } structure
      */
     transform(rawData) {
       console.log('[DataTransformer] Raw data type:', typeof rawData, Array.isArray(rawData) ? 'array' : '');
@@ -4436,6 +4436,13 @@
         console.log('[DataTransformer] Schema detected in response');
         SchemaProcessor.init(rawData.schema);
         rawData = rawData.data || rawData.records || [];
+      }
+
+      // NEW: Handle 5-bucket master record format from n8n
+      // Format: { _meta, client, cases, applications, hearings, events }
+      if (rawData && this.isMasterRecordFormat(rawData)) {
+        console.log('[DataTransformer] Detected 5-bucket master record format');
+        return this.transformMasterRecord(rawData);
       }
 
       // Handle n8n webhook format: { records: [...] }
@@ -4456,7 +4463,7 @@
       // Handle flat array of records (actual Airtable format)
       if (!Array.isArray(rawData) || rawData.length === 0) {
         console.warn('[DataTransformer] Empty or invalid data received:', rawData);
-        return { clientInfo: { fields: {} }, cases: [], events: [], applications: [] };
+        return { clientInfo: { fields: {} }, cases: [], events: [], applications: [], hearings: [] };
       }
 
       // Filter out empty objects from the array
@@ -4897,6 +4904,257 @@
         return value[0];
       }
       return value;
+    },
+
+    /**
+     * Detect if data is in the new 5-bucket master record format
+     * Format: { _meta?, client, cases, applications?, hearings?, events? }
+     */
+    isMasterRecordFormat(data) {
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return false;
+      }
+      // Must have client (object) and cases (array) at minimum
+      const hasClient = data.client && typeof data.client === 'object' && !Array.isArray(data.client);
+      const hasCases = Array.isArray(data.cases);
+      // Also check for _meta as a strong indicator
+      const hasMeta = data._meta && typeof data._meta === 'object';
+
+      return (hasClient && hasCases) || hasMeta;
+    },
+
+    /**
+     * Transform 5-bucket master record format to normalized widget format
+     * Input: { _meta, client, cases, applications, hearings, events }
+     * Output: { clientInfo, cases, events, applications, hearings }
+     */
+    transformMasterRecord(masterRecord) {
+      console.log('[DataTransformer] Transforming master record format');
+      console.log('[DataTransformer] Record counts:', masterRecord._meta?.recordCounts || 'no metadata');
+
+      // Extract client fields from client bucket
+      const clientFields = this.transformMasterClient(masterRecord.client);
+
+      // Transform cases from cases bucket
+      const cases = (masterRecord.cases || []).map((record, index) =>
+        this.transformMasterCase(record, index)
+      );
+
+      // Transform applications from applications bucket
+      const applications = (masterRecord.applications || []).map((record, index) =>
+        this.transformMasterApplication(record, index)
+      );
+
+      // Transform hearings from hearings bucket (Google Calendar - Hearings)
+      const hearings = (masterRecord.hearings || []).map((record, index) =>
+        this.transformMasterCalendarEvent(record, index, 'hearing')
+      );
+
+      // Transform events from events bucket (Google Calendar - Events)
+      const events = (masterRecord.events || []).map((record, index) =>
+        this.transformMasterCalendarEvent(record, index, 'general')
+      );
+
+      const result = {
+        clientInfo: {
+          recordId: masterRecord.client?._recordId || masterRecord.client?.id,
+          fields: clientFields
+        },
+        cases,
+        applications,
+        hearings,
+        events
+      };
+
+      console.log(`[DataTransformer] Master record result: clientInfo=${Object.keys(clientFields).length} fields, cases=${cases.length}, applications=${applications.length}, hearings=${hearings.length}, events=${events.length}`);
+
+      return result;
+    },
+
+    /**
+     * Transform client bucket fields to standard field format
+     */
+    transformMasterClient(clientRecord) {
+      if (!clientRecord) return {};
+
+      const fields = {};
+
+      // Field name mappings from new schema to widget expected names
+      const fieldMappings = {
+        'Client Name': 'Client Name',
+        'First Name': 'First Name',
+        'Last Name': 'Family Name',
+        'A#': 'A#',
+        'DOB': 'DOB',
+        'Country of Origin': 'Country',
+        'Phone': 'Phone Number',
+        'Email': 'Client Email',
+        'Address': 'Address',
+        'Emergency Contact': 'Emergency Contact',
+        'Gender': 'Gender',
+        'Pronouns': 'Pronouns'
+      };
+
+      for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
+        if (clientRecord[sourceField] !== undefined && clientRecord[sourceField] !== null) {
+          const value = this.normalizeValue(clientRecord[sourceField], sourceField);
+          if (value !== null) {
+            fields[targetField] = value;
+          }
+        }
+      }
+
+      // Also include any other fields not in the mapping (preserve unknown fields)
+      for (const [key, value] of Object.entries(clientRecord)) {
+        if (key.startsWith('_')) continue; // Skip internal fields
+        if (key === 'id') continue;
+        if (!Object.keys(fieldMappings).includes(key) && !Object.values(fieldMappings).includes(key)) {
+          const normalized = this.normalizeValue(value, key);
+          if (normalized !== null && !fields[key]) {
+            fields[key] = normalized;
+          }
+        }
+      }
+
+      // Compose Client Name from First Name + Last Name if not already set
+      if (!fields['Client Name']) {
+        const firstName = fields['First Name'] || '';
+        const familyName = fields['Family Name'] || '';
+        const nameParts = [firstName, familyName].filter(p => p);
+        if (nameParts.length > 0) {
+          fields['Client Name'] = nameParts.join(' ');
+          console.log('[DataTransformer] Composed Client Name from parts:', fields['Client Name']);
+        }
+      }
+
+      return fields;
+    },
+
+    /**
+     * Transform a case record from the cases bucket
+     */
+    transformMasterCase(record, index) {
+      const fields = {};
+      const skipFields = new Set(['_recordId', 'id', 'Client_ID_Airtable']);
+
+      // Field mappings for case fields
+      const fieldMappings = {
+        'Matter Type': 'Description',
+        'Case Status': 'File Case Status',
+        'Court': 'Court/Office',
+        'Next Hearing': 'Hearing Date/Time',
+        'Filing Deadline': 'Pleadings Due Date',
+        'Case Number': 'Case Number'
+      };
+
+      for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
+        if (record[sourceField] !== undefined) {
+          const value = this.normalizeValue(record[sourceField], sourceField);
+          if (value !== null) {
+            fields[targetField] = value;
+          }
+        }
+      }
+
+      // Copy remaining fields
+      for (const [key, value] of Object.entries(record)) {
+        if (skipFields.has(key)) continue;
+        if (Object.keys(fieldMappings).includes(key)) continue;
+
+        const normalized = this.normalizeValue(value, key);
+        if (normalized !== null && !fields[key]) {
+          fields[key] = normalized;
+        }
+      }
+
+      const caseIdentifier = record['Matter Type']
+        ? this.cleanCaseDescription(record['Matter Type'])
+        : (record.Description ? this.cleanCaseDescription(record.Description) : `Case ${index + 1}`);
+
+      return {
+        recordId: record._recordId || record.id || `case-${index}`,
+        caseIdentifier,
+        fields
+      };
+    },
+
+    /**
+     * Transform an application record from the applications bucket
+     */
+    transformMasterApplication(record, index) {
+      const fields = {};
+      const skipFields = new Set(['_recordId', '_parentCaseId', 'id', 'Case Master']);
+
+      for (const [key, value] of Object.entries(record)) {
+        if (skipFields.has(key)) continue;
+
+        const normalized = this.normalizeValue(value, key);
+        if (normalized !== null) {
+          fields[key] = normalized;
+        }
+      }
+
+      return {
+        recordId: record._recordId || record.id || `app-${index}`,
+        type: record['Application Type'] || record['Form Number'] || `Application ${index + 1}`,
+        caseId: record._parentCaseId || (record['Case Master'] ? record['Case Master'][0] : null),
+        fields
+      };
+    },
+
+    /**
+     * Transform a calendar event from hearings or events bucket
+     * Handles the normalized calendar event format from n8n
+     */
+    transformMasterCalendarEvent(record, index, calendarType) {
+      const fields = {};
+      const skipFields = new Set(['_id', '_calendarType']);
+
+      // Map normalized calendar fields to display fields
+      const fieldMappings = {
+        'title': 'Event Name',
+        'description': 'Description',
+        'location': 'Location',
+        'startDateTime': 'Start Date',
+        'endDateTime': 'End Date',
+        'htmlLink': 'Calendar Link',
+        'meetLink': 'Meeting Link',
+        'status': 'Status'
+      };
+
+      for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
+        if (record[sourceField] !== undefined && record[sourceField] !== null) {
+          fields[targetField] = record[sourceField];
+        }
+      }
+
+      // Handle attendees
+      if (record.attendees && Array.isArray(record.attendees) && record.attendees.length > 0) {
+        fields['Attendees'] = record.attendees.map(a => a.name || a.email).join(', ');
+      }
+
+      // Copy any other non-internal fields
+      for (const [key, value] of Object.entries(record)) {
+        if (skipFields.has(key)) continue;
+        if (Object.keys(fieldMappings).includes(key)) continue;
+        if (key === 'attendees' || key === 'isAllDay' || key === 'created' || key === 'updated') continue;
+
+        const normalized = this.normalizeValue(value, key);
+        if (normalized !== null && !fields[key]) {
+          fields[key] = normalized;
+        }
+      }
+
+      return {
+        recordId: record._id || `${calendarType}-${index}`,
+        title: record.title || `Event ${index + 1}`,
+        startDate: record.startDateTime,
+        endDate: record.endDateTime,
+        location: record.location,
+        isAllDay: record.isAllDay || false,
+        calendarType: record._calendarType || calendarType,
+        fields
+      };
     }
   };
 

@@ -1443,12 +1443,39 @@ const ClientGlanceConfig = {
         'Client Name' // Already in header
       ]
     },
+    hearings: {
+      id: 'hearings',
+      label: 'Hearings',
+      icon: '⚖️',
+      description: 'Court hearings and interviews from Hearings-Interviews calendar',
+      sourceTables: ['Hearings', 'Google Calendar - Hearings'],
+      viewType: 'events', // Same event display format
+      showMatterLabels: true,
+      groupByUrgency: true,
+      defaultFields: [
+        'Event Name',
+        'Start Date',
+        'End Date',
+        'Location',
+        'Description',
+        'Attendees',
+        'Calendar Link',
+        'Status'
+      ],
+      alwaysHidden: [
+        '_id',
+        '_calendarType',
+        'created',
+        'updated',
+        'isAllDay'
+      ]
+    },
     events: {
       id: 'events',
       label: 'Events',
       icon: '📅',
-      description: 'Google Calendar events - hearings, interviews, and appointments',
-      sourceTables: ['Events', 'Google Calendar', 'Case Master View'],
+      description: 'General calendar events - appointments, deadlines, and reminders',
+      sourceTables: ['Events', 'Google Calendar - Events'],
       viewType: 'events', // Dedicated events view for Google Calendar data
       // Show matter label on each event
       showMatterLabels: true,
@@ -1456,19 +1483,21 @@ const ClientGlanceConfig = {
       groupByUrgency: true,
       defaultFields: [
         'Event Name',
-        'Hearing Date/Time',
-        'Event Hearing Type',
-        'Court/Office',
-        'Judge',
-        'MCH Attny',
-        'Client Notice Date',
-        'Hearing Notes',
-        'Court Action Items',
+        'Start Date',
+        'End Date',
         'Location',
+        'Description',
         'Attendees',
-        'Description'
+        'Calendar Link',
+        'Meeting Link',
+        'Status'
       ],
       alwaysHidden: [
+        '_id',
+        '_calendarType',
+        'created',
+        'updated',
+        'isAllDay',
         'AMINO',
         'Audit25-Q1',
         'Push',
@@ -1536,7 +1565,7 @@ const ClientGlanceConfig = {
       label: 'Timeline',
       icon: '⏱️',
       description: 'All dates from every field, grouped by semantic category',
-      sourceTables: ['Client Info', 'Case Master View', 'Events', 'Applications'],
+      sourceTables: ['Client Info', 'Case Master View', 'Hearings', 'Events', 'Applications'],
       viewType: 'timeline',
       showMatterLabels: true,
       // Date fields are now dynamically extracted from ALL fields using SEMANTIC_ROLES
