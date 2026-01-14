@@ -917,7 +917,45 @@
 
         if (pastItems.length > 0) {
           sections.push(`<br><span class="text-slate-400 font-medium">Past Events (${pastItems.length})</span>`);
-          sections.push(`<span class="text-slate-500 text-sm">${pastItems.length} past ${pluralize(pastItems.length, 'event')} on record.</span>`);
+
+          pastItems.forEach(item => {
+            const eventTitle = item.title || item.summary || 'Event';
+            const dateStr = formatDateLong(item.startDateTime);
+
+            const locationStr = (isFieldVisible('events', 'location') && item.location)
+              ? ` at <span class="text-slate-400">${escapeHtml(item.location)}</span>`
+              : '';
+            const calType = (isFieldVisible('events', 'calendarType') && item._calendarType)
+              ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-500 rounded">${escapeHtml(item._calendarType)}</span> `
+              : '';
+
+            let eventLine = calType;
+            if (isFieldVisible('events', 'title')) {
+              eventLine += `<span class="text-slate-400">${escapeHtml(eventTitle)}</span>`;
+            }
+            if (isFieldVisible('events', 'dateTime')) {
+              eventLine += ` on ${dateStr}`;
+            }
+            eventLine += locationStr;
+
+            // Meet link
+            if (isFieldVisible('events', 'meetLink') && item.meetLink) {
+              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400/70 hover:underline text-sm">[Video Link]</a>`;
+            }
+
+            sections.push(eventLine);
+
+            // Description
+            if (isFieldVisible('events', 'description') && item.description && item.description.trim()) {
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Event details</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
+            }
+
+            // Attendees
+            if (isFieldVisible('events', 'attendees') && item.attendees && item.attendees.length > 0) {
+              const attendeeList = item.attendees.map(a => a.email || a.displayName || a).join(', ');
+              sections.push(`<span class="text-xs text-slate-500 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
+            }
+          });
         }
       }
 
