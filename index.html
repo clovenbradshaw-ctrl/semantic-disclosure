@@ -116,7 +116,7 @@
     // BRIEF NARRATIVE - Executive summary style
     // ═══════════════════════════════════════════════════════════════
     function generateBriefNarrative(data) {
-      const { client, cases } = data;
+      const { client, cases, applications, events, hearings } = data;
       const lines = [];
 
       if (!client) {
@@ -190,6 +190,61 @@
         lines.push('<span class="text-slate-500">No active cases.</span>');
       }
 
+      // Applications summary
+      if (applications && applications.length > 0) {
+        const appsByType = {};
+        applications.forEach(app => {
+          const type = app.Application || app.Name || 'Other';
+          if (!appsByType[type]) appsByType[type] = [];
+          appsByType[type].push(app);
+        });
+
+        const appTypeSummary = Object.entries(appsByType)
+          .map(([type, arr]) => {
+            const statuses = [...new Set(arr.map(a => a.Status).filter(Boolean))];
+            const statusStr = statuses.length > 0 ? ` (${statuses.join(', ')})` : '';
+            return `<span class="text-purple-300">${escapeHtml(type)}</span>${statusStr}`;
+          })
+          .join(', ');
+
+        lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>: ${appTypeSummary}`);
+      }
+
+      // Events summary (calendar events)
+      if (events && events.length > 0) {
+        const upcomingEvents = events
+          .filter(e => e.startDateTime && new Date(e.startDateTime) >= new Date())
+          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+        if (upcomingEvents.length > 0) {
+          const nextEvent = upcomingEvents[0];
+          const eventDate = formatDate(nextEvent.startDateTime);
+          const eventTitle = nextEvent.title || nextEvent.summary || 'Upcoming event';
+          lines.push(`<span class="text-rose-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)} on ${eventDate}`);
+
+          if (upcomingEvents.length > 1) {
+            lines.push(`<span class="text-slate-400">${upcomingEvents.length - 1} more upcoming ${pluralize(upcomingEvents.length - 1, 'event')}.</span>`);
+          }
+        } else {
+          lines.push(`<span class="text-rose-300">${events.length} ${pluralize(events.length, 'event')} on file.</span>`);
+        }
+      }
+
+      // Hearings from calendar
+      if (hearings && hearings.length > 0) {
+        const upcomingHearings = hearings
+          .filter(h => h.startDateTime && new Date(h.startDateTime) >= new Date())
+          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+        if (upcomingHearings.length > 0) {
+          const nextHearing = upcomingHearings[0];
+          const hearingDate = formatDate(nextHearing.startDateTime);
+          const hearingTitle = nextHearing.title || nextHearing.summary || 'Hearing';
+          const location = nextHearing.location ? ` at ${escapeHtml(nextHearing.location)}` : '';
+          lines.push(`<span class="text-amber-400 font-medium">Scheduled hearing:</span> ${escapeHtml(hearingTitle)} on ${hearingDate}${location}`);
+        }
+      }
+
       return lines;
     }
 
@@ -197,7 +252,7 @@
     // DETAILED NARRATIVE - Full prose disclosure
     // ═══════════════════════════════════════════════════════════════
     function generateDetailedNarrative(data) {
-      const { client, cases } = data;
+      const { client, cases, applications, events, hearings } = data;
       const sections = [];
 
       if (!client) {
@@ -362,6 +417,115 @@
         }
       } else {
         sections.push(`<br><span class="text-slate-500">No active cases currently on file for this client.</span>`);
+      }
+
+      // ─── Applications ───
+      if (applications && applications.length > 0) {
+        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Applications</span>`);
+
+        const appsByType = {};
+        applications.forEach(app => {
+          const type = app.Application || 'Other';
+          if (!appsByType[type]) appsByType[type] = [];
+          appsByType[type].push(app);
+        });
+
+        for (const [type, typeApps] of Object.entries(appsByType)) {
+          sections.push(`<span class="text-purple-300 font-medium">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeApps.length})</span>`);
+
+          typeApps.forEach(app => {
+            const parts = [];
+
+            // Application name/matter
+            if (app.Name) {
+              parts.push(`<span class="text-slate-200">${escapeHtml(app.Name)}</span>`);
+            }
+
+            // Status with color coding
+            if (app.Status) {
+              const statusColors = {
+                'Engaged': 'text-green-400',
+                'Potential': 'text-amber-400',
+                'Filed': 'text-blue-400',
+                'Pending': 'text-amber-400',
+                'Approved': 'text-emerald-400',
+                'Denied': 'text-red-400'
+              };
+              const statusClass = statusColors[app.Status] || 'text-slate-300';
+              parts.push(`Status: <span class="${statusClass}">${escapeHtml(app.Status)}</span>`);
+            }
+
+            // Receipt number
+            if (app['Receipt Number']) {
+              parts.push(`Receipt: <span class="font-mono text-blue-300">${escapeHtml(app['Receipt Number'])}</span>`);
+            }
+
+            // Cert County/State
+            if (app['Cert County/State']) {
+              parts.push(`County/State: ${escapeHtml(app['Cert County/State'])}`);
+            }
+
+            if (parts.length > 0) {
+              sections.push(parts.join(' · '));
+            }
+
+            // Notes
+            if (app.Notes && app.Notes.trim()) {
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Application notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(app.Notes)}</pre></details>`);
+            }
+          });
+        }
+      }
+
+      // ─── Calendar Events & Hearings ───
+      const allCalendarItems = [...(events || []), ...(hearings || [])];
+      if (allCalendarItems.length > 0) {
+        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Scheduled Events & Hearings</span>`);
+
+        // Sort by date
+        const sortedItems = allCalendarItems
+          .filter(item => item.startDateTime)
+          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+        const now = new Date();
+        const upcomingItems = sortedItems.filter(item => new Date(item.startDateTime) >= now);
+        const pastItems = sortedItems.filter(item => new Date(item.startDateTime) < now);
+
+        if (upcomingItems.length > 0) {
+          sections.push(`<span class="text-amber-300 font-medium">Upcoming (${upcomingItems.length})</span>`);
+
+          upcomingItems.forEach(item => {
+            const title = item.title || item.summary || 'Event';
+            const dateStr = formatDateLong(item.startDateTime);
+            const location = item.location ? ` at <span class="text-slate-300">${escapeHtml(item.location)}</span>` : '';
+            const calType = item._calendarType ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-400 rounded">${escapeHtml(item._calendarType)}</span> ` : '';
+
+            let eventLine = `${calType}<span class="text-slate-200">${escapeHtml(title)}</span> on ${dateStr}${location}`;
+
+            // Meet link
+            if (item.meetLink) {
+              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-sm">[Video Link]</a>`;
+            }
+
+            sections.push(eventLine);
+
+            // Description
+            if (item.description && item.description.trim()) {
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Event details</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
+            }
+
+            // Attendees
+            if (item.attendees && item.attendees.length > 0) {
+              const attendeeList = item.attendees.map(a => a.email || a.displayName || a).join(', ');
+              sections.push(`<span class="text-xs text-slate-500 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
+            }
+          });
+        }
+
+        if (pastItems.length > 0) {
+          sections.push(`<br><span class="text-slate-400 font-medium">Past Events (${pastItems.length})</span>`);
+          sections.push(`<span class="text-slate-500 text-sm">${pastItems.length} past ${pluralize(pastItems.length, 'event')} on record.</span>`);
+        }
       }
 
       return sections;
@@ -569,25 +733,138 @@
         `;
       }
 
-      // Generic section renderer for arrays
-      function renderArraySection(title, items, icon, iconBg, iconColor) {
+      // Specialized renderer for Applications
+      function renderApplicationsSection(items) {
         if (!items || items.length === 0) return '';
 
-        const sectionId = title.toLowerCase().replace(/\s+/g, '-');
-        const itemsHtml = items.map(item => {
-          // Display all non-internal fields
-          const fields = Object.entries(item)
-            .filter(([key]) => !key.startsWith('_'))
-            .slice(0, 6) // Show first 6 fields
-            .map(([key, value]) => {
-              let displayValue = value;
-              if (Array.isArray(value)) displayValue = value.join(', ');
-              if (typeof value === 'object' && value !== null) displayValue = JSON.stringify(value);
-              if (displayValue && String(displayValue).length > 50) displayValue = String(displayValue).substring(0, 50) + '...';
-              return `<div><span class="text-slate-500 text-xs">${escapeHtml(key)}:</span> <span class="text-slate-300 text-sm">${escapeHtml(String(displayValue || '—'))}</span></div>`;
-            }).join('');
+        const statusColors = {
+          'Engaged': 'bg-green-500/20 text-green-400',
+          'Potential': 'bg-amber-500/20 text-amber-400',
+          'Filed': 'bg-blue-500/20 text-blue-400',
+          'Pending': 'bg-amber-500/20 text-amber-400',
+          'Approved': 'bg-emerald-500/20 text-emerald-400',
+          'Denied': 'bg-red-500/20 text-red-400'
+        };
 
-          return `<div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0"><div class="grid grid-cols-2 gap-2">${fields}</div></div>`;
+        const itemsHtml = items.map(app => {
+          const status = app.Status;
+          const statusClass = statusColors[status] || 'bg-slate-700/50 text-slate-400';
+          const statusBadge = status ? `<span class="px-2 py-1 rounded text-xs ${statusClass}">${escapeHtml(status)}</span>` : '';
+
+          const appType = app.Application || 'Application';
+          const name = app.Name || '—';
+          const receiptNum = app['Receipt Number'];
+          const certCounty = app['Cert County/State'];
+          const notes = app.Notes;
+
+          let notesHtml = '';
+          if (notes && notes.trim()) {
+            notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
+          }
+
+          return `
+            <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-purple-300 font-medium text-sm">${escapeHtml(appType)}</span>
+                    ${statusBadge}
+                  </div>
+                  <p class="text-slate-200 text-sm">${escapeHtml(name)}</p>
+                  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
+                    ${receiptNum ? `<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(receiptNum)}</span></div>` : ''}
+                    ${certCounty ? `<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(certCounty)}</span></div>` : ''}
+                  </div>
+                </div>
+              </div>
+              ${notesHtml}
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleSection('applications')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-medium">${items.length}</span>
+                <div class="text-left">
+                  <h2 class="font-medium text-slate-100">Applications</h2>
+                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'application')}</p>
+                </div>
+              </div>
+              <span id="arrow-applications" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+            </button>
+            <div id="content-applications" class="border-t border-slate-700/50">${itemsHtml}</div>
+          </div>
+        `;
+      }
+
+      // Specialized renderer for calendar events (events + hearings)
+      function renderCalendarSection(title, items, sectionId, iconBg, iconColor) {
+        if (!items || items.length === 0) return '';
+
+        const now = new Date();
+
+        const itemsHtml = items.map(event => {
+          const title = event.title || event.summary || 'Event';
+          const startDate = event.startDateTime;
+          const endDate = event.endDateTime;
+          const location = event.location;
+          const description = event.description;
+          const meetLink = event.meetLink;
+          const attendees = event.attendees || [];
+          const calType = event._calendarType;
+          const isAllDay = event.isAllDay;
+          const status = event.status;
+
+          // Date display
+          let dateDisplay = '—';
+          let isPast = false;
+          if (startDate) {
+            const startDateObj = new Date(startDate);
+            isPast = startDateObj < now;
+            if (isAllDay) {
+              dateDisplay = formatDate(startDate);
+            } else {
+              const time = startDateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              dateDisplay = `${formatDate(startDate)} at ${time}`;
+            }
+          }
+
+          const pastClass = isPast ? 'opacity-60' : '';
+          const calTypeBadge = calType ? `<span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-xs">${escapeHtml(calType)}</span>` : '';
+
+          let descHtml = '';
+          if (description && description.trim()) {
+            descHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View details</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
+          }
+
+          let attendeesHtml = '';
+          if (attendees.length > 0) {
+            const attendeeList = attendees.map(a => a.email || a.displayName || a).join(', ');
+            attendeesHtml = `<div class="text-xs text-slate-500 mt-1">Attendees: ${escapeHtml(attendeeList)}</div>`;
+          }
+
+          return `
+            <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0 ${pastClass}">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-slate-200 font-medium text-sm">${escapeHtml(title)}</span>
+                    ${calTypeBadge}
+                    ${isPast ? '<span class="text-xs text-slate-500">(past)</span>' : ''}
+                  </div>
+                  <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    <div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>
+                    ${location ? `<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>` : ''}
+                    ${meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>` : ''}
+                  </div>
+                  ${attendeesHtml}
+                </div>
+              </div>
+              ${descHtml}
+            </div>
+          `;
         }).join('');
 
         return `
@@ -597,19 +874,19 @@
                 <span class="w-8 h-8 rounded-full ${iconBg} ${iconColor} flex items-center justify-center text-sm font-medium">${items.length}</span>
                 <div class="text-left">
                   <h2 class="font-medium text-slate-100">${escapeHtml(title)}</h2>
-                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'record')}</p>
+                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'event')}</p>
                 </div>
               </div>
-              <span id="arrow-${sectionId}" class="text-slate-500 transition-transform">▼</span>
+              <span id="arrow-${sectionId}" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
-            <div id="content-${sectionId}" class="border-t border-slate-700/50 hidden">${itemsHtml}</div>
+            <div id="content-${sectionId}" class="border-t border-slate-700/50">${itemsHtml}</div>
           </div>
         `;
       }
 
-      const applicationsHtml = renderArraySection('Applications', applications, 'A', 'bg-purple-500/20', 'text-purple-400');
-      const hearingsHtml = renderArraySection('Hearings', hearings, 'H', 'bg-amber-500/20', 'text-amber-400');
-      const eventsHtml = renderArraySection('Events', events, 'E', 'bg-rose-500/20', 'text-rose-400');
+      const applicationsHtml = renderApplicationsSection(applications);
+      const hearingsHtml = renderCalendarSection('Hearings', hearings, 'hearings', 'bg-amber-500/20', 'text-amber-400');
+      const eventsHtml = renderCalendarSection('Events', events, 'events', 'bg-rose-500/20', 'text-rose-400');
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
