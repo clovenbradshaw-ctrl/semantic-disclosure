@@ -5111,24 +5111,41 @@
         });
       }
 
+      // Process events
+      if (normalizedData.events && Array.isArray(normalizedData.events)) {
+        normalizedData.events.forEach((eventRecord, index) => {
+          const eventLabel = eventRecord.title || eventRecord.summary || `Event ${index + 1}`;
+          this.processRecord(eventRecord.fields || eventRecord, 'Events', eventLabel, processed, eventRecord.recordId);
+        });
+      }
+
+      // Process applications
+      if (normalizedData.applications && Array.isArray(normalizedData.applications)) {
+        normalizedData.applications.forEach((appRecord, index) => {
+          const appLabel = appRecord.type || `Application ${index + 1}`;
+          this.processRecord(appRecord.fields || appRecord, 'Applications', appLabel, processed, appRecord.recordId);
+        });
+      }
+
       return processed;
     },
 
-    processRecord(record, sourceTable, caseLabel, results) {
+    processRecord(record, sourceTable, caseLabel, results, recordIdOverride = null) {
       const fields = record.fields || record;
-      
+      const recordId = recordIdOverride || record.recordId;
+
       Object.entries(fields).forEach(([fieldName, value]) => {
         // Skip empty values
         if (value === null || value === undefined || value === '') return;
         if (Array.isArray(value) && value.length === 0) return;
-        
+
         // Skip hidden fields
         if (Utils.isHiddenField(fieldName)) return;
-        
+
         // Skip record metadata
         if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
-        
-        const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
+
+        const processedField = this.processField(fieldName, value, sourceTable, caseLabel, recordId);
         if (processedField) {
           results.push(processedField);
         }
@@ -5791,8 +5808,12 @@
         this.tabData[tabId] = {
           config: tabConfig,
           fields: this.processedFields.filter(f => {
-            // Match by source table
-            if (sourceTables.some(t => f.sourceTable?.includes(t) || t.includes(f.sourceTable || ''))) return true;
+            // Match by source table - require non-empty sourceTable for matching
+            if (f.sourceTable && sourceTables.some(t =>
+              f.sourceTable === t ||
+              f.sourceTable.toLowerCase().includes(t.toLowerCase()) ||
+              t.toLowerCase().includes(f.sourceTable.toLowerCase())
+            )) return true;
             // For client tab, include fields without sourceTable (from client info)
             if (tabId === 'client' && (!f.sourceTable || f.sourceTable === 'Client Info')) return true;
             // For overview, include critical fields from any source
