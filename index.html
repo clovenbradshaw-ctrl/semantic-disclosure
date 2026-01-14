@@ -3,2744 +3,500 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Client At-a-Glance - Test Page</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>Client Record Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg-dark: #0f172a;
-      --bg-card: #1e293b;
-      --bg-input: #0f172a;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --border: #334155;
-      --border-active: #3b82f6;
-      --accent-blue: #3b82f6;
-      --accent-green: #22c55e;
-      --accent-amber: #f59e0b;
-      --accent-violet: #8b5cf6;
-      --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
-      --font-mono: 'IBM Plex Mono', monospace;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg-dark);
-      color: var(--text-primary);
-      min-height: 100vh;
-    }
-
-    .page-container {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* Control Panel */
-    .control-panel {
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-    }
-
-    .control-panel-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .control-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .control-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .control-title h1 {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .control-title .badge {
-      font-size: 11px;
-      padding: 3px 8px;
-      background: var(--accent-violet);
-      color: white;
-      border-radius: 4px;
-      font-weight: 500;
-    }
-
-    /* Mode Selector */
-    .mode-selector {
-      display: flex;
-      background: var(--bg-input);
-      border-radius: 8px;
-      padding: 4px;
-      gap: 4px;
-    }
-
-    .mode-btn {
-      padding: 8px 16px;
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      font-family: var(--font-sans);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .mode-btn:hover {
-      color: var(--text-primary);
-    }
-
-    .mode-btn.active {
-      background: var(--accent-blue);
-      color: white;
-    }
-
-    .mode-btn svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* Control Row */
-    .control-row {
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-    }
-
-    .input-section {
-      flex: 1;
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-    }
-
-    .input-wrapper {
-      flex: 1;
-      position: relative;
-    }
-
-    .input-wrapper input {
-      width: 100%;
-      height: 44px;
-      padding: 0 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg-input);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .input-wrapper input:focus {
-      outline: none;
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    }
-
-    .input-wrapper input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .input-wrapper input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* URL Display */
-    .url-display {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      height: 44px;
-    }
-
-    .url-display .url-icon {
-      color: var(--text-muted);
-    }
-
-    .url-display .url-text {
-      flex: 1;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--text-secondary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .url-display .url-text .param {
-      color: var(--accent-green);
-    }
-
-    .url-display .url-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 4px;
-    }
-
-    .url-display .url-status.found {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--accent-green);
-    }
-
-    .url-display .url-status.not-found {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--accent-amber);
-    }
-
-    /* Buttons */
-    .btn {
-      padding: 0 20px;
-      height: 44px;
-      border: none;
-      border-radius: 8px;
-      font-family: var(--font-sans);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      white-space: nowrap;
-    }
-
-    .btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .btn-primary {
-      background: var(--accent-blue);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: #2563eb;
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--bg-input);
-      color: var(--text-primary);
-      border-color: var(--text-muted);
-    }
-
-    .btn-success {
-      background: var(--accent-green);
-      color: white;
-    }
-
-    .btn-success:hover {
-      background: #16a34a;
-    }
-
-    /* Quick Actions */
-    .quick-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-
-    .quick-btn {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: transparent;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .quick-btn:hover {
-      background: var(--bg-input);
-      color: var(--text-primary);
-      border-color: var(--accent-blue);
-    }
-
-    .schema-status {
-      padding: 6px 12px;
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      background: var(--bg-input);
-      border-radius: 6px;
-      border: 1px solid var(--border);
-    }
-
-    .schema-status.loaded {
-      color: var(--accent-green);
-      border-color: var(--accent-green);
-    }
-
-    /* Status Bar */
-    .status-bar {
-      padding: 10px 24px;
-      background: rgba(59, 130, 246, 0.1);
-      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-      display: none;
-    }
-
-    .status-bar.visible {
-      display: block;
-    }
-
-    .status-bar.success {
-      background: rgba(34, 197, 94, 0.1);
-      border-color: rgba(34, 197, 94, 0.2);
-    }
-
-    .status-bar.error {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .status-bar-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-    }
-
-    .status-bar .status-icon {
-      width: 16px;
-      height: 16px;
-    }
-
-    .status-bar.success .status-icon { color: var(--accent-green); }
-    .status-bar.error .status-icon { color: #ef4444; }
-    .status-bar:not(.success):not(.error) .status-icon { color: var(--accent-blue); }
-
-    /* Widget Container */
-    .widget-area {
-      flex: 1;
-      padding: 24px;
-      background: #f0f0f0;
-      overflow: auto;
-    }
-
-    .widget-area-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    /* Empty State */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 80px 20px;
-      color: var(--text-muted);
-      text-align: center;
-      background: white;
-      border-radius: 12px;
-      border: 2px dashed #d1d5db;
-    }
-
-    .empty-state svg {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 16px;
-      opacity: 0.4;
-      stroke: #9ca3af;
-    }
-
-    .empty-state h3 {
-      font-size: 16px;
-      color: #6b7280;
-      margin-bottom: 8px;
-    }
-
-    .empty-state p {
-      font-size: 14px;
-      color: #9ca3af;
-    }
-
-    /* Hide sections based on mode */
-    [data-mode="url"] .manual-only { display: none !important; }
-    [data-mode="manual"] .url-only { display: none !important; }
-
-    /* Embed mode - hide test controls, show only widget */
-    .embed-mode .control-panel { display: none !important; }
-    .embed-mode .status-bar { display: none !important; }
-    .embed-mode .widget-area { padding-top: 0; }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .control-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
-      }
-
-      .control-row {
-        flex-direction: column;
-      }
-
-      .input-section {
-        flex-direction: column;
-      }
-
-      .quick-actions {
-        flex-wrap: wrap;
-      }
-    }
-
-    /* Debug Modal */
-    .debug-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      padding: 20px;
-    }
-
-    .debug-modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      max-width: 900px;
-      width: 100%;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .debug-modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .debug-modal-header h2 {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .debug-modal-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .debug-modal-btn {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--bg-input);
-      color: var(--text-primary);
-      transition: all 0.15s;
-    }
-
-    .debug-modal-btn:hover {
-      background: var(--border);
-    }
-
-    .debug-modal-btn.primary {
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-    }
-
-    .debug-modal-btn.primary:hover {
-      background: #2563eb;
-    }
-
-    .debug-modal-close {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .debug-modal-close:hover {
-      color: var(--text-primary);
-    }
-
-    .debug-modal-body {
-      flex: 1;
-      overflow: auto;
-      padding: 16px 20px;
-    }
-
-    .debug-output {
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      line-height: 1.5;
-      color: var(--text-secondary);
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 60vh;
-      overflow: auto;
-    }
-
-    .debug-modal-footer {
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .quick-btn.debug-btn {
-      background: #7c3aed;
-      border-color: #7c3aed;
-      color: white;
-    }
-
-    .quick-btn.debug-btn:hover {
-      background: #6d28d9;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
   </style>
 </head>
-<body>
-
-<div class="page-container" id="pageContainer" data-mode="manual">
-  <!-- Control Panel -->
-  <div class="control-panel">
-    <div class="control-panel-inner">
-      <div class="control-header">
-        <div class="control-title">
-          <h1>Client At-a-Glance</h1>
-          <span class="badge">Test Mode</span>
-        </div>
-        <div class="mode-selector">
-          <button class="mode-btn" data-mode="url" onclick="setMode('url')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-            URL Mode
-          </button>
-          <button class="mode-btn active" data-mode="manual" onclick="setMode('manual')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Manual Input
-          </button>
-        </div>
-      </div>
-
-      <div class="control-row">
-        <!-- URL Mode Display -->
-        <div class="url-display url-only">
-          <svg class="url-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="2" y1="12" x2="22" y2="12"></line>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-          </svg>
-          <span class="url-text" id="urlText">Loading...</span>
-          <span class="url-status" id="urlStatus">
-            <span class="status-dot"></span>
-            <span class="status-label">Checking...</span>
-          </span>
-        </div>
-
-        <!-- Manual Input -->
-        <div class="input-section manual-only">
-          <div class="input-wrapper">
-            <input
-              type="text"
-              id="recordIdInput"
-              placeholder="Enter recordId (e.g., recABC123XYZ)"
-              autocomplete="off"
-              spellcheck="false"
-            >
-          </div>
-        </div>
-
-        <button class="btn btn-primary" id="loadBtn" onclick="loadWidget()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          Load
-        </button>
-
-        <button class="btn btn-success manual-only" onclick="loadMockData()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          Mock Data
-        </button>
-
-        <button class="btn btn-secondary" onclick="reloadWidget()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-          Reload
-        </button>
-      </div>
-
-      <div class="quick-actions">
-        <button class="quick-btn" onclick="logState()">Log State</button>
-        <button class="quick-btn" onclick="logMockData()">Log Mock Data</button>
-        <button class="quick-btn" onclick="logSchema()">Log Schema</button>
-        <button class="quick-btn" onclick="toggleDebug()">Toggle Debug</button>
-        <button class="quick-btn debug-btn" onclick="debugWebhook()">Debug Webhook</button>
-        <button class="quick-btn" onclick="copyUrl()">Copy URL</button>
-        <button class="quick-btn" onclick="openInNewTab()">Open in Tab</button>
-        <span id="schemaStatus" class="schema-status">Schema: <span id="schemaStatusText">Ready</span></span>
+<body class="min-h-screen bg-slate-900 text-slate-100">
+  <div id="app" class="p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center py-12">
+        <div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-400 text-sm">Loading client data...</p>
       </div>
     </div>
   </div>
 
-  <!-- Status Bar -->
-  <div class="status-bar" id="statusBar">
-    <div class="status-bar-inner">
-      <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-      </svg>
-      <span id="statusText">Ready</span>
-    </div>
-  </div>
+  <script>
+    const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
 
-  <!-- Widget Area -->
-  <div class="widget-area">
-    <div class="widget-area-inner" id="widgetContainer">
-      <div class="empty-state" id="emptyState">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="3" y1="9" x2="21" y2="9"></line>
-          <line x1="9" y1="21" x2="9" y2="9"></line>
-        </svg>
-        <h3>No Widget Loaded</h3>
-        <p>Select a mode and load data to preview the widget</p>
-      </div>
-    </div>
-  </div>
-</div>
+    // View mode: 'structured' or 'narrative'
+    let currentView = 'narrative';
 
-<!-- Mock Data -->
-<script>
-window.MOCK_DATA = {
-  clientInfo: {
-    recordId: "recCLIENT123",
-    fields: {
-      "Client Name": "Maria Elena Rodriguez Garcia",
-      "A#": "234-567-890",
-      "DOB": "1995-03-22",
-      "Country": "Guatemala",
-      "Age": "29",
-      "Phone Number": "6155551234",
-      "Client Email": "maria.rodriguez@email.com",
-      "Address": "123 Main Street, Nashville, TN 37203",
-      "Entry Date": "2022-06-15",
-      "Entry Status": "EWI",
-      "Case Manager": "Sarah Johnson",
-      "MCH Attny": "David Chen",
-      "Case Tags": "SIJ, USCIS Pending, Priority"
-    }
-  },
-
-  cases: [
-    {
-      recordId: "recCASE001",
-      caseIdentifier: "SIJ - Davidson County",
-      fields: {
-        "Hearing Date/Time": "2027-02-15T09:00:00",
-        "Court/Office": "Memphis Immigration Court",
-        "Judge": "Hon. Patricia Williams",
-        "SIJ Case Status": "Pending Custody Order",
-        "SIJ County": "Davidson",
-        "Date Custody Filed": "2024-08-19",
-        "SIJ Eligible (child)": "Yes",
-        "JDR Ct Date": "2027-01-27",
-        "Relief Sought": "Special Immigrant Juvenile Status",
-        "File Case Status": "Active",
-        "Case Tags": "SIJ, Court",
-        "FOIA Receipt": "2024-09-15",
-        "FOIA #": "2024-FOI-12345",
-        "FOIA PIN #": "847291",
-        "USCIS FOIA Stage": "Received",
-        "FBI Record Stage": "Requested",
-        "Pleadings Due Date": "2027-01-31",
-        "NTA Date": "2022-08-14",
-        "Master Hearing Notes": "Client appeared with counsel. Case continued for individual hearing.",
-        "ICH Prep Notes": "Review country conditions documentation before hearing.",
-        "Some_New_Field_2025": "Value without semantic mapping"
-      }
-    },
-    {
-      recordId: "recCASE002",
-      caseIdentifier: "USCIS - I-360 Appeal - BIA",
-      fields: {
-        "USCIS Receipt Date": "2024-11-19",
-        "USCIS Receipt Number": "SRC2411234567",
-        "I-360 Receipt Number": "SRC2411234567",
-        "I-360 Mailed Date": "2024-11-14",
-        "Current USCIS application": "I-360 (SIJ)",
-        "Priority Date (I-360)": "2024-11-19",
-        "Biometric Notice Date": "2024-12-04",
-        "RFE Due Date": "2027-02-28",
-        "RFE/RFI (topic)": "Birth Certificate Authentication",
-        "Relief Sought": "Special Immigrant Juvenile Status",
-        "File Case Status": "Active",
-        "USCIS Notes": "Biometrics completed 12/10/2024. Awaiting adjudication.",
-        "EAD Stage": "Filed",
-        "EAD Receipt Date": "2024-11-19",
-        "EAD Eligible Date": "2024-11-19",
-        "Another_Unrecognized_Field": "Random data here",
-        "Internal_Tracking_Code": "ABC-XYZ-789"
-      }
-    },
-    {
-      recordId: "recCASE003",
-      caseIdentifier: "Appeal - BIA",
-      fields: {
-        "Appeal Status": "Pending",
-        "Appeal Due Date": "2027-04-15",
-        "Appeal Receipt Date": "2027-01-10",
-        "Brief Due Date": "2027-03-15",
-        "Appeal Forum": "Board of Immigration Appeals",
-        "Appeal Notes": "Appealing denial of motion to change venue.",
-        "Relief Sought": "Motion to Reopen"
-      }
-    }
-  ]
-};
-
-// Schema for testing schema-driven display
-window.MOCK_SCHEMA = [
-  {
-    "id": "tbl0uHmtLkGyDnSP9",
-    "name": "Client Info",
-    "fields": [
-      { "type": "formula", "id": "fld001", "name": "Client Name" },
-      { "type": "singleLineText", "id": "fld002", "name": "A#" },
-      { "type": "date", "id": "fld003", "name": "DOB" },
-      { "type": "singleSelect", "id": "fld004", "name": "Country" },
-      { "type": "formula", "id": "fld005", "name": "Age" },
-      { "type": "singleLineText", "id": "fld006", "name": "Phone Number" },
-      { "type": "email", "id": "fld007", "name": "Client Email" },
-      { "type": "singleLineText", "id": "fld008", "name": "Address" },
-      { "type": "date", "id": "fld009", "name": "Entry Date" },
-      { "type": "singleLineText", "id": "fld010", "name": "Entry Status" },
-      { "type": "multipleRecordLinks", "id": "fld011", "name": "Case Manager" }
-    ]
-  },
-  {
-    "id": "tblgynOzESGvAXAsK",
-    "name": "Case Master View",
-    "fields": [
-      { "type": "dateTime", "id": "fld101", "name": "Hearing Date/Time" },
-      { "type": "singleLineText", "id": "fld102", "name": "Court/Office" },
-      { "type": "singleLineText", "id": "fld103", "name": "Judge" },
-      { "type": "singleSelect", "id": "fld104", "name": "SIJ Case Status" },
-      { "type": "singleLineText", "id": "fld105", "name": "SIJ County" },
-      { "type": "date", "id": "fld106", "name": "Date Custody Filed" },
-      { "type": "checkbox", "id": "fld107", "name": "SIJ Eligible (child)" },
-      { "type": "date", "id": "fld108", "name": "JDR Ct Date" },
-      { "type": "singleLineText", "id": "fld109", "name": "Relief Sought" },
-      { "type": "singleSelect", "id": "fld110", "name": "File Case Status" },
-      { "type": "multipleSelects", "id": "fld111", "name": "Case Tags" },
-      { "type": "date", "id": "fld112", "name": "FOIA Receipt" },
-      { "type": "singleLineText", "id": "fld113", "name": "FOIA #" },
-      { "type": "singleLineText", "id": "fld114", "name": "FOIA PIN #" },
-      { "type": "singleSelect", "id": "fld115", "name": "USCIS FOIA Stage" },
-      { "type": "singleSelect", "id": "fld116", "name": "FBI Record Stage" },
-      { "type": "date", "id": "fld117", "name": "Pleadings Due Date" },
-      { "type": "date", "id": "fld118", "name": "NTA Date" },
-      { "type": "richText", "id": "fld119", "name": "Master Hearing Notes" },
-      { "type": "richText", "id": "fld120", "name": "ICH Prep Notes" },
-      { "type": "date", "id": "fld121", "name": "USCIS Receipt Date" },
-      { "type": "singleLineText", "id": "fld122", "name": "USCIS Receipt Number" },
-      { "type": "singleLineText", "id": "fld123", "name": "I-360 Receipt Number" },
-      { "type": "date", "id": "fld124", "name": "I-360 Mailed Date" },
-      { "type": "singleLineText", "id": "fld125", "name": "Current USCIS application" },
-      { "type": "date", "id": "fld126", "name": "Priority Date (I-360)" },
-      { "type": "date", "id": "fld127", "name": "Biometric Notice Date" },
-      { "type": "date", "id": "fld128", "name": "RFE Due Date" },
-      { "type": "singleLineText", "id": "fld129", "name": "RFE/RFI (topic)" },
-      { "type": "richText", "id": "fld130", "name": "USCIS Notes" },
-      { "type": "singleSelect", "id": "fld131", "name": "EAD Stage" },
-      { "type": "date", "id": "fld132", "name": "EAD Receipt Date" },
-      { "type": "date", "id": "fld133", "name": "EAD Eligible Date" },
-      { "type": "singleSelect", "id": "fld134", "name": "Appeal Status" },
-      { "type": "date", "id": "fld135", "name": "Appeal Due Date" },
-      { "type": "date", "id": "fld136", "name": "Appeal Receipt Date" },
-      { "type": "date", "id": "fld137", "name": "Brief Due Date" },
-      { "type": "singleLineText", "id": "fld138", "name": "Appeal Forum" },
-      { "type": "richText", "id": "fld139", "name": "Appeal Notes" }
-    ]
-  }
-];
-console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables');
-</script>
-
-<!-- Config -->
-<script src="config.js"></script>
-
-<!-- Widget Styles (Light theme for widget area) -->
-<style id="widget-styles">
-  #widget-frame {
-    background: #fafaf9;
-    border-radius: 8px;
-    min-height: 400px;
-  }
-
-  #widget-frame :root {
-    --bg-primary: #fafaf9;
-    --bg-secondary: #f5f5f4;
-    --bg-tertiary: #e7e5e4;
-    --bg-card: #ffffff;
-    --text-primary: #1c1917;
-    --text-secondary: #57534e;
-    --text-muted: #a8a29e;
-    --border: #e7e5e4;
-    --border-strong: #d6d3d1;
-    --accent-blue: #0369a1;
-    --accent-green: #15803d;
-    --accent-amber: #b45309;
-    --accent-rose: #be123c;
-    --accent-violet: #7c3aed;
-    --accent-slate: #475569;
-    --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.07);
-    --radius: 6px;
-    --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
-  }
-
-  #widget-frame * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  #widget-frame .widget-container {
-    max-width: 800px;
-    margin: 0 auto;
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 16px;
-    border-radius: 8px;
-  }
-
-  #widget-frame .widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  #widget-frame .widget-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  #widget-frame .view-toggle {
-    display: flex;
-    gap: 4px;
-    background: var(--bg-secondary);
-    padding: 3px;
-    border-radius: var(--radius);
-  }
-
-  #widget-frame .view-btn {
-    padding: 6px 12px;
-    border: none;
-    background: transparent;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s ease;
-  }
-
-  #widget-frame .view-btn.active {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
-  }
-
-  #widget-frame .view-btn:hover:not(.active) { color: var(--text-primary); }
-
-  #widget-frame .client-header {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-  }
-
-  #widget-frame .client-name {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-  }
-
-  #widget-frame .client-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    color: var(--text-secondary);
-    font-size: 14px;
-  }
-
-  #widget-frame .client-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  #widget-frame .client-meta-label {
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  #widget-frame .narrative-view {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-  }
-
-  #widget-frame .narrative-text {
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--text-primary);
-  }
-
-  #widget-frame .structured-view {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  #widget-frame .field-group {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  #widget-frame .field-group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.15s ease;
-  }
-
-  #widget-frame .field-group-header:hover { background: var(--bg-tertiary); }
-
-  #widget-frame .field-group-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    font-size: 13px;
-    color: var(--text-primary);
-  }
-
-  #widget-frame .field-group-count {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-
-  #widget-frame .field-group-chevron {
-    color: var(--text-muted);
-    transition: transform 0.2s ease;
-    font-size: 12px;
-  }
-
-  #widget-frame .field-group.collapsed .field-group-chevron { transform: rotate(-90deg); }
-  #widget-frame .field-group.collapsed .field-group-content { display: none; }
-
-  #widget-frame .field-group-content { padding: 12px 16px; }
-
-  #widget-frame .field-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--bg-secondary);
-  }
-
-  #widget-frame .field-item:last-child { border-bottom: none; }
-
-  #widget-frame .field-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-    max-width: 45%;
-  }
-
-  #widget-frame .field-value {
-    font-size: 13px;
-    color: var(--text-primary);
-    text-align: right;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #widget-frame .field-value a {
-    color: var(--accent-blue);
-    text-decoration: none;
-  }
-
-  #widget-frame .field-value a:hover { text-decoration: underline; }
-
-  #widget-frame .provenance-badge {
-    font-size: 10px;
-    font-family: var(--font-mono);
-    padding: 2px 6px;
-    background: var(--bg-secondary);
-    border-radius: 3px;
-    color: var(--text-muted);
-    white-space: nowrap;
-  }
-
-  #widget-frame .tier-indicator {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: inline-block;
-    margin-right: 6px;
-  }
-
-  #widget-frame .tier-1 { background: var(--accent-green); }
-  #widget-frame .tier-2 { background: var(--accent-blue); }
-  #widget-frame .tier-3 { background: var(--accent-amber); }
-
-  #widget-frame .uncategorized-section { margin-top: 8px; }
-
-  #widget-frame .uncategorized-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: var(--bg-secondary);
-    border: 1px dashed var(--border-strong);
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-secondary);
-    width: 100%;
-    transition: all 0.15s ease;
-  }
-
-  #widget-frame .uncategorized-toggle:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  #widget-frame .uncategorized-content {
-    display: none;
-    margin-top: 8px;
-    padding: 12px 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-
-  #widget-frame .uncategorized-content.visible { display: block; }
-
-  #widget-frame .triplet {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 8px;
-    padding: 6px 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    border-bottom: 1px solid var(--bg-secondary);
-    align-items: center;
-  }
-
-  #widget-frame .triplet:last-child { border-bottom: none; }
-  #widget-frame .triplet-source { color: var(--text-muted); font-size: 11px; }
-  #widget-frame .triplet-field { color: var(--accent-violet); }
-  #widget-frame .triplet-value { color: var(--text-primary); text-align: right; word-break: break-word; }
-
-  #widget-frame .case-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 12px;
-    padding: 4px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius);
-    overflow-x: auto;
-  }
-
-  #widget-frame .case-tab {
-    padding: 8px 14px;
-    border: none;
-    background: transparent;
-    font-family: var(--font-sans);
-    font-size: 13px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: 4px;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-  }
-
-  #widget-frame .case-tab.active {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
-  }
-
-  #widget-frame .case-tab:hover:not(.active) { color: var(--text-primary); }
-  #widget-frame .case-tab .case-count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
-
-  #widget-frame .settings-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-
-  #widget-frame .settings-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-muted);
-    cursor: pointer;
-  }
-
-  #widget-frame .settings-toggle input { cursor: pointer; }
-
-  #widget-frame .loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    color: var(--text-secondary);
-  }
-
-  #widget-frame .loading-spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent-blue);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 12px;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  #widget-frame .error {
-    padding: 24px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: var(--radius);
-    color: #991b1b;
-  }
-
-  #widget-frame .error-title { font-weight: 600; margin-bottom: 4px; }
-
-  #widget-frame .debug-panel {
-    display: none;
-    margin-top: 12px;
-    padding: 12px;
-    background: #1e293b;
-    border-radius: var(--radius);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  #widget-frame .debug-panel.visible { display: block; }
-
-  #widget-frame .debug-panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #334155;
-  }
-
-  #widget-frame .debug-panel-title {
-    color: #94a3b8;
-    font-weight: 500;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  #widget-frame .debug-clear-btn {
-    padding: 4px 8px;
-    background: #475569;
-    border: none;
-    border-radius: 3px;
-    color: #e2e8f0;
-    font-size: 10px;
-    cursor: pointer;
-  }
-
-  #widget-frame .debug-clear-btn:hover { background: #64748b; }
-
-  #widget-frame .debug-log-entry {
-    padding: 4px 0;
-    border-bottom: 1px solid #334155;
-    line-height: 1.4;
-  }
-
-  #widget-frame .debug-log-entry:last-child { border-bottom: none; }
-
-  #widget-frame .debug-timestamp { color: #64748b; margin-right: 8px; }
-  #widget-frame .debug-level-info { color: #38bdf8; }
-  #widget-frame .debug-level-success { color: #4ade80; }
-  #widget-frame .debug-level-warn { color: #fbbf24; }
-  #widget-frame .debug-level-error { color: #f87171; }
-  #widget-frame .debug-message { color: #e2e8f0; }
-
-  #widget-frame .debug-data {
-    display: block;
-    margin-top: 4px;
-    padding: 6px 8px;
-    background: #0f172a;
-    border-radius: 3px;
-    color: #a5b4fc;
-    white-space: pre-wrap;
-    word-break: break-all;
-    max-height: 150px;
-    overflow-y: auto;
-  }
-
-  #widget-frame .debug-toggle-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #widget-frame .debug-status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #64748b;
-  }
-
-  #widget-frame .debug-status-indicator.active {
-    background: #4ade80;
-    box-shadow: 0 0 6px #4ade80;
-  }
-</style>
-
-<!-- Page Controller Script -->
-<script>
-(function() {
-  'use strict';
-
-  let currentMode = 'manual';
-  let widgetLoaded = false;
-
-  const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
-
-  async function fetchFromWebhook(recordId) {
-    const url = `${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`;
-
-    console.log('[SANITY CHECK] Fetching from:', url);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    console.log('[SANITY CHECK] Response status:', response.status, response.statusText);
-    console.log('[SANITY CHECK] Response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const text = await response.text();
-    console.log('[SANITY CHECK] Raw response length:', text.length);
-    console.log('[SANITY CHECK] Raw response preview:', text.substring(0, 500));
-
-    // Try to parse as JSON
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('[SANITY CHECK] JSON parse error:', e.message);
-      console.error('[SANITY CHECK] Full raw response:', text);
-      throw new Error(`Invalid JSON response: ${e.message}`);
-    }
-
-    // Log structure info
-    console.log('[SANITY CHECK] Parsed data type:', Array.isArray(data) ? 'array' : typeof data);
-    if (Array.isArray(data)) {
-      console.log('[SANITY CHECK] Array length:', data.length);
-      if (data[0]) {
-        console.log('[SANITY CHECK] First item keys:', Object.keys(data[0]));
-      }
-    } else if (data && typeof data === 'object') {
-      console.log('[SANITY CHECK] Object keys:', Object.keys(data));
-    }
-
-    // Store for debugging
-    window._lastWebhookResponse = data;
-    console.log('[SANITY CHECK] Data stored in window._lastWebhookResponse');
-
-    return data;
-  }
-
-  // Initialize on DOM ready
-  document.addEventListener('DOMContentLoaded', init);
-
-  function init() {
-    // Check URL for recordId
-    const params = new URLSearchParams(window.location.search);
-    const urlRecordId = params.get('recordId') || params.get('record_id') || params.get('id');
-    const showTestMode = params.get('test') === 'true';
-
-    if (urlRecordId) {
-      // Enable embed mode (hide test controls) unless ?test=true
-      if (!showTestMode) {
-        document.getElementById('pageContainer').classList.add('embed-mode');
-      }
-      // Auto-switch to URL mode if recordId found
-      setMode('url');
-      document.getElementById('recordIdInput').value = urlRecordId;
-      updateUrlDisplay(urlRecordId);
-      // Auto-load from webhook after a brief delay
-      setTimeout(async () => {
-        showStatus('Fetching data from webhook...', 'info');
-        try {
-          const data = await fetchFromWebhook(urlRecordId);
-          loadWidgetWithData(data);
-        } catch (error) {
-          console.error('Webhook fetch error:', error);
-          showStatus(`Error fetching data: ${error.message}`, 'error');
-        }
-      }, 100);
-    } else {
-      setMode('manual');
-      updateUrlDisplay(null);
-    }
-
-    // Enter key handler
-    document.getElementById('recordIdInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') loadWidget();
-    });
-  }
-
-  window.setMode = function(mode) {
-    currentMode = mode;
-    document.getElementById('pageContainer').dataset.mode = mode;
-
-    // Update mode buttons
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
-
-    if (mode === 'url') {
+    function getRecordId() {
       const params = new URLSearchParams(window.location.search);
-      const urlRecordId = params.get('recordId') || params.get('record_id') || params.get('id');
-      updateUrlDisplay(urlRecordId);
-    }
-  };
-
-  function updateUrlDisplay(recordId) {
-    const urlText = document.getElementById('urlText');
-    const urlStatus = document.getElementById('urlStatus');
-
-    const baseUrl = window.location.origin + window.location.pathname;
-
-    if (recordId) {
-      urlText.innerHTML = `${baseUrl}?recordId=<span class="param">${escapeHtml(recordId)}</span>`;
-      urlStatus.className = 'url-status found';
-      urlStatus.innerHTML = '<span class="status-dot">&#x2713;</span><span class="status-label">Found</span>';
-    } else {
-      urlText.textContent = baseUrl + ' (no recordId parameter)';
-      urlStatus.className = 'url-status not-found';
-      urlStatus.innerHTML = '<span class="status-dot">!</span><span class="status-label">Not found</span>';
-    }
-  }
-
-  window.loadWidget = async function() {
-    const recordId = document.getElementById('recordIdInput').value.trim();
-
-    if (currentMode === 'manual' && !recordId) {
-      showStatus('Please enter a recordId or use Mock Data', 'error');
-      return;
+      return params.get('recordId') || 'recbMn886NM6d8eWf';
     }
 
-    // Update URL if manual mode
-    if (currentMode === 'manual' && recordId) {
-      const newUrl = new URL(window.location);
-      newUrl.searchParams.set('recordId', recordId);
-      window.history.pushState({}, '', newUrl);
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    showStatus('Fetching data from webhook...', 'info');
-
-    try {
-      const data = await fetchFromWebhook(recordId);
-      loadWidgetWithData(data);
-    } catch (error) {
-      console.error('Webhook fetch error:', error);
-      showStatus(`Error fetching data: ${error.message}`, 'error');
-    }
-  };
-
-  window.loadMockData = function() {
-    showStatus('Loading mock data...', 'info');
-    loadWidgetWithData(window.MOCK_DATA);
-  };
-
-  function loadWidgetWithData(data) {
-    const container = document.getElementById('widgetContainer');
-    const emptyState = document.getElementById('emptyState');
-
-    // Hide empty state
-    if (emptyState) emptyState.style.display = 'none';
-
-    // Remove existing widget frame
-    const existingFrame = document.getElementById('widget-frame');
-    if (existingFrame) existingFrame.remove();
-
-    // Create widget frame
-    const widgetFrame = document.createElement('div');
-    widgetFrame.id = 'widget-frame';
-    widgetFrame.innerHTML = `
-      <div class="widget-container" id="app">
-        <div class="loading">
-          <div class="loading-spinner"></div>
-          <span>Loading client data...</span>
-        </div>
-      </div>
-    `;
-    container.appendChild(widgetFrame);
-
-    // Initialize widget after a brief delay
-    setTimeout(() => {
-      initWidget(data);
-      widgetLoaded = true;
-      showStatus('Widget loaded successfully', 'success');
-      updateSchemaStatus();
-    }, 100);
-  }
-
-  function updateSchemaStatus() {
-    const schemaStatus = document.getElementById('schemaStatus');
-    const schemaStatusText = document.getElementById('schemaStatusText');
-    if (window.ClientGlance && window.ClientGlance.SchemaProcessor && window.ClientGlance.SchemaProcessor.hasSchema()) {
-      const fieldCount = window.ClientGlance.SchemaProcessor.fieldMap.size;
-      schemaStatus.classList.add('loaded');
-      schemaStatusText.textContent = `Loaded (${fieldCount} fields)`;
-    } else {
-      schemaStatus.classList.remove('loaded');
-      schemaStatusText.textContent = 'Not loaded';
-    }
-  }
-
-  window.reloadWidget = async function() {
-    const recordId = document.getElementById('recordIdInput').value.trim();
-    if (recordId) {
-      showStatus('Reloading from webhook...', 'info');
-      try {
-        const data = await fetchFromWebhook(recordId);
-        loadWidgetWithData(data);
-      } catch (error) {
-        console.error('Webhook fetch error:', error);
-        showStatus(`Error fetching data: ${error.message}`, 'error');
-      }
-    } else if (widgetLoaded) {
-      loadWidgetWithData(window.MOCK_DATA);
-    } else {
-      loadWidget();
-    }
-  };
-
-  window.logState = function() {
-    if (window.ClientGlance) {
-      console.log('ClientGlance State:', window.ClientGlance);
-    } else {
-      console.log('Widget not loaded');
-    }
-  };
-
-  window.logMockData = function() {
-    console.log('Mock Data:', window.MOCK_DATA);
-  };
-
-  window.logSchema = function() {
-    console.log('Mock Schema:', window.MOCK_SCHEMA);
-    if (window.ClientGlance && window.ClientGlance.SchemaProcessor) {
-      console.log('SchemaProcessor hasSchema:', window.ClientGlance.SchemaProcessor.hasSchema());
-      console.log('SchemaProcessor fieldMap:', window.ClientGlance.SchemaProcessor.fieldMap);
-    }
-  };
-
-  window.toggleDebug = function() {
-    if (window.ClientGlance && window.ClientGlance.DebugLogger) {
-      const current = window.ClientGlance.DebugLogger.enabled;
-      window.ClientGlance.DebugLogger.toggle(!current);
-      const debugCheckbox = document.querySelector('[data-setting="debug"]');
-      if (debugCheckbox) debugCheckbox.checked = !current;
-      showStatus(`Debug mode ${!current ? 'enabled' : 'disabled'}`, 'success');
-    }
-  };
-
-  window.copyUrl = function() {
-    const recordId = document.getElementById('recordIdInput').value.trim();
-    let url = window.location.origin + window.location.pathname;
-    if (recordId) {
-      url += '?recordId=' + encodeURIComponent(recordId);
-    }
-    navigator.clipboard.writeText(url).then(() => {
-      showStatus('URL copied to clipboard', 'success');
-    });
-  };
-
-  window.openInNewTab = function() {
-    const recordId = document.getElementById('recordIdInput').value.trim();
-    let url = 'widget.html';
-    if (recordId) {
-      url += '?recordId=' + encodeURIComponent(recordId);
-    }
-    window.open(url, '_blank');
-  };
-
-  // Debug Webhook Functions
-  function redactValue(value, key = '') {
-    if (value === null) return '[null]';
-    if (value === undefined) return '[undefined]';
-
-    const type = typeof value;
-
-    if (type === 'string') {
-      if (value === '') return '[empty_string]';
-      // Check for common patterns and show type hints
-      if (/^rec[A-Za-z0-9]+$/.test(value)) return '[record_id]';
-      if (/^https?:\/\//.test(value)) return '[url]';
-      if (/^\d{4}-\d{2}-\d{2}/.test(value)) return '[date_string]';
-      if (/^[^@]+@[^@]+\.[^@]+$/.test(value)) return '[email]';
-      if (/^\+?\d[\d\s-]{8,}$/.test(value)) return '[phone]';
-      return `[string:${value.length}chars]`;
+    function formatDateLong(dateStr) {
+      if (!dateStr) return null;
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
-    if (type === 'number') {
-      if (Number.isInteger(value)) return '[integer]';
-      return '[float]';
+    function formatAge(dob) {
+      if (!dob) return '—';
+      const birth = new Date(dob);
+      const now = new Date();
+      let age = now.getFullYear() - birth.getFullYear();
+      const m = now.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+      return `${age} years`;
     }
 
-    if (type === 'boolean') return `[boolean:${value}]`;
-
-    if (Array.isArray(value)) {
-      if (value.length === 0) return '[]';
-      return value.map((item, i) => redactValue(item, `${key}[${i}]`));
+    function getAge(dob) {
+      if (!dob) return null;
+      const birth = new Date(dob);
+      const now = new Date();
+      let age = now.getFullYear() - birth.getFullYear();
+      const m = now.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+      return age;
     }
 
-    if (type === 'object') {
-      const redacted = {};
-      for (const [k, v] of Object.entries(value)) {
-        redacted[k] = redactValue(v, k);
-      }
-      return redacted;
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
-    return `[${type}]`;
-  }
-
-  window.debugWebhook = async function() {
-    const recordId = document.getElementById('recordIdInput').value.trim();
-
-    if (!recordId) {
-      showStatus('Please enter a recordId first', 'error');
-      return;
-    }
-
-    const modal = document.getElementById('debugModal');
-    const output = document.getElementById('debugOutput');
-
-    modal.style.display = 'flex';
-    output.textContent = 'Fetching from webhook...';
-
-    try {
-      const response = await fetch(`${WEBHOOK_URL}?recordId=${encodeURIComponent(recordId)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-
-      const responseText = await response.text();
-
-      let displayData;
-
-      if (!response.ok) {
-        displayData = {
-          _debug_info: {
-            status: response.status,
-            statusText: response.statusText,
-            error: true
-          },
-          _raw_response: responseText.substring(0, 1000) + (responseText.length > 1000 ? '...[truncated]' : '')
-        };
+    function toggleSection(sectionId) {
+      const content = document.getElementById(`content-${sectionId}`);
+      const arrow = document.getElementById(`arrow-${sectionId}`);
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
       } else {
-        try {
-          const jsonData = JSON.parse(responseText);
-          const redacted = redactValue(jsonData);
-          displayData = {
-            _debug_info: {
-              status: response.status,
-              recordId: recordId,
-              timestamp: new Date().toISOString(),
-              responseType: Array.isArray(jsonData) ? 'array' : typeof jsonData,
-              topLevelKeys: Array.isArray(jsonData) ? `[${jsonData.length} items]` : Object.keys(jsonData)
-            },
-            _redacted_data: redacted
-          };
-        } catch (parseError) {
-          displayData = {
-            _debug_info: {
-              status: response.status,
-              parseError: parseError.message,
-              error: true
-            },
-            _raw_response: responseText.substring(0, 2000) + (responseText.length > 2000 ? '...[truncated]' : '')
-          };
-        }
+        content.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
       }
-
-      output.textContent = JSON.stringify(displayData, null, 2);
-      showStatus('Debug data loaded - values redacted', 'success');
-
-    } catch (error) {
-      output.textContent = JSON.stringify({
-        _debug_info: {
-          error: true,
-          message: error.message,
-          type: error.name
-        }
-      }, null, 2);
-      showStatus('Error fetching webhook', 'error');
     }
-  };
 
-  window.closeDebugModal = function() {
-    document.getElementById('debugModal').style.display = 'none';
-  };
-
-  window.copyDebugOutput = function() {
-    const output = document.getElementById('debugOutput').textContent;
-    navigator.clipboard.writeText(output).then(() => {
-      showStatus('Debug output copied to clipboard', 'success');
-    }).catch(() => {
-      showStatus('Failed to copy to clipboard', 'error');
-    });
-  };
-
-  // Close modal on overlay click
-  document.addEventListener('click', function(e) {
-    if (e.target.id === 'debugModal') {
-      closeDebugModal();
+    function switchView(view) {
+      currentView = view;
+      if (window.currentData) {
+        renderData(window.currentData);
+      }
     }
-  });
 
-  // Close modal on Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('debugModal').style.display !== 'none') {
-      closeDebugModal();
-    }
-  });
-
-  function showStatus(message, type = 'info') {
-    const statusBar = document.getElementById('statusBar');
-    const statusText = document.getElementById('statusText');
-
-    statusBar.className = 'status-bar visible ' + type;
-    statusText.textContent = message;
-
-    if (type === 'success') {
-      setTimeout(() => {
-        statusBar.classList.remove('visible');
-      }, 3000);
-    }
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // Widget initialization function (embedded widget code)
-  function initWidget(data) {
-    const CONFIG = typeof ClientGlanceConfig !== 'undefined' ? ClientGlanceConfig : null;
-
-    const DebugLogger = {
-      enabled: false,
-      logs: [],
-      maxLogs: 100,
-
-      log(level, message, data = null) {
-        const entry = {
-          timestamp: new Date().toISOString().substr(11, 12),
-          level,
-          message,
-          data: data ? this.safeStringify(data) : null
-        };
-        this.logs.unshift(entry);
-        if (this.logs.length > this.maxLogs) this.logs.pop();
-        if (this.enabled) {
-          const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
-          console[consoleMethod](`[ClientGlance ${level.toUpperCase()}]`, message, data || '');
-        }
-        this.updatePanel();
-      },
-
-      info(message, data = null) { this.log('info', message, data); },
-      success(message, data = null) { this.log('success', message, data); },
-      warn(message, data = null) { this.log('warn', message, data); },
-      error(message, data = null) { this.log('error', message, data); },
-
-      safeStringify(obj) {
-        try {
-          if (typeof obj === 'string') return obj;
-          return JSON.stringify(obj, (key, value) => {
-            if (typeof value === 'function') return '[Function]';
-            if (value instanceof RegExp) return value.toString();
-            return value;
-          }, 2);
-        } catch (e) { return String(obj); }
-      },
-
-      clear() { this.logs = []; this.updatePanel(); },
-
-      toggle(enabled) {
-        this.enabled = enabled;
-        this.updatePanel();
-        if (enabled) this.info('Debug mode enabled');
-      },
-
-      updatePanel() {
-        const panel = document.getElementById('debug-panel');
-        const indicator = document.getElementById('debug-status-indicator');
-        if (!panel) return;
-        if (this.enabled) {
-          panel.classList.add('visible');
-          if (indicator) indicator.classList.add('active');
-        } else {
-          panel.classList.remove('visible');
-          if (indicator) indicator.classList.remove('active');
-        }
-        const logsContainer = document.getElementById('debug-logs');
-        if (!logsContainer) return;
-        logsContainer.innerHTML = this.logs.map(entry => `
-          <div class="debug-log-entry">
-            <span class="debug-timestamp">${entry.timestamp}</span>
-            <span class="debug-level-${entry.level}">[${entry.level.toUpperCase()}]</span>
-            <span class="debug-message">${this.escapeHtml(entry.message)}</span>
-            ${entry.data ? `<code class="debug-data">${this.escapeHtml(entry.data)}</code>` : ''}
+    function renderError(message) {
+      document.getElementById('app').innerHTML = `
+        <div class="max-w-4xl mx-auto">
+          <div class="bg-red-900/30 border border-red-500/50 rounded-lg p-6 max-w-md mx-auto mt-12">
+            <p class="text-red-400 font-medium">Error loading data</p>
+            <p class="text-red-300/70 text-sm mt-1">${escapeHtml(message)}</p>
           </div>
-        `).join('') || '<div class="debug-log-entry"><span class="debug-message" style="color: #64748b;">No logs yet...</span></div>';
-      },
+        </div>
+      `;
+    }
 
-      escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-      },
+    // Generate semantic narrative from the data
+    function generateNarrative(data) {
+      const { client, cases } = data;
+      const paragraphs = [];
 
-      renderPanel() {
-        return `
-          <div class="debug-panel ${this.enabled ? 'visible' : ''}" id="debug-panel">
-            <div class="debug-panel-header">
-              <span class="debug-panel-title">Debug Log</span>
-              <button class="debug-clear-btn" onclick="window.ClientGlance.DebugLogger.clear()">Clear</button>
-            </div>
-            <div id="debug-logs"></div>
-          </div>
-        `;
+      // Client introduction
+      if (client) {
+        const name = client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'This client';
+        const age = getAge(client.DOB);
+        const country = client.Country;
+        const aNumber = client['A#'];
+
+        let intro = `<strong>${escapeHtml(name)}</strong>`;
+        if (age && country) {
+          intro += ` is a ${age}-year-old individual from ${escapeHtml(country)}`;
+        } else if (age) {
+          intro += ` is ${age} years old`;
+        } else if (country) {
+          intro += ` is from ${escapeHtml(country)}`;
+        }
+        if (aNumber) {
+          intro += ` with A# <span class="font-mono text-blue-300">${escapeHtml(aNumber)}</span>`;
+        }
+        intro += '.';
+        paragraphs.push(intro);
+
+        // Contact information
+        const phone = client['Phone Number'];
+        const address = client['Address Line 1'];
+        const city = client.City;
+        const state = client['State Formula'];
+
+        if (phone || address) {
+          let contact = 'They can be reached';
+          if (phone) {
+            contact += ` at <span class="font-mono text-emerald-300">${escapeHtml(phone)}</span>`;
+          }
+          if (address && city) {
+            contact += phone ? ' and' : '';
+            contact += ` reside at ${escapeHtml(address)}, ${escapeHtml(city)}${state ? ', ' + escapeHtml(state) : ''}`;
+          }
+          contact += '.';
+          paragraphs.push(contact);
+        }
+
+        // Tags and status
+        const tags = (client['CM Tags'] || []).filter(Boolean);
+        const sijStatus = client['SIJ Case Status'];
+
+        if (sijStatus) {
+          const statusText = Array.isArray(sijStatus) ? sijStatus.join(', ') : sijStatus;
+          paragraphs.push(`Their SIJ case status is currently <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded">${escapeHtml(statusText)}</span>.`);
+        }
+
+        if (tags.length > 0) {
+          const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
+          paragraphs.push(`Case management tags: ${tagSpans}`);
+        }
       }
-    };
 
-    const Utils = {
-      formatDate(value, includeTime = false) {
-        try {
-          const date = new Date(value);
-          if (isNaN(date.getTime())) return value;
-          const options = includeTime
-            ? CONFIG?.DISPLAY?.dateTimeFormat || { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
-            : CONFIG?.DISPLAY?.dateFormat || { year: 'numeric', month: 'short', day: 'numeric' };
-          return date.toLocaleDateString('en-US', options);
-        } catch { return value; }
-      },
-
-      formatPhone(value) {
-        const cleaned = String(value).replace(/\D/g, '');
-        if (cleaned.length === 10) {
-          return `(${cleaned.slice(0,3)}) ${cleaned.slice(3,6)}-${cleaned.slice(6)}`;
-        }
-        return value;
-      },
-
-      humanizeFieldName(name) {
-        return name.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\s+/g, ' ').trim().replace(/^./, s => s.toUpperCase());
-      },
-
-      applyTemplate(template, value, dataType) {
-        let formattedValue = value;
-        if (template.includes('{value:date}')) {
-          formattedValue = this.formatDate(value);
-          return template.replace('{value:date}', formattedValue);
-        }
-        if (template.includes('{value:datetime}')) {
-          formattedValue = this.formatDate(value, true);
-          return template.replace('{value:datetime}', formattedValue);
-        }
-        if (template.includes('{value:phone}')) {
-          formattedValue = this.formatPhone(value);
-          return template.replace('{value:phone}', formattedValue);
-        }
-        if (template.includes('{value:lowercase}')) {
-          formattedValue = String(value).toLowerCase();
-          return template.replace('{value:lowercase}', formattedValue);
-        }
-        return template.replace('{value}', value);
-      },
-
-      inferDataType(value) {
-        if (!value || typeof value !== 'string') return null;
-        const patterns = CONFIG?.DATA_TYPE_PATTERNS || [];
-        for (const { type, pattern, minLength } of patterns) {
-          if (pattern.test(value)) {
-            if (minLength && value.length < minLength) continue;
-            return type;
-          }
-        }
-        return null;
-      },
-
-      formatByType(value, type) {
-        switch (type) {
-          case 'date': return this.formatDate(value);
-          case 'datetime': return this.formatDate(value, true);
-          case 'phone': return this.formatPhone(value);
-          case 'boolean': return String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'yes' ? 'Yes' : 'No';
-          default: return value;
-        }
-      },
-
-      isHiddenField(fieldName) {
-        const hiddenPatterns = CONFIG?.DISPLAY?.hiddenFields || [];
-        return hiddenPatterns.some(pattern => {
-          if (pattern instanceof RegExp) return pattern.test(fieldName);
-          return fieldName === pattern;
+      // Cases narrative
+      if (cases && cases.length > 0) {
+        // Group by type
+        const casesByType = {};
+        cases.forEach(c => {
+          const type = c.Description || 'Other';
+          if (!casesByType[type]) casesByType[type] = [];
+          casesByType[type].push(c);
         });
-      },
 
-      findGroupByPattern(fieldName) {
-        const patterns = CONFIG?.FIELD_GROUP_PATTERNS || [];
-        for (const { group, pattern } of patterns) {
-          if (pattern.test(fieldName)) return group;
+        const typeCount = Object.keys(casesByType).length;
+        paragraphs.push(`<br><strong>Case Summary:</strong> There ${cases.length === 1 ? 'is' : 'are'} <span class="text-blue-300 font-semibold">${cases.length} active case${cases.length !== 1 ? 's' : ''}</span> across ${typeCount} category${typeCount !== 1 ? 'ies' : 'y'}.`);
+
+        // Narrative for each case type
+        for (const [type, typeCases] of Object.entries(casesByType)) {
+          let typeNarrative = `<br><span class="text-slate-300 font-medium">${escapeHtml(type)}</span> (${typeCases.length}): `;
+
+          const caseDescriptions = typeCases.map(c => {
+            const parts = [];
+            const court = c['Court/Office'];
+            const judge = c['Judge text'];
+            const hearing = c['Hearing Date/Time'];
+            const daysToHearing = c['Days to Next Hearing'];
+
+            if (court) {
+              const courtText = Array.isArray(court) ? court.join(', ') : court;
+              parts.push(`at ${escapeHtml(courtText)}`);
+            }
+            if (judge) {
+              parts.push(`before Judge ${escapeHtml(judge)}`);
+            }
+            if (hearing) {
+              const hearingDate = formatDateLong(Array.isArray(hearing) ? hearing[0] : hearing);
+              if (hearingDate) {
+                let hearingText = `next hearing on <span class="text-emerald-300">${hearingDate}</span>`;
+                if (typeof daysToHearing === 'number') {
+                  const urgencyClass = daysToHearing <= 30 ? 'text-red-400 font-semibold' :
+                                       daysToHearing <= 60 ? 'text-amber-400' : 'text-slate-400';
+                  hearingText += ` <span class="${urgencyClass}">(${daysToHearing} days)</span>`;
+                }
+                parts.push(hearingText);
+              }
+            }
+
+            return parts.length > 0 ? parts.join(', ') : 'details pending';
+          });
+
+          typeNarrative += caseDescriptions.join('; ') + '.';
+          paragraphs.push(typeNarrative);
+
+          // Add notes if present
+          typeCases.forEach(c => {
+            if (c['Case Notes'] && c['Case Notes'].trim()) {
+              paragraphs.push(`<details class="ml-4 my-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Notes for case ${escapeHtml(c._recordId)}</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap">${escapeHtml(c['Case Notes'])}</pre></details>`);
+            }
+          });
         }
-        return null;
-      },
 
-      escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        // Urgency summary
+        const urgentCases = cases.filter(c => typeof c['Days to Next Hearing'] === 'number' && c['Days to Next Hearing'] <= 30);
+        const soonCases = cases.filter(c => typeof c['Days to Next Hearing'] === 'number' && c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
+
+        if (urgentCases.length > 0 || soonCases.length > 0) {
+          let urgencyNote = '<br><strong>Timeline Alerts:</strong> ';
+          if (urgentCases.length > 0) {
+            urgencyNote += `<span class="text-red-400">${urgentCases.length} case${urgentCases.length !== 1 ? 's' : ''} require${urgentCases.length === 1 ? 's' : ''} immediate attention (hearing within 30 days)</span>`;
+          }
+          if (urgentCases.length > 0 && soonCases.length > 0) {
+            urgencyNote += ' and ';
+          }
+          if (soonCases.length > 0) {
+            urgencyNote += `<span class="text-amber-400">${soonCases.length} case${soonCases.length !== 1 ? 's have' : ' has'} hearings within 60 days</span>`;
+          }
+          urgencyNote += '.';
+          paragraphs.push(urgencyNote);
+        }
+      } else {
+        paragraphs.push('<br><span class="text-slate-500">No active cases on file.</span>');
       }
-    };
 
-    // ==========================================================================
-    // DATA TRANSFORMER
-    // Converts various API response formats to normalized clientInfo/cases structure
-    // ==========================================================================
-    const DataTransformer = {
-      transform(rawData) {
-        DebugLogger.info('DataTransformer: Analyzing input format', {
-          type: typeof rawData,
-          isArray: Array.isArray(rawData),
-          keys: rawData && typeof rawData === 'object' ? Object.keys(rawData).slice(0, 5) : null
-        });
-
-        // Handle n8n webhook wrapper format: [{"data":[...]}]
-        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0] && rawData[0].data) {
-          DebugLogger.info('DataTransformer: Detected n8n webhook wrapper format [{"data":[...]}]');
-          rawData = rawData[0].data;
-          if (!Array.isArray(rawData)) rawData = [rawData];
-        }
-
-        // Handle array-wrapped master record format: [{ _meta, client, cases, ... }]
-        // Check if first element looks like a master record (has _meta and client)
-        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0] && rawData[0]._meta && rawData[0].client) {
-          DebugLogger.info('DataTransformer: Detected array-wrapped master record format, unwrapping');
-          console.log('[DataTransformer] Unwrapping array - first item has _meta and client');
-          rawData = rawData[0];
-        }
-
-        // Handle master record format: { _meta, client, cases, applications, hearings, events }
-        if (rawData && rawData._meta && rawData.client && !Array.isArray(rawData)) {
-          console.log('[DataTransformer] Processing master record format');
-          console.log('[DataTransformer] Client keys:', Object.keys(rawData.client));
-          console.log('[DataTransformer] Client Name:', rawData.client['Client Name']);
-          DebugLogger.info('DataTransformer: Detected master record format', {
-            hasClient: !!rawData.client,
-            clientName: rawData.client['Client Name'] || rawData.client['Full Client Name'] || 'NOT FOUND',
-            caseCount: rawData.cases?.length || 0,
-            applicationCount: rawData.applications?.length || 0,
-            hearingCount: rawData.hearings?.length || 0,
-            eventCount: rawData.events?.length || 0
-          });
-          return this.transformMasterRecord(rawData);
-        }
-
-        // Handle response with schema included: { schema: [...], data: [...] }
-        if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
-          DebugLogger.info('DataTransformer: Schema detected in response');
-          rawData = rawData.data || rawData.records || [];
-        }
-
-        // Handle already-normalized data
-        if (rawData && rawData.clientInfo) {
-          DebugLogger.info('DataTransformer: Data already in normalized format');
-          return rawData;
-        }
-
-        // Handle flat array of records
-        if (!Array.isArray(rawData) || rawData.length === 0) {
-          DebugLogger.warn('DataTransformer: Empty or invalid data received');
-          return { clientInfo: { fields: {} }, cases: [], events: [] };
-        }
-
-        // Filter out empty objects from the array
-        const records = rawData.filter(record =>
-          record && typeof record === 'object' && Object.keys(record).length > 0
-        );
-
-        if (records.length === 0) {
-          DebugLogger.warn('DataTransformer: No valid records after filtering');
-          return { clientInfo: { fields: {} }, cases: [], events: [] };
-        }
-
-        DebugLogger.info('DataTransformer: Transforming flat array', { recordCount: records.length });
-
-        // Identify Client Info record vs Case records vs Event records
-        const { clientInfoRecord, caseRecords, eventRecords } = this.separateRecordTypes(records);
-
-        // Extract client fields from the appropriate source
-        const clientFields = clientInfoRecord
-          ? this.extractClientFieldsFromClientInfo(clientInfoRecord)
-          : this.extractClientFields(caseRecords[0] || {});
-
-        // Transform case records
-        const cases = caseRecords.map((record, index) => this.transformCase(record, index));
-
-        // Transform event records (clean up _sourceTable from events)
-        const events = eventRecords.map(record => {
-          const { _sourceTable, ...eventData } = record;
-          return eventData;
-        });
-
-        const result = {
-          clientInfo: {
-            recordId: clientInfoRecord?.id ||
-                      clientInfoRecord?.recordId ||
-                      this.unwrapValue(caseRecords[0]?.['Client_ID_Airtable']) ||
-                      caseRecords[0]?.id,
-            fields: clientFields
-          },
-          cases,
-          events
-        };
-
-        DebugLogger.success('DataTransformer: Transformation complete', {
-          clientFieldCount: Object.keys(clientFields).length,
-          caseCount: cases.length,
-          eventCount: events.length,
-          hasClientInfoRecord: !!clientInfoRecord
-        });
-
-        return result;
-      },
-
-      /**
-       * Transform master record format (5-bucket format from webhook)
-       * Input: { _meta, client, cases, applications, hearings, events }
-       * Output: normalized { clientInfo, cases, events } format
-       */
-      transformMasterRecord(masterData) {
-        const { _meta, client, cases = [], applications = [], hearings = [], events = [] } = masterData;
-
-        console.log('[transformMasterRecord] Starting transformation');
-        console.log('[transformMasterRecord] client object exists:', !!client);
-        console.log('[transformMasterRecord] cases count:', cases.length);
-
-        // Transform client object to clientInfo format
-        const clientFields = {};
-        if (client) {
-          for (const [key, value] of Object.entries(client)) {
-            // Skip internal fields
-            if (key.startsWith('_')) continue;
-            clientFields[key] = this.unwrapValue(value);
-          }
-          console.log('[transformMasterRecord] Extracted client fields:', Object.keys(clientFields).length);
-          console.log('[transformMasterRecord] Client Name in fields:', clientFields['Client Name']);
-        }
-
-        // Transform cases
-        const transformedCases = cases.map((caseRecord, index) => this.transformCase(caseRecord, index));
-
-        // Combine hearings and events into a single events array
-        const allEvents = [
-          ...hearings.map(h => ({ ...h, _eventType: 'hearing' })),
-          ...events.map(e => ({ ...e, _eventType: 'event' }))
-        ];
-
-        // Include applications as part of cases or keep separate based on your needs
-        // For now, we can add application info to cases or handle separately
-        const transformedApplications = applications.map((app, index) => ({
-          ...app,
-          _isApplication: true,
-          _applicationIndex: index
-        }));
-
-        const result = {
-          clientInfo: {
-            recordId: client?._recordId || client?.id || client?.recordId,
-            fields: clientFields
-          },
-          cases: transformedCases,
-          applications: transformedApplications,
-          events: allEvents,
-          _meta // Preserve metadata
-        };
-
-        DebugLogger.success('DataTransformer: Master record transformation complete', {
-          clientFieldCount: Object.keys(clientFields).length,
-          caseCount: transformedCases.length,
-          applicationCount: transformedApplications.length,
-          eventCount: allEvents.length
-        });
-
-        return result;
-      },
-
-      /**
-       * Separate Client Info records from Case Master View records and Events
-       * Uses _sourceTable field when available, falls back to field-based heuristics
-       */
-      separateRecordTypes(records) {
-        let clientInfoRecord = null;
-        const caseRecords = [];
-        const eventRecords = [];
-
-        for (const record of records) {
-          const sourceTable = record._sourceTable;
-
-          // Primary detection: use _sourceTable field if available
-          if (sourceTable) {
-            const tableLower = String(sourceTable).toLowerCase();
-            if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
-              clientInfoRecord = record;
-              DebugLogger.info(`DataTransformer: Client Info record via _sourceTable: ${sourceTable}`);
-              continue;
-            }
-            // Extract Google Calendar events (labeled as 'Events' by n8n webhook)
-            if (tableLower === 'events' || tableLower.includes('google calendar')) {
-              eventRecords.push(record);
-              DebugLogger.info(`DataTransformer: Event record via _sourceTable: ${sourceTable}`);
-              continue;
-            }
-          } else {
-            // Fallback: field-based heuristics for older response formats
-            const clientInfoIndicators = [
-              'Full Client Name', 'Full_Name_Normal_Pretty', 'Address Line 1',
-              'City', 'Zip (5)', 'PPID', 'Softr Client Page', 'Gmail_Search_Terms',
-              'Box_Folder_ID', 'Client Details Page', 'airtable_client_info_id'
-            ];
-            const caseIndicators = [
-              'Case Notes', 'Activity', 'Details', 'Matter_Flatpack',
-              'Case Master View Record ID', 'Appeal Engagement Deadline'
-            ];
-            // Detect Google Calendar event records by their characteristic fields
-            const eventIndicators = ['summary', 'start', 'end', 'htmlLink', 'organizer'];
-            const hasEventFields = eventIndicators.filter(f => record[f] !== undefined).length >= 3;
-
-            if (hasEventFields) {
-              eventRecords.push(record);
-              DebugLogger.info('DataTransformer: Event record via field heuristics');
-              continue;
-            }
-
-            const hasClientInfoFields = clientInfoIndicators.some(f => record[f] !== undefined);
-            const hasCaseFields = caseIndicators.some(f => record[f] !== undefined);
-
-            if (hasClientInfoFields && !hasCaseFields) {
-              clientInfoRecord = record;
-              DebugLogger.info('DataTransformer: Client Info record via field heuristics');
-              continue;
-            }
-          }
-
-          // Default: treat as Case Master View record
-          caseRecords.push(record);
-        }
-
-        DebugLogger.info(`DataTransformer: Found ${caseRecords.length} case records, ${eventRecords.length} event records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
-        return { clientInfoRecord, caseRecords, eventRecords };
-      },
-
-      /**
-       * Extract client fields from a dedicated Client Info record
-       */
-      extractClientFieldsFromClientInfo(record) {
-        const fieldMappings = {
-          'Full Client Name': 'Client Name',
-          'Client Name': 'Client Name',
-          'First Name': 'First Name',
-          'Family Name': 'Family Name',
-          'Middle Name': 'Middle Name',
-          'A#': 'A#',
-          'DOB': 'DOB',
-          'Age': 'Age',
-          'Country': 'Country',
-          'Phone Number': 'Phone Number',
-          'Phone Reformat 3 (xxx) xxx-xxxx': 'Phone Number',
-          'Client Email': 'Client Email',
-          'Address Formula': 'Address',
-          'Address': 'Address',
-          'Gender': 'Gender',
-          'Pronouns': 'Pronouns',
-          'Detained': 'Detained',
-          'Detainment Status / Location': 'Detention Location'
-        };
-
-        const fields = {};
-        for (const [sourceField, targetField] of Object.entries(fieldMappings)) {
-          if (record[sourceField] !== undefined && !fields[targetField]) {
-            const value = this.normalizeValue(record[sourceField], sourceField);
-            if (value !== null) {
-              fields[targetField] = value;
-            }
-          }
-        }
-
-        // Compose Client Name from First Name + Family Name if not already set
-        if (!fields['Client Name']) {
-          const firstName = fields['First Name'] || '';
-          const familyName = fields['Family Name'] || '';
-          const middleName = fields['Middle Name'] || '';
-          const nameParts = [firstName, middleName, familyName].filter(p => p);
-          if (nameParts.length > 0) {
-            fields['Client Name'] = nameParts.join(' ');
-          }
-        }
-
-        return fields;
-      },
-
-      extractClientFields(record) {
-        const clientFieldNames = [
-          'Client Name', 'First Name', 'Family Name', 'Middle Name',
-          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
-          'Address', 'Gender', 'Pronouns'
-        ];
-
-        const fields = {};
-        for (const fieldName of clientFieldNames) {
-          if (record[fieldName] !== undefined) {
-            const value = this.normalizeValue(record[fieldName], fieldName);
-            if (value !== null) {
-              fields[fieldName] = value;
-            }
-          }
-        }
-
-        // Compose Client Name from First Name + Family Name if not already set
-        if (!fields['Client Name']) {
-          const firstName = fields['First Name'] || '';
-          const familyName = fields['Family Name'] || '';
-          const middleName = fields['Middle Name'] || '';
-          const nameParts = [firstName, middleName, familyName].filter(p => p);
-          if (nameParts.length > 0) {
-            fields['Client Name'] = nameParts.join(' ');
-          }
-        }
-
-        return fields;
-      },
-
-      transformCase(record, index) {
-        const caseIdentifier = this.deriveCaseIdentifier(record, index);
-        const fields = {};
-
-        // Client fields to exclude from case
-        const clientOnlyFields = new Set([
-          'Client Name', 'First Name', 'Family Name', 'Middle Name',
-          'A#', 'DOB', 'Age', 'Country', 'Phone Number', 'Client Email',
-          'Address', 'Client_ID_Airtable', 'Edit Client Info', 'Gender', 'Pronouns',
-          'id', '_sourceTable'
-        ]);
-
-        for (const [key, value] of Object.entries(record)) {
-          if (!clientOnlyFields.has(key)) {
-            const normalizedValue = this.normalizeValue(value, key);
-            if (normalizedValue !== null) {
-              fields[key] = normalizedValue;
-            }
-          }
-        }
-
-        return {
-          caseIdentifier,
-          recordId: record.id || record.recordId,
-          fields
-        };
-      },
-
-      deriveCaseIdentifier(record, index) {
-        // Try common case identifier fields
-        const identifierFields = ['Case Type', 'Case_Type', 'caseType', 'Case Number', 'Case_Number'];
-        for (const field of identifierFields) {
-          if (record[field]) {
-            return this.unwrapValue(record[field]);
-          }
-        }
-        return `Case ${index + 1}`;
-      },
-
-      normalizeValue(value, fieldName) {
-        if (value === null || value === undefined || value === '') return null;
-        if (Array.isArray(value)) {
-          if (value.length === 0) return null;
-          if (value.length === 1) return value[0];
-          return value;
-        }
-        return value;
-      },
-
-      unwrapValue(value) {
-        if (Array.isArray(value) && value.length > 0) return value[0];
-        return value;
-      }
-    };
-
-    const DataProcessor = {
-      processFields(rawData) {
-        console.log('[DataProcessor] processFields called');
-        console.log('[DataProcessor] rawData keys:', Object.keys(rawData || {}));
-        console.log('[DataProcessor] has clientInfo:', !!rawData?.clientInfo);
-        console.log('[DataProcessor] clientInfo.fields keys:', Object.keys(rawData?.clientInfo?.fields || {}));
-
-        const processed = [];
-        if (rawData.clientInfo) {
-          console.log('[DataProcessor] Processing clientInfo, fields count:', Object.keys(rawData.clientInfo.fields || {}).length);
-          console.log('[DataProcessor] Client Name value:', rawData.clientInfo.fields?.['Client Name']);
-          this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
-          console.log('[DataProcessor] After clientInfo, processed count:', processed.length);
-          const clientNameField = processed.find(f => f.fieldName === 'Client Name');
-          console.log('[DataProcessor] Client Name field result:', clientNameField);
-        }
-        if (rawData.cases && Array.isArray(rawData.cases)) {
-          rawData.cases.forEach((caseRecord, index) => {
-            const caseLabel = caseRecord.caseIdentifier || `Case ${index + 1}`;
-            this.processRecord(caseRecord.fields || caseRecord, 'Case Master View', caseLabel, processed);
-          });
-        }
-        return processed;
-      },
-
-      processRecord(record, sourceTable, caseLabel, results) {
-        const fields = record.fields || record;
-        Object.entries(fields).forEach(([fieldName, value]) => {
-          if (value === null || value === undefined || value === '') return;
-          if (Array.isArray(value) && value.length === 0) return;
-          if (Utils.isHiddenField(fieldName)) return;
-          if (fieldName === 'recordId' || fieldName === 'caseIdentifier') return;
-          const processedField = this.processField(fieldName, value, sourceTable, caseLabel, record.recordId);
-          if (processedField) results.push(processedField);
-        });
-      },
-
-      processField(fieldName, value, sourceTable, caseLabel, recordId) {
-        const semanticConfig = CONFIG?.SEMANTIC_ROLES?.[fieldName];
-        let displayValue = value;
-        if (Array.isArray(value)) displayValue = value.join(', ');
-        else if (typeof value === 'object') displayValue = JSON.stringify(value);
-
-        if (semanticConfig) {
-          const rendered = Utils.applyTemplate(semanticConfig.template, displayValue, semanticConfig.dataType);
-          return {
-            tier: 1, fieldName, value: displayValue, rendered,
-            role: semanticConfig.role, group: semanticConfig.group,
-            priority: semanticConfig.priority || 99,
-            narrativePosition: semanticConfig.narrativePosition,
-            dataType: semanticConfig.dataType, sourceTable, caseLabel, recordId
-          };
-        }
-
-        const group = Utils.findGroupByPattern(fieldName);
-        const inferredType = Utils.inferDataType(String(displayValue));
-
-        if (group || inferredType) {
-          const formatted = inferredType ? Utils.formatByType(displayValue, inferredType) : displayValue;
-          return {
-            tier: 2, fieldName, value: displayValue, rendered: formatted,
-            role: null, group: group || 'Other', priority: 50,
-            narrativePosition: null, dataType: inferredType,
-            sourceTable, caseLabel, recordId
-          };
-        }
-
-        return {
-          tier: 3, fieldName, value: displayValue, rendered: String(displayValue),
-          role: null, group: 'Uncategorized', priority: 99,
-          narrativePosition: null, dataType: null, sourceTable, caseLabel, recordId
-        };
-      },
-
-      composeNarrative(fields) {
-        const tier1 = fields.filter(f => f.tier === 1);
-        const templates = CONFIG?.NARRATIVE_TEMPLATES || {};
-        const sentences = [];
-
-        const orderedTemplates = Object.entries(templates).sort(([,a], [,b]) => a.order - b.order);
-        for (const [name, template] of orderedTemplates) {
-          try {
-            const sentence = template.compose(tier1);
-            if (sentence) sentences.push(sentence);
-          } catch (e) { console.warn(`Error composing ${name} narrative:`, e); }
-        }
-
-        const usedRoles = new Set(tier1.filter(f => f.narrativePosition).map(f => f.role));
-        const unusedTier1 = tier1.filter(f => !usedRoles.has(f.role) && !['client_name', 'a_number', 'date_of_birth', 'country_of_origin'].includes(f.role));
-
-        if (unusedTier1.length > 0) {
-          const grouped = {};
-          unusedTier1.forEach(f => {
-            if (!grouped[f.group]) grouped[f.group] = [];
-            grouped[f.group].push(f);
-          });
-          Object.entries(grouped).forEach(([group, items]) => {
-            const parts = items.slice(0, 3).map(i => i.rendered);
-            if (parts.length) sentences.push(`${group}: ${parts.join(', ')}`);
-          });
-        }
-
-        return sentences.join('. ') + (sentences.length ? '.' : '');
-      },
-
-      groupFields(fields) {
-        const groups = {};
-        fields.forEach(field => {
-          const groupName = field.group || 'Uncategorized';
-          if (!groups[groupName]) groups[groupName] = [];
-          groups[groupName].push(field);
-        });
-
-        Object.values(groups).forEach(groupFields => {
-          groupFields.sort((a, b) => {
-            if (a.tier !== b.tier) return a.tier - b.tier;
-            return a.priority - b.priority;
-          });
-        });
-
-        const groupOrder = CONFIG?.GROUP_ORDER || [];
-        const sortedGroups = {};
-        groupOrder.forEach(groupName => { if (groups[groupName]) sortedGroups[groupName] = groups[groupName]; });
-        Object.keys(groups).forEach(groupName => { if (!sortedGroups[groupName]) sortedGroups[groupName] = groups[groupName]; });
-        return sortedGroups;
-      },
-
-      extractHeaderFields(fields) {
-        const headerRoles = CONFIG?.DISPLAY?.headerFields || ['client_name', 'a_number', 'dob'];
-        return fields.filter(f => headerRoles.includes(f.role));
-      }
-    };
-
-    const Renderer = {
-      state: { viewMode: 'structured', showProvenance: false, expandedGroups: new Set(['Court', 'SIJ', 'USCIS']), selectedCase: 'all' },
-
-      init(data) {
-        DebugLogger.info('Renderer initializing with data');
-        // Transform raw API response to normalized format
-        const normalizedData = DataTransformer.transform(data);
-        this.data = normalizedData;
-        try {
-          DebugLogger.info('Processing fields...');
-          this.processedFields = DataProcessor.processFields(normalizedData);
-          DebugLogger.success('Fields processed', {
-            totalFields: this.processedFields.length,
-            tier1: this.processedFields.filter(f => f.tier === 1).length,
-            tier2: this.processedFields.filter(f => f.tier === 2).length,
-            tier3: this.processedFields.filter(f => f.tier === 3).length,
-            groups: [...new Set(this.processedFields.map(f => f.group))]
-          });
-          DebugLogger.info('Rendering UI...');
-          this.render();
-          DebugLogger.success('Render complete');
-        } catch (error) {
-          DebugLogger.error('Renderer init failed', { message: error.message, stack: error.stack });
-          throw error;
-        }
-      },
-
-      render() {
-        const container = document.getElementById('app');
-        const headerFields = DataProcessor.extractHeaderFields(this.processedFields);
-        const clientName = headerFields.find(f => f.role === 'client_name')?.value || 'Unknown Client';
-        const cases = [...new Set(this.processedFields.filter(f => f.caseLabel && f.value !== undefined && f.value !== null && f.value !== '').map(f => f.caseLabel))];
-
-        let displayFields = this.processedFields;
-        if (this.state.selectedCase === 'client-info') {
-          // Show only client info fields (no caseLabel)
-          displayFields = this.processedFields.filter(f => !f.caseLabel);
-        } else if (this.state.selectedCase !== 'all' && cases.length > 0) {
-          displayFields = this.processedFields.filter(f => !f.caseLabel || f.caseLabel === this.state.selectedCase);
-        }
-
-        container.innerHTML = `
-          <div class="widget-header">
-            <span class="widget-title">Client At-a-Glance</span>
-            <div class="view-toggle">
-              <button class="view-btn ${this.state.viewMode === 'structured' ? 'active' : ''}" data-view="structured">Structured</button>
-              <button class="view-btn ${this.state.viewMode === 'narrative' ? 'active' : ''}" data-view="narrative">Narrative</button>
+      return paragraphs;
+    }
+
+    function renderNarrativeView(data) {
+      const { _meta } = data;
+      const paragraphs = generateNarrative(data);
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-4">
+          ${renderHeader(_meta)}
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-6">
+            <div class="prose prose-invert max-w-none">
+              <div class="space-y-3 text-slate-300 leading-relaxed">
+                ${paragraphs.map(p => `<p>${p}</p>`).join('')}
+              </div>
             </div>
           </div>
-          ${this.renderClientHeader(headerFields, clientName)}
-          ${cases.length > 0 ? this.renderCaseTabs(cases) : ''}
-          ${this.state.viewMode === 'narrative' ? this.renderNarrativeView(displayFields) : this.renderStructuredView(displayFields)}
-          <div class="settings-row">
-            <label class="settings-toggle">
-              <input type="checkbox" ${this.state.showProvenance ? 'checked' : ''} data-setting="provenance"> Show sources
-            </label>
-            <label class="settings-toggle debug-toggle-container">
-              <input type="checkbox" ${DebugLogger.enabled ? 'checked' : ''} data-setting="debug">
-              <span class="debug-status-indicator ${DebugLogger.enabled ? 'active' : ''}" id="debug-status-indicator"></span>
-              Debug mode
-            </label>
-          </div>
-          ${DebugLogger.renderPanel()}
-        `;
-        this.attachEventListeners();
-        DebugLogger.updatePanel();
-      },
+        </div>
+      `;
+    }
 
-      renderClientHeader(headerFields, clientName) {
-        const aNum = headerFields.find(f => f.role === 'a_number');
-        const dob = headerFields.find(f => f.role === 'date_of_birth');
-        const country = headerFields.find(f => f.role === 'country_of_origin');
-        return `
-          <div class="client-header">
-            <div class="client-name">${Utils.escapeHtml(clientName)}</div>
-            <div class="client-meta">
-              ${aNum ? `<span class="client-meta-item"><span class="client-meta-label">A#</span> ${Utils.escapeHtml(aNum.value)}</span>` : ''}
-              ${dob ? `<span class="client-meta-item"><span class="client-meta-label">DOB</span> ${Utils.escapeHtml(dob.rendered)}</span>` : ''}
-              ${country ? `<span class="client-meta-item"><span class="client-meta-label">From</span> ${Utils.escapeHtml(country.value)}</span>` : ''}
+    function renderHeader(_meta) {
+      const countBadges = Object.entries(_meta.recordCounts).map(([type, count]) => {
+        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
+        return `<span class="px-2 py-1 rounded ${colorClass}">${type}: ${count}</span>`;
+      }).join('');
+
+      return `
+        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h1 class="text-lg font-semibold text-slate-100">Client Record Viewer</h1>
+            <div class="flex items-center gap-4">
+              <div class="flex gap-1 bg-slate-700/50 p-1 rounded-lg">
+                <button onclick="switchView('narrative')" class="px-3 py-1 text-sm rounded ${currentView === 'narrative' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}">Narrative</button>
+                <button onclick="switchView('structured')" class="px-3 py-1 text-sm rounded ${currentView === 'structured' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}">Structured</button>
+              </div>
+              <div class="flex gap-3 text-xs">${countBadges}</div>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-2">Generated: ${formatDate(_meta.generatedAt)}</p>
+        </div>
+      `;
+    }
+
+    function renderStructuredView(data) {
+      const { _meta, client, cases } = data;
+
+      // Group cases by type
+      const casesByType = {};
+      if (cases && cases.length > 0) {
+        cases.forEach(c => {
+          const type = c.Description || 'Other';
+          if (!casesByType[type]) casesByType[type] = [];
+          casesByType[type].push(c);
+        });
+      }
+
+      // Client section
+      let clientHtml = '';
+      if (client) {
+        const tags = (client['CM Tags'] || []).filter(Boolean).map(tag =>
+          `<span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">${escapeHtml(tag)}</span>`
+        ).join('');
+
+        const sijStatus = client['SIJ Case Status']
+          ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
+              <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">SIJ Status</p>
+              <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-sm">
+                ${escapeHtml(Array.isArray(client['SIJ Case Status']) ? client['SIJ Case Status'].join(', ') : client['SIJ Case Status'])}
+              </span>
+            </div>`
+          : '';
+
+        const tagsSection = tags
+          ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
+              <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">Tags</p>
+              <div class="flex flex-wrap gap-2">${tags}</div>
+            </div>`
+          : '';
+
+        const address = client['Address Line 1']
+          ? `${client['Address Line 1']}, ${client.City || ''} ${client['State Formula'] || ''} ${client['Zip (5)'] || ''}`
+          : '—';
+
+        clientHtml = `
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">👤</span>
+                <div class="text-left">
+                  <h2 class="font-medium text-slate-100">Client</h2>
+                  <p class="text-slate-400 text-sm">${escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'])}</p>
+                </div>
+              </div>
+              <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+            </button>
+            <div id="content-client" class="px-4 pb-4 border-t border-slate-700/50">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">A#</p>
+                  <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
+                </div>
+                <div>
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">DOB</p>
+                  <p class="text-slate-200 text-sm">${formatDate(client.DOB)} (${formatAge(client.DOB)})</p>
+                </div>
+                <div>
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
+                  <p class="text-slate-200 text-sm">${escapeHtml(client.Country) || '—'}</p>
+                </div>
+                <div>
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">Phone</p>
+                  <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
+                </div>
+                <div class="col-span-2">
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">Address</p>
+                  <p class="text-slate-200 text-sm">${escapeHtml(address)}</p>
+                </div>
+              </div>
+              ${sijStatus}
+              ${tagsSection}
             </div>
           </div>
         `;
-      },
+      }
 
-      renderCaseTabs(cases) {
-        return `
-          <div class="case-tabs">
-            <button class="case-tab ${this.state.selectedCase === 'all' ? 'active' : ''}" data-case="all">All Cases<span class="case-count">${cases.length}</span></button>
-            <button class="case-tab ${this.state.selectedCase === 'client-info' ? 'active' : ''}" data-case="client-info">Client Info</button>
-            ${cases.map(c => `<button class="case-tab ${this.state.selectedCase === c ? 'active' : ''}" data-case="${Utils.escapeHtml(c)}">${Utils.escapeHtml(c)}</button>`).join('')}
-          </div>
-        `;
-      },
+      // Cases section
+      let casesHtml = '';
+      if (cases && cases.length > 0) {
+        const caseTypesHtml = Object.entries(casesByType).map(([type, typeCases]) => {
+          const caseItemsHtml = typeCases.map(caseItem => {
+            const court = caseItem['Court/Office']
+              ? `<span>📍 ${escapeHtml(Array.isArray(caseItem['Court/Office']) ? caseItem['Court/Office'].join(', ') : caseItem['Court/Office'])}</span>`
+              : '';
+            const judge = caseItem['Judge text']
+              ? `<span>⚖️ ${escapeHtml(caseItem['Judge text'])}</span>`
+              : '';
+            const hearing = caseItem['Hearing Date/Time']
+              ? `<span>📅 ${formatDate(Array.isArray(caseItem['Hearing Date/Time']) ? caseItem['Hearing Date/Time'][0] : caseItem['Hearing Date/Time'])}</span>`
+              : '';
 
-      renderNarrativeView(fields) {
-        const narrative = DataProcessor.composeNarrative(fields);
-        const tier2and3 = fields.filter(f => f.tier > 1);
-        const grouped = DataProcessor.groupFields(tier2and3);
+            let daysBadge = '';
+            if (caseItem['Days to Next Hearing'] && typeof caseItem['Days to Next Hearing'] === 'number') {
+              const days = caseItem['Days to Next Hearing'];
+              const colorClass = days <= 30 ? 'bg-red-500/20 text-red-300' :
+                                 days <= 60 ? 'bg-amber-500/20 text-amber-300' :
+                                 'bg-slate-700/50 text-slate-400';
+              daysBadge = `<span class="shrink-0 px-2 py-1 rounded text-xs ${colorClass}">${days}d</span>`;
+            }
 
-        return `
-          <div class="narrative-view">
-            <div class="narrative-text">${narrative || '<em>No semantic data available for this client.</em>'}</div>
-          </div>
-          ${Object.keys(grouped).length > 0 ? `
-            <div class="uncategorized-section">
-              <button class="uncategorized-toggle" data-action="toggle-extra">
-                <span>&#9654;</span> Also on file (${tier2and3.length} fields not in narrative)
-              </button>
-              <div class="uncategorized-content" id="extra-fields">${this.renderGroupedFields(grouped, true)}</div>
-            </div>
-          ` : ''}
-        `;
-      },
-
-      renderStructuredView(fields) {
-        const headerRoles = CONFIG?.DISPLAY?.headerFields || [];
-        const nonHeaderFields = fields.filter(f => !headerRoles.includes(f.role));
-        const grouped = DataProcessor.groupFields(nonHeaderFields);
-        return `<div class="structured-view">${this.renderGroupedFields(grouped, false)}</div>`;
-      },
-
-      renderGroupedFields(grouped, flat = false) {
-        const groupOrder = CONFIG?.GROUP_ORDER || Object.keys(grouped);
-        return groupOrder
-          .filter(groupName => grouped[groupName] && grouped[groupName].length > 0)
-          .map(groupName => {
-            const groupFields = grouped[groupName];
-            const isUncategorized = groupName === 'Uncategorized';
-            const isExpanded = this.state.expandedGroups.has(groupName) || flat;
-
-            if (flat) return this.renderFlatGroup(groupName, groupFields);
+            let notesHtml = '';
+            if (caseItem['Case Notes'] && caseItem['Case Notes'].trim()) {
+              notesHtml = `
+                <details class="mt-2">
+                  <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary>
+                  <pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(caseItem['Case Notes'])}</pre>
+                </details>
+              `;
+            }
 
             return `
-              <div class="field-group ${isExpanded ? '' : 'collapsed'}" data-group="${Utils.escapeHtml(groupName)}">
-                <div class="field-group-header">
-                  <span class="field-group-title">${Utils.escapeHtml(groupName)}<span class="field-group-count">(${groupFields.length})</span></span>
-                  <span class="field-group-chevron">&#9660;</span>
+              <div class="px-4 py-3 hover:bg-slate-700/10 transition-colors">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-slate-300 text-sm font-mono truncate">${escapeHtml(caseItem._recordId)}</p>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
+                      ${court}${judge}${hearing}
+                    </div>
+                  </div>
+                  ${daysBadge}
                 </div>
-                <div class="field-group-content">${isUncategorized ? this.renderTriplets(groupFields) : this.renderFieldItems(groupFields)}</div>
+                ${notesHtml}
               </div>
             `;
           }).join('');
-      },
 
-      renderFlatGroup(groupName, fields) {
-        const isUncategorized = groupName === 'Uncategorized';
-        return `
-          <div style="margin-bottom: 16px;">
-            <div style="font-weight: 500; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">${Utils.escapeHtml(groupName)}</div>
-            ${isUncategorized ? this.renderTriplets(fields) : this.renderFieldItems(fields)}
+          return `
+            <div class="border-b border-slate-700/30 last:border-b-0">
+              <div class="px-4 py-3 bg-slate-700/20">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-medium text-slate-200">${escapeHtml(type)}</h3>
+                  <span class="text-xs text-slate-500">${typeCases.length} case${typeCases.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+              <div class="divide-y divide-slate-700/20">
+                ${caseItemsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        casesHtml = `
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">📁</span>
+                <div class="text-left">
+                  <h2 class="font-medium text-slate-100">Cases</h2>
+                  <p class="text-slate-400 text-sm">${cases.length} total · ${Object.keys(casesByType).length} types</p>
+                </div>
+              </div>
+              <span id="arrow-cases" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+            </button>
+            <div id="content-cases" class="border-t border-slate-700/50">
+              ${caseTypesHtml}
+            </div>
           </div>
         `;
-      },
-
-      renderFieldItems(fields) {
-        return fields.map(field => `
-          <div class="field-item">
-            <span class="field-label"><span class="tier-indicator tier-${field.tier}" title="Tier ${field.tier}"></span>${Utils.escapeHtml(Utils.humanizeFieldName(field.fieldName))}</span>
-            <span class="field-value">
-              ${this.renderFieldValue(field)}
-              ${this.state.showProvenance && (field.sourceTable || field.caseLabel) ? `<span class="provenance-badge">${Utils.escapeHtml(field.sourceTable || field.caseLabel)}</span>` : ''}
-            </span>
-          </div>
-        `).join('');
-      },
-
-      renderFieldValue(field) {
-        const value = field.rendered || field.value;
-        if (field.dataType === 'url' || /^https?:\/\//.test(String(value))) {
-          return `<a href="${Utils.escapeHtml(value)}" target="_blank" rel="noopener">Link &#8599;</a>`;
-        }
-        const strValue = String(value);
-        if (strValue.length > 100) {
-          return `<span title="${Utils.escapeHtml(strValue)}">${Utils.escapeHtml(strValue.slice(0, 100))}&hellip;</span>`;
-        }
-        return Utils.escapeHtml(strValue);
-      },
-
-      renderTriplets(fields) {
-        return fields.map(field => `
-          <div class="triplet">
-            <span class="triplet-source">[${Utils.escapeHtml(field.caseLabel || field.sourceTable)}]</span>
-            <span class="triplet-field">${Utils.escapeHtml(field.fieldName)}</span>
-            <span class="triplet-value">${this.renderFieldValue(field)}</span>
-          </div>
-        `).join('');
-      },
-
-      setupEventDelegation() {
-        // Set up event delegation once on the container - this persists across renders
-        const container = document.getElementById('app');
-        if (!container || container._delegationSetup) return;
-        container._delegationSetup = true;
-
-        container.addEventListener('click', (e) => {
-          const target = e.target;
-
-          // View toggle buttons (Structured/Narrative)
-          const viewBtn = target.closest('.view-btn');
-          if (viewBtn && viewBtn.dataset.view) {
-            e.preventDefault();
-            this.state.viewMode = viewBtn.dataset.view;
-            this.render();
-            return;
-          }
-
-          // Case tabs
-          const caseTab = target.closest('.case-tab');
-          if (caseTab && caseTab.dataset.case) {
-            e.preventDefault();
-            this.state.selectedCase = caseTab.dataset.case;
-            this.render();
-            return;
-          }
-
-          // Field group headers (expand/collapse)
-          const groupHeader = target.closest('.field-group-header');
-          if (groupHeader) {
-            const group = groupHeader.closest('.field-group');
-            if (group) {
-              const groupName = group.dataset.group;
-              if (this.state.expandedGroups.has(groupName)) {
-                this.state.expandedGroups.delete(groupName);
-              } else {
-                this.state.expandedGroups.add(groupName);
-              }
-              group.classList.toggle('collapsed');
-            }
-            return;
-          }
-
-          // Extra fields toggle
-          const extraToggle = target.closest('[data-action="toggle-extra"]');
-          if (extraToggle) {
-            const content = document.getElementById('extra-fields');
-            if (content) {
-              content.classList.toggle('visible');
-              const arrow = extraToggle.querySelector('span');
-              if (arrow) {
-                arrow.innerHTML = content.classList.contains('visible') ? '&#9660;' : '&#9654;';
-              }
-            }
-            return;
-          }
-        });
-
-        container.addEventListener('change', (e) => {
-          const target = e.target;
-          if (target.dataset.setting === 'provenance') {
-            this.state.showProvenance = target.checked;
-            this.render();
-          }
-          if (target.dataset.setting === 'debug') {
-            DebugLogger.toggle(target.checked);
-          }
-        });
-      },
-
-      attachEventListeners() {
-        // Now just calls setupEventDelegation which only runs once
-        this.setupEventDelegation();
       }
-    };
 
-    // Initialize
-    try {
-      if (!CONFIG) {
-        throw new Error('Configuration not loaded. Make sure config.js is included.');
-      }
-      DebugLogger.success('Config loaded', { semanticRoles: Object.keys(CONFIG.SEMANTIC_ROLES || {}).length + ' fields defined' });
-      Renderer.init(data);
-    } catch (error) {
-      DebugLogger.error('Init failed', { message: error.message, stack: error.stack });
-      const container = document.getElementById('app');
-      container.innerHTML = `<div class="error"><div class="error-title">Error</div><div>${Utils.escapeHtml(error.message)}</div></div>`;
+      // Empty sections notice
+      const emptySections = Object.entries(_meta.recordCounts)
+        .filter(([key, count]) => count === 0)
+        .map(([key]) => key);
+
+      const emptyNotice = emptySections.length > 0
+        ? `<div class="bg-slate-800/30 rounded-lg p-4 border border-slate-700/30">
+            <p class="text-slate-500 text-sm">
+              <span class="text-slate-400">Empty sections:</span> ${emptySections.join(', ')}
+            </p>
+          </div>`
+        : '';
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-4">
+          ${renderHeader(_meta)}
+          ${clientHtml}
+          ${casesHtml}
+          ${emptyNotice}
+        </div>
+      `;
     }
 
-    // Expose globally
-    window.ClientGlance = { Utils, DataTransformer, DataProcessor, Renderer, DebugLogger };
-  }
-})();
-</script>
+    function renderData(data) {
+      window.currentData = data;
 
-<!-- Debug Modal -->
-<div class="debug-modal-overlay" id="debugModal" style="display: none;">
-  <div class="debug-modal">
-    <div class="debug-modal-header">
-      <h2>Webhook Response (Values Redacted)</h2>
-      <div class="debug-modal-actions">
-        <button class="debug-modal-btn primary" onclick="copyDebugOutput()">Copy to Clipboard</button>
-        <button class="debug-modal-close" onclick="closeDebugModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="debug-modal-body">
-      <pre class="debug-output" id="debugOutput">Loading...</pre>
-    </div>
-    <div class="debug-modal-footer">
-      All values have been replaced with placeholders showing the data type. Share this structure to debug data format issues.
-    </div>
-  </div>
-</div>
+      if (currentView === 'narrative') {
+        document.getElementById('app').innerHTML = renderNarrativeView(data);
+      } else {
+        document.getElementById('app').innerHTML = renderStructuredView(data);
+      }
+    }
 
+    // Fetch and render
+    async function init() {
+      try {
+        const recordId = getRecordId();
+        const response = await fetch(`${DATA_URL}?recordId=${recordId}`);
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const json = await response.json();
+        renderData(json[0]);
+      } catch (err) {
+        renderError(err.message);
+      }
+    }
+
+    init();
+  </script>
 </body>
 </html>
