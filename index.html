@@ -22,7 +22,49 @@
 
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
+    const SOFTR_BASE_URL = 'https://rklacylaw.softr.app/client-info';
     const STORAGE_KEY = 'semantic-disclosure-field-prefs';
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXTERNAL LINK HELPERS - Generate URLs for Softr and Google Calendar
+    // ═══════════════════════════════════════════════════════════════
+    function getSoftrClientUrl(recordId, tabHash = '') {
+      const base = `${SOFTR_BASE_URL}?recordId=${encodeURIComponent(recordId)}`;
+      return tabHash ? `${base}#${tabHash}` : base;
+    }
+
+    function getGoogleCalendarEventUrl(event) {
+      // If the event has an htmlLink (direct Google Calendar link), use it
+      if (event.htmlLink) return event.htmlLink;
+      // Otherwise, construct a search URL to find the event
+      const title = event.title || event.summary || 'Event';
+      return `https://calendar.google.com/calendar/u/0/r/search?q=${encodeURIComponent(title)}`;
+    }
+
+    function renderExternalLinkIcon(url, title = 'Open in Softr') {
+      return `
+        <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
+           class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+           onclick="event.stopPropagation()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </a>
+      `;
+    }
+
+    function renderCalendarLinkIcon(url, title = 'Open in Google Calendar') {
+      return `
+        <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
+           class="inline-flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded transition-colors"
+           onclick="event.stopPropagation()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span>Calendar</span>
+        </a>
+      `;
+    }
 
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
     let currentView = 'structured';
@@ -1113,6 +1155,7 @@
           ? escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown')
           : 'Client';
 
+        const clientSoftrUrl = getSoftrClientUrl(getRecordId());
         clientHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
@@ -1123,7 +1166,10 @@
                   <p class="text-slate-400 text-sm">${clientName}</p>
                 </div>
               </div>
-              <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <div class="flex items-center gap-2">
+                ${renderExternalLinkIcon(clientSoftrUrl, 'Open Client in Softr')}
+                <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              </div>
             </button>
             <div id="content-client" class="px-4 pb-4 border-t border-slate-700/50">
               ${clientFields.length > 0 ? `<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">${clientFields.join('')}</div>` : ''}
@@ -1209,6 +1255,7 @@
           `;
         }).join('');
 
+        const mattersSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab12');
         casesHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
@@ -1219,7 +1266,10 @@
                   <p class="text-slate-400 text-sm">${Object.keys(casesByType).length} ${pluralize(Object.keys(casesByType).length, 'type')}</p>
                 </div>
               </div>
-              <span id="arrow-cases" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <div class="flex items-center gap-2">
+                ${renderExternalLinkIcon(mattersSoftrUrl, 'Open Matters in Softr')}
+                <span id="arrow-cases" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              </div>
             </button>
             <div id="content-cases" class="border-t border-slate-700/50">${caseTypesHtml}</div>
           </div>
@@ -1282,6 +1332,7 @@
           `;
         }).join('');
 
+        const applicationsSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab15');
         return `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('applications')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
@@ -1292,7 +1343,10 @@
                   <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'application')}</p>
                 </div>
               </div>
-              <span id="arrow-applications" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <div class="flex items-center gap-2">
+                ${renderExternalLinkIcon(applicationsSoftrUrl, 'Open Applications in Softr')}
+                <span id="arrow-applications" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              </div>
             </button>
             <div id="content-applications" class="border-t border-slate-700/50">${itemsHtml}</div>
           </div>
@@ -1358,6 +1412,9 @@
           if (isFieldVisible('events', 'meetLink') && meetLink) {
             detailFields.push(`<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>`);
           }
+          // Add Google Calendar link for all events
+          const calendarUrl = getGoogleCalendarEventUrl(event);
+          detailFields.push(`<div>${renderCalendarLinkIcon(calendarUrl, 'Open in Google Calendar')}</div>`);
 
           const titleHtml = isFieldVisible('events', 'title')
             ? `<span class="text-slate-200 font-medium text-sm">${escapeHtml(eventTitle)}</span>`
@@ -1544,6 +1601,7 @@
               detail: hearing.location || null,
               source: 'Hearings',
               meetLink: hearing.meetLink,
+              calendarUrl: getGoogleCalendarEventUrl(hearing),
               icon: '🏛️',
               color: 'amber'
             });
@@ -1561,6 +1619,7 @@
               detail: event.location || null,
               source: 'Events',
               meetLink: event.meetLink,
+              calendarUrl: getGoogleCalendarEventUrl(event),
               icon: '📅',
               color: 'rose'
             });
@@ -1617,6 +1676,12 @@
           meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-xs">Join Video</a>`;
         }
 
+        // Add Google Calendar link for Events and Hearings sources
+        let calendarLinkLine = '';
+        if ((item.source === 'Events' || item.source === 'Hearings') && item.calendarUrl) {
+          calendarLinkLine = renderCalendarLinkIcon(item.calendarUrl, 'Open in Google Calendar');
+        }
+
         return `
           <div class="flex gap-3 items-start">
             <div class="flex-shrink-0 w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center">
@@ -1628,6 +1693,7 @@
               <div class="flex items-center gap-3 mt-1 flex-wrap">
                 <span class="text-slate-500 text-sm">${dateStr}${timeStr ? ` at ${timeStr}` : ''}</span>
                 ${meetLinkLine}
+                ${calendarLinkLine}
               </div>
             </div>
           </div>
