@@ -679,15 +679,16 @@
               <div class="flex gap-1 px-4 pt-2">${viewTabsHtml}</div>
             </div>
 
-            <div class="p-4 overflow-y-auto max-h-[55vh]">
-              <div class="mb-4">
-                <p class="text-slate-400 text-sm mb-2">
-                  Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
-                </p>
-                <div class="flex flex-wrap gap-1.5">
-                  ${categoryJumpLinks}
-                </div>
+            <div class="px-4 pt-3 pb-2 border-b border-slate-700/50 bg-slate-800">
+              <p class="text-slate-400 text-sm mb-2">
+                Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
+              </p>
+              <div class="flex flex-wrap gap-1.5">
+                ${categoryJumpLinks}
               </div>
+            </div>
+
+            <div class="p-4 overflow-y-auto max-h-[50vh]">
               ${categoriesHtml}
             </div>
 
