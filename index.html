@@ -1545,17 +1545,18 @@
 
     function renderHeader(data) {
       const _meta = data._meta || {};
-      // Count directly from the data
-      const counts = {
-        client: data.client ? 1 : 0,
-        cases: Array.isArray(data.cases) ? data.cases.length : 0,
-        applications: Array.isArray(data.applications) ? data.applications.length : 0,
-        events: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0)
-      };
-      const countBadges = Object.entries(counts).map(([type, count]) => {
-        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
-        return `<span class="px-2 py-1 rounded text-xs ${colorClass}">${type}: ${count}</span>`;
-      }).join('');
+      // Count directly from the data (excluding client since there's always 1)
+      const entityCounts = [
+        { label: 'case', count: Array.isArray(data.cases) ? data.cases.length : 0 },
+        { label: 'application', count: Array.isArray(data.applications) ? data.applications.length : 0 },
+        { label: 'event', count: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0) }
+      ];
+      const countBadges = entityCounts
+        .filter(({ count }) => count > 0)
+        .map(({ label, count }) => {
+          const displayLabel = count === 1 ? label : label + 's';
+          return `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-300">${count} ${displayLabel}</span>`;
+        }).join('');
 
       const viewButtons = ['structured', 'brief', 'detailed', 'timeline'].map(view => {
         const label = view.charAt(0).toUpperCase() + view.slice(1);
