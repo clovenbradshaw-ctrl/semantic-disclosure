@@ -160,6 +160,25 @@
       '_rawJson', '_table', 'fields'
     ]);
 
+    // Date fields by category - only these fields can appear in timeline view
+    const DATE_FIELDS = {
+      client: new Set(['dob', 'entryDate', 'createdTime']),
+      cases: new Set(['hearingDate', 'oyd', 'createdTime', 'filingDate']),
+      applications: new Set(['filedDate', 'createdTime', 'decisionDate', 'expirationDate']),
+      events: new Set(['dateTime', 'startDateTime', 'endDateTime', 'createdTime'])
+    };
+
+    // Helper to check if a field is a date field
+    function isDateField(category, key) {
+      // Check explicit date fields set
+      if (DATE_FIELDS[category]?.has(key)) return true;
+      // Also check by naming convention (contains date, time, deadline, etc.)
+      const lowerKey = key.toLowerCase();
+      return lowerKey.includes('date') || lowerKey.includes('time') ||
+             lowerKey.includes('deadline') || lowerKey.includes('dob') ||
+             lowerKey.includes('oyd') || lowerKey.includes('entry');
+    }
+
     // Fields that are already handled specially in rendering (mapped to our internal keys)
     const SPECIAL_FIELD_MAPPINGS = {
       client: {
@@ -493,11 +512,36 @@
       const existingModal = document.getElementById('settings-modal');
       if (existingModal) existingModal.remove();
 
+      // Category labels with context about single vs multiple records
       const categoryLabels = {
-        client: 'Client Fields',
-        cases: 'Case Fields',
-        applications: 'Application Fields',
-        events: 'Event & Hearing Fields'
+        client: {
+          label: 'Client Fields',
+          sublabel: 'Single record per client',
+          icon: '👤'
+        },
+        cases: {
+          label: 'Case Fields',
+          sublabel: 'Card elements (multiple records)',
+          icon: '⚖️'
+        },
+        applications: {
+          label: 'Application Fields',
+          sublabel: 'Card elements (multiple records)',
+          icon: '📝'
+        },
+        events: {
+          label: 'Event & Hearing Fields',
+          sublabel: 'Card elements (multiple records)',
+          icon: '📅'
+        }
+      };
+
+      // Timeline-specific sublabels
+      const timelineSublabels = {
+        client: 'Date fields from client record',
+        cases: 'Date fields from case records',
+        applications: 'Date fields from applications',
+        events: 'Date fields from events/hearings'
       };
 
       const viewLabels = {
@@ -521,8 +565,20 @@
       }).join('');
 
       // Build categories for the selected view
+      const isTimelineView = settingsCurrentView === 'timeline';
+
       const categoriesHtml = Object.entries(FIELD_REGISTRY).map(([category, registryFields]) => {
-        const fields = getFieldsInOrder(category, settingsCurrentView);
+        let fields = getFieldsInOrder(category, settingsCurrentView);
+
+        // For timeline view, only show date fields
+        if (isTimelineView) {
+          fields = fields.filter(f => isDateField(category, f.key));
+        }
+
+        // Skip category if no fields to show
+        if (fields.length === 0) {
+          return '';
+        }
 
         const fieldsHtml = fields.map((f, idx) => {
           const isFirst = idx === 0;
@@ -563,8 +619,6 @@
                 <div class="flex flex-col">
                   <span class="text-sm text-slate-300">${f.label}</span>
                   <span class="text-xs text-slate-500 flex items-center gap-1.5">
-                    <span class="px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-400 text-[10px] font-medium uppercase tracking-wide">${category}</span>
-                    <span class="text-slate-600">→</span>
                     <span class="font-mono text-slate-400">${f.sourceField || f.label}</span>
                   </span>
                 </div>
@@ -573,18 +627,38 @@
           `;
         }).join('');
 
+        const catInfo = categoryLabels[category];
+        const sublabel = isTimelineView ? timelineSublabels[category] : catInfo.sublabel;
+
         return `
-          <div class="mb-5">
-            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-              ${categoryLabels[category]}
-              <span class="text-slate-600 font-normal normal-case">(type # to reorder)</span>
-            </h3>
+          <div class="mb-5" id="settings-cat-${category}">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-lg">${catInfo.icon}</span>
+              <div>
+                <h3 class="text-sm font-semibold text-slate-300">${catInfo.label}</h3>
+                <p class="text-xs text-slate-500">${sublabel}</p>
+              </div>
+            </div>
             <div class="space-y-0.5 bg-slate-800/50 rounded-lg p-1" id="fields-${category}">
               ${fieldsHtml}
             </div>
           </div>
         `;
       }).join('');
+
+      // Build category jump links
+      const categoryJumpLinks = Object.entries(categoryLabels).map(([cat, info]) => {
+        // For timeline, only show categories with date fields
+        if (isTimelineView) {
+          const dateFields = getFieldsInOrder(cat, settingsCurrentView).filter(f => isDateField(cat, f.key));
+          if (dateFields.length === 0) return '';
+        }
+        return `<button onclick="document.getElementById('settings-cat-${cat}').scrollIntoView({behavior:'smooth'})"
+                        class="flex items-center gap-1 px-2 py-1 rounded text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors">
+                  <span>${info.icon}</span>
+                  <span>${info.label.replace(' Fields', '')}</span>
+                </button>`;
+      }).filter(Boolean).join('');
 
       const modalHtml = `
         <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
@@ -606,12 +680,14 @@
             </div>
 
             <div class="p-4 overflow-y-auto max-h-[55vh]">
-              <p class="text-slate-400 text-sm mb-2">
-                Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view and their display order.
-              </p>
-              <p class="text-slate-500 text-xs mb-4">
-                Each field shows its data source and original property name.
-              </p>
+              <div class="mb-4">
+                <p class="text-slate-400 text-sm mb-2">
+                  Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  ${categoryJumpLinks}
+                </div>
+              </div>
               ${categoriesHtml}
             </div>
 
@@ -1612,7 +1688,7 @@
 
         const clientSoftrUrl = getSoftrClientUrl(getRecordId());
         clientHtml = `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div id="section-client" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
             <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">C</span>
@@ -1715,7 +1791,7 @@
 
         const mattersSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab12');
         casesHtml = `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div id="section-cases" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
             <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-medium">${cases.length}</span>
@@ -1792,7 +1868,7 @@
 
         const applicationsSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab15');
         return `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div id="section-applications" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
             <button onclick="toggleSection('applications')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-medium">${items.length}</span>
@@ -1895,7 +1971,7 @@
         }).join('');
 
         return `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+          <div id="section-${sectionId}" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
             <button onclick="toggleSection('${sectionId}')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-full ${iconBg} ${iconColor} flex items-center justify-center text-sm font-medium">${items.length}</span>
@@ -1958,11 +2034,16 @@
 
       // ─── CLIENT DATES ───
       if (client) {
+        const clientRecordId = client.id || client.recordId;
+
         if (isValidDate(client.DOB)) {
           timelineItems.push({
             date: new Date(client.DOB),
             statement: `${clientName} was born`,
             source: 'Client',
+            recordName: clientName,
+            recordId: clientRecordId,
+            sectionId: 'client',
             icon: '🎂',
             color: 'emerald'
           });
@@ -1975,6 +2056,9 @@
             date: new Date(entryDate),
             statement: placeOfEntry ? `Entered the U.S. at ${placeOfEntry}` : 'Entered the United States',
             source: 'Client',
+            recordName: clientName,
+            recordId: clientRecordId,
+            sectionId: 'client',
             icon: '🛬',
             color: 'emerald'
           });
@@ -1985,6 +2069,9 @@
             date: new Date(client.createdTime),
             statement: 'Client file opened',
             source: 'Client',
+            recordName: clientName,
+            recordId: clientRecordId,
+            sectionId: 'client',
             icon: '📁',
             color: 'emerald'
           });
@@ -1997,6 +2084,7 @@
           const caseLabel = getCaseLabel(c, idx);
           const court = val(c['Court/Office']);
           const judge = c['Judge text'];
+          const caseRecordId = c.id || c.recordId;
 
           const hearingDate = val(c['Hearing Date/Time']);
           if (isValidDate(hearingDate)) {
@@ -2008,6 +2096,9 @@
               statement: statement,
               detail: judge ? `Before Judge ${judge}` : null,
               source: 'Cases',
+              recordName: caseLabel,
+              recordId: caseRecordId,
+              sectionId: 'cases',
               icon: '⚖️',
               color: 'amber'
             });
@@ -2019,6 +2110,9 @@
               date: new Date(oyd),
               statement: multipleCases ? `${caseLabel}: One-year filing deadline` : 'One-year filing deadline',
               source: 'Cases',
+              recordName: caseLabel,
+              recordId: caseRecordId,
+              sectionId: 'cases',
               icon: '⏰',
               color: 'amber'
             });
@@ -2031,6 +2125,8 @@
         applications.forEach(app => {
           const appType = app.Application || 'Application';
           const status = app.Status;
+          const appRecordId = app.id || app.recordId;
+          const appName = app.Name || appType;
 
           if (isValidDate(app.createdTime)) {
             let statement = `${appType} application filed`;
@@ -2040,6 +2136,9 @@
               date: new Date(app.createdTime),
               statement: statement,
               source: 'Applications',
+              recordName: appName,
+              recordId: appRecordId,
+              sectionId: 'applications',
               icon: '📝',
               color: 'purple'
             });
@@ -2052,11 +2151,17 @@
       if (allCalendarEvents.length > 0) {
         allCalendarEvents.forEach(event => {
           if (isValidDate(event.startDateTime)) {
+            const eventTitle = event.title || event.summary || 'Event';
+            const eventRecordId = event.id || event.eventId;
+
             timelineItems.push({
               date: new Date(event.startDateTime),
-              statement: event.title || event.summary || 'Event',
+              statement: eventTitle,
               detail: event.location || null,
               source: 'Events',
+              recordName: eventTitle,
+              recordId: eventRecordId,
+              sectionId: 'events',
               meetLink: event.meetLink,
               calendarUrl: getGoogleCalendarEventUrl(event),
               icon: '📅',
@@ -2121,13 +2226,29 @@
           calendarLinkLine = renderCalendarLinkIcon(item.calendarUrl, 'Open in Google Calendar');
         }
 
+        // Record link - navigate to structured view and scroll to section
+        const sourceColors = {
+          'Client': 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30',
+          'Cases': 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30',
+          'Applications': 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+          'Events': 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+        };
+        const sourceColor = isPast ? 'bg-slate-700/40 text-slate-500 hover:bg-slate-700/60' : (sourceColors[item.source] || 'bg-slate-700/40 text-slate-400');
+
+        const recordLink = item.sectionId
+          ? `<button onclick="navigateToRecord('${item.sectionId}')" class="px-1.5 py-0.5 rounded text-[10px] font-medium ${sourceColor} transition-colors" title="View in ${item.source}">${escapeHtml(item.recordName || item.source)}</button>`
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700/40 text-slate-500">${item.source}</span>`;
+
         return `
           <div class="flex gap-3 items-start">
             <div class="flex-shrink-0 w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center">
               <span class="text-lg ${isPast ? 'opacity-50' : ''}">${item.icon}</span>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="${colors.text} font-medium">${escapeHtml(item.statement)}</p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="${colors.text} font-medium">${escapeHtml(item.statement)}</p>
+                ${recordLink}
+              </div>
               ${detailLine}
               <div class="flex items-center gap-3 mt-1 flex-wrap">
                 <span class="text-slate-500 text-sm">${dateStr}${timeStr ? ` at ${timeStr}` : ''}</span>
@@ -2202,6 +2323,37 @@
           ${pastHtml}
         </div>
       `;
+    }
+
+    // Navigate from timeline to structured view and scroll to section
+    function navigateToRecord(sectionId) {
+      // Switch to structured view
+      currentView = 'structured';
+      if (window.currentData) {
+        renderData(window.currentData);
+      }
+
+      // Update active view button
+      document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.classList.remove('bg-slate-700', 'text-slate-100');
+        btn.classList.add('text-slate-400');
+      });
+      const activeBtn = document.querySelector(`[data-view="structured"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-700', 'text-slate-100');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      // Scroll to the section after a short delay to allow rendering
+      setTimeout(() => {
+        const section = document.getElementById(`section-${sectionId}`);
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Flash highlight effect
+          section.classList.add('ring-2', 'ring-blue-500/50');
+          setTimeout(() => section.classList.remove('ring-2', 'ring-blue-500/50'), 2000);
+        }
+      }, 100);
     }
 
     function renderData(data) {
