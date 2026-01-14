@@ -257,6 +257,71 @@ function processWebhookResponse(data) {
 }
 ```
 
+## JSON Schemas
+
+Two JSON Schema files are available for development and validation:
+
+### Airtable Export Schema
+
+**File:** [`airtable-export-schema.json`](./airtable-export-schema.json)
+
+Validates the webhook response data structure. Key features:
+
+- **Separate subschemas** for each source table (`clientInfoRecord`, `caseMasterViewRecord`, `applicationRecord`, `eventRecord`)
+- **Discriminated union** using `oneOf` with `_sourceTable` as the discriminator
+- **Reusable definitions** for common patterns:
+  - `valueOrError` - Formula fields that may contain `{ specialValue: "NaN" }` or `{ error: "#ERROR" }`
+  - `linkObject` - Button/link fields with `label` and `url`
+  - `personObject` - Collaborator fields with `id`, `email`, and `name`
+  - `attachmentObject` - File attachment metadata
+  - `dateTimeObject` - Google Calendar date/time format
+- **Explicit nullable fields** using `"type": ["string", "null"]` syntax
+- **Extensible** with `additionalProperties: true` to allow new fields without breaking validation
+
+### n8n Workflow Schema
+
+**File:** [`n8n-workflow-schema.json`](./n8n-workflow-schema.json)
+
+Validates n8n workflow JSON exports. Key features:
+
+- **Node type discrimination** using `oneOf` for specific node types:
+  - `webhookNode` - Webhook trigger configuration
+  - `codeNode` - JavaScript/Python code execution
+  - `airtableNode` - Airtable CRUD operations
+  - `googleCalendarNode` - Google Calendar operations
+  - `respondToWebhookNode` - Webhook response configuration
+  - `genericNode` - Fallback for other node types
+- **Connection validation** ensuring proper node linking
+- **Resource locator objects** for dynamic field selections
+- **Credential reference validation**
+
+### Using the Schemas
+
+```javascript
+// Validate webhook response
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+import airtableSchema from './docs/airtable-export-schema.json';
+
+const ajv = new Ajv({ allErrors: true });
+addFormats(ajv);
+const validate = ajv.compile(airtableSchema);
+
+const webhookData = await fetchWebhookData();
+if (!validate(webhookData)) {
+  console.error('Validation errors:', validate.errors);
+}
+```
+
+### Schema Design Principles
+
+1. **DRY (Don't Repeat Yourself)** - Common patterns extracted to `definitions`
+2. **Explicit nullability** - Fields that can be `null` are explicitly typed
+3. **Discriminated unions** - `_sourceTable` distinguishes record types
+4. **Extensibility** - `additionalProperties: true` allows schema evolution
+5. **Self-documenting** - Descriptions on all definitions and key properties
+
 ## Version History
 
+- **2025-01-14**: Added JSON Schema files for webhook response and n8n workflow validation
 - **2025-01-14**: Initial documentation based on n8n workflow `jstKXUSVFd3o8eOh`

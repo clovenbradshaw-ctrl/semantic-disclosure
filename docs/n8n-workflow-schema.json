@@ -1,0 +1,417 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "n8n Workflow Definition",
+  "description": "Schema for n8n workflow JSON exports, supporting webhook, code, Airtable, Google Calendar, and respond-to-webhook node types",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [
+    "name",
+    "nodes",
+    "connections",
+    "active",
+    "settings",
+    "versionId",
+    "meta",
+    "id"
+  ],
+
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable workflow name"
+    },
+
+    "nodes": {
+      "type": "array",
+      "description": "Array of workflow nodes",
+      "items": { "$ref": "#/definitions/node" }
+    },
+
+    "pinData": {
+      "type": "object",
+      "description": "Pinned data for testing",
+      "additionalProperties": true
+    },
+
+    "connections": {
+      "type": "object",
+      "description": "Node connection definitions keyed by source node name",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "main": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/connection" }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "active": {
+      "type": "boolean",
+      "description": "Whether the workflow is currently active"
+    },
+
+    "settings": {
+      "type": "object",
+      "properties": {
+        "executionOrder": {
+          "type": "string",
+          "enum": ["v1", "v2"],
+          "description": "Execution order version"
+        },
+        "saveManualExecutions": { "type": "boolean" },
+        "callerPolicy": { "type": "string" },
+        "errorWorkflow": { "type": "string" },
+        "timezone": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "versionId": {
+      "type": "string",
+      "description": "Workflow version identifier"
+    },
+
+    "meta": {
+      "type": "object",
+      "properties": {
+        "templateCredsSetupCompleted": { "type": "boolean" },
+        "instanceId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "id": {
+      "type": "string",
+      "description": "Unique workflow identifier"
+    },
+
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Workflow tags for organization"
+    }
+  },
+
+  "definitions": {
+    "connection": {
+      "type": "object",
+      "description": "Connection descriptor linking nodes",
+      "required": ["node", "type", "index"],
+      "additionalProperties": false,
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "Target node name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["main", "error", "continueOnFail"],
+          "description": "Connection type"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Input index on the target node"
+        }
+      }
+    },
+
+    "position": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Canvas position [x, y]"
+    },
+
+    "credentialRef": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "resourceLocator": {
+      "type": "object",
+      "description": "n8n resource locator object for dynamic selections",
+      "properties": {
+        "__rl": { "type": "boolean" },
+        "value": { "type": "string" },
+        "mode": {
+          "type": "string",
+          "enum": ["list", "id", "url", "name"]
+        },
+        "cachedResultName": { "type": "string" },
+        "cachedResultUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["__rl", "value", "mode"]
+    },
+
+    "nodeBase": {
+      "type": "object",
+      "description": "Common properties for all node types",
+      "required": ["id", "name", "type", "typeVersion", "position"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique node identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Node display name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Node type identifier"
+        },
+        "typeVersion": {
+          "type": "number",
+          "description": "Node type version"
+        },
+        "position": { "$ref": "#/definitions/position" },
+        "parameters": { "type": "object" },
+        "credentials": { "type": "object" },
+        "disabled": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "notesInFlow": { "type": "boolean" },
+        "webhookId": { "type": "string" }
+      }
+    },
+
+    "node": {
+      "oneOf": [
+        { "$ref": "#/definitions/webhookNode" },
+        { "$ref": "#/definitions/codeNode" },
+        { "$ref": "#/definitions/airtableNode" },
+        { "$ref": "#/definitions/googleCalendarNode" },
+        { "$ref": "#/definitions/respondToWebhookNode" },
+        { "$ref": "#/definitions/genericNode" }
+      ]
+    },
+
+    "webhookNode": {
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "n8n-nodes-base.webhook" },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Webhook URL path"
+                },
+                "responseMode": {
+                  "type": "string",
+                  "enum": ["responseNode", "onReceived", "lastNode"],
+                  "description": "How to respond to webhook calls"
+                },
+                "httpMethod": {
+                  "type": "string",
+                  "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
+                },
+                "options": { "type": "object" }
+              },
+              "required": ["path", "responseMode"]
+            },
+            "webhookId": { "type": "string" }
+          },
+          "required": ["type", "parameters"]
+        }
+      ]
+    },
+
+    "codeNode": {
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "n8n-nodes-base.code" },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "jsCode": {
+                  "type": "string",
+                  "description": "JavaScript code to execute"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": ["runOnceForAllItems", "runOnceForEachItem"]
+                },
+                "language": {
+                  "type": "string",
+                  "enum": ["javaScript", "python"]
+                }
+              },
+              "required": ["jsCode"]
+            }
+          },
+          "required": ["type", "parameters"]
+        }
+      ]
+    },
+
+    "airtableNode": {
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "n8n-nodes-base.airtable" },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": ["append", "delete", "list", "read", "search", "update"],
+                  "description": "Airtable operation to perform"
+                },
+                "base": { "$ref": "#/definitions/resourceLocator" },
+                "table": { "$ref": "#/definitions/resourceLocator" },
+                "id": {
+                  "type": "string",
+                  "description": "Record ID for read/update/delete operations"
+                },
+                "filterByFormula": {
+                  "type": "string",
+                  "description": "Airtable formula for filtering records"
+                },
+                "returnAll": { "type": "boolean" },
+                "limit": { "type": "integer" },
+                "options": { "type": "object" }
+              },
+              "required": ["base", "table"]
+            },
+            "credentials": {
+              "type": "object",
+              "properties": {
+                "airtableTokenApi": { "$ref": "#/definitions/credentialRef" },
+                "airtableApi": { "$ref": "#/definitions/credentialRef" }
+              }
+            }
+          },
+          "required": ["type", "parameters"]
+        }
+      ]
+    },
+
+    "googleCalendarNode": {
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "n8n-nodes-base.googleCalendar" },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "operation": {
+                  "type": "string",
+                  "enum": ["create", "delete", "get", "getAll", "update"],
+                  "description": "Calendar operation to perform"
+                },
+                "calendar": { "$ref": "#/definitions/resourceLocator" },
+                "eventId": { "type": "string" },
+                "returnAll": { "type": "boolean" },
+                "limit": { "type": "integer" },
+                "timeMin": {
+                  "type": "string",
+                  "description": "Start time filter (ISO 8601)"
+                },
+                "timeMax": {
+                  "type": "string",
+                  "description": "End time filter (ISO 8601)"
+                },
+                "options": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string",
+                      "description": "Free-text search query"
+                    },
+                    "singleEvents": { "type": "boolean" },
+                    "orderBy": { "type": "string" }
+                  }
+                }
+              },
+              "required": ["operation", "calendar"]
+            },
+            "credentials": {
+              "type": "object",
+              "properties": {
+                "googleCalendarOAuth2Api": { "$ref": "#/definitions/credentialRef" }
+              }
+            }
+          },
+          "required": ["type", "parameters"]
+        }
+      ]
+    },
+
+    "respondToWebhookNode": {
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "n8n-nodes-base.respondToWebhook" },
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "respondWith": {
+                  "type": "string",
+                  "enum": ["allIncomingItems", "firstIncomingItem", "noData", "text", "json", "binary"],
+                  "description": "What data to respond with"
+                },
+                "responseBody": { "type": "string" },
+                "responseCode": { "type": "integer" },
+                "responseHeaders": { "type": "object" },
+                "options": { "type": "object" }
+              },
+              "required": ["respondWith"]
+            }
+          },
+          "required": ["type", "parameters"]
+        }
+      ]
+    },
+
+    "genericNode": {
+      "description": "Fallback schema for other node types not explicitly defined",
+      "allOf": [
+        { "$ref": "#/definitions/nodeBase" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "not": {
+                "enum": [
+                  "n8n-nodes-base.webhook",
+                  "n8n-nodes-base.code",
+                  "n8n-nodes-base.airtable",
+                  "n8n-nodes-base.googleCalendar",
+                  "n8n-nodes-base.respondToWebhook"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
