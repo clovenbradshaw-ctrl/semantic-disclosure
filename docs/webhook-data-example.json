@@ -29,6 +29,10 @@
       "recordId": "recABC123",
       "Case Master View Record ID": ["recDEF456", "recGHI789"],
       "Case Master View // Activities": ["recDEF456", "recGHI789"],
+      "Matter_Flatpack (from Case Master View // Activities)": [
+        "{\"description\":\"SIJ - Davidson County\",\"county\":\"Davidson\",\"state\":\"TN\",\"case_type\":\"Special Immigrant Juvenile\",\"filing_status\":\"Active\"}",
+        "{\"description\":\"Removal Defense\",\"court\":\"Nashville Immigration Court\",\"case_type\":\"Removal Proceedings\",\"relief_sought\":\"Asylum\"}"
+      ],
       "Airtable_Last_Modified": "2025-11-15T17:41:02.000Z",
       "Client Details Page": "<a href='https://example.com/client/recABC123'>View Details</a>",
       "Created Quarter": "2025-Q4",
@@ -134,7 +138,8 @@
         "AAF Deadline": { "error": "#ERROR" },
         "Applications": ["appJKL012"],
         "Notes Summary": [null],
-        "TESTER_12": "Filed"
+        "TESTER_12": "Filed",
+        "Matter_Flatpack": "{\"description\":\"SIJ - Davidson County\",\"county\":\"Davidson\",\"state\":\"TN\",\"case_type\":\"Special Immigrant Juvenile\",\"filing_status\":\"Active\",\"assigned_attorney\":\"Sarah Johnson\",\"priority\":\"High\"}"
       },
       {
         "_recordId": "recGHI789",
@@ -159,7 +164,8 @@
         "Client_ID_Airtable": ["recABC123"],
         "Record ID": "recGHI789",
         "Applications": ["appMNO345"],
-        "Notes Summary": [null]
+        "Notes Summary": [null],
+        "Matter_Flatpack": "{\"description\":\"Removal Defense\",\"court\":\"Nashville Immigration Court\",\"case_type\":\"Removal Proceedings\",\"relief_sought\":\"Asylum\",\"hearing_type\":\"Individual Merits\",\"judge\":\"Hon. Smith\"}"
       }
     ],
     "applications": [
