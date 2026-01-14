@@ -1948,15 +1948,21 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
         }
 
         // Handle array-wrapped master record format: [{ _meta, client, cases, ... }]
-        if (Array.isArray(rawData) && rawData.length === 1 && rawData[0] && rawData[0]._meta && rawData[0].client) {
+        // Check if first element looks like a master record (has _meta and client)
+        if (Array.isArray(rawData) && rawData.length > 0 && rawData[0] && rawData[0]._meta && rawData[0].client) {
           DebugLogger.info('DataTransformer: Detected array-wrapped master record format, unwrapping');
+          console.log('[DataTransformer] Unwrapping array - first item has _meta and client');
           rawData = rawData[0];
         }
 
         // Handle master record format: { _meta, client, cases, applications, hearings, events }
         if (rawData && rawData._meta && rawData.client && !Array.isArray(rawData)) {
+          console.log('[DataTransformer] Processing master record format');
+          console.log('[DataTransformer] Client keys:', Object.keys(rawData.client));
+          console.log('[DataTransformer] Client Name:', rawData.client['Client Name']);
           DebugLogger.info('DataTransformer: Detected master record format', {
             hasClient: !!rawData.client,
+            clientName: rawData.client['Client Name'] || rawData.client['Full Client Name'] || 'NOT FOUND',
             caseCount: rawData.cases?.length || 0,
             applicationCount: rawData.applications?.length || 0,
             hearingCount: rawData.hearings?.length || 0,
@@ -2042,6 +2048,10 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
       transformMasterRecord(masterData) {
         const { _meta, client, cases = [], applications = [], hearings = [], events = [] } = masterData;
 
+        console.log('[transformMasterRecord] Starting transformation');
+        console.log('[transformMasterRecord] client object exists:', !!client);
+        console.log('[transformMasterRecord] cases count:', cases.length);
+
         // Transform client object to clientInfo format
         const clientFields = {};
         if (client) {
@@ -2050,6 +2060,8 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
             if (key.startsWith('_')) continue;
             clientFields[key] = this.unwrapValue(value);
           }
+          console.log('[transformMasterRecord] Extracted client fields:', Object.keys(clientFields).length);
+          console.log('[transformMasterRecord] Client Name in fields:', clientFields['Client Name']);
         }
 
         // Transform cases
@@ -2292,9 +2304,19 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
 
     const DataProcessor = {
       processFields(rawData) {
+        console.log('[DataProcessor] processFields called');
+        console.log('[DataProcessor] rawData keys:', Object.keys(rawData || {}));
+        console.log('[DataProcessor] has clientInfo:', !!rawData?.clientInfo);
+        console.log('[DataProcessor] clientInfo.fields keys:', Object.keys(rawData?.clientInfo?.fields || {}));
+
         const processed = [];
         if (rawData.clientInfo) {
+          console.log('[DataProcessor] Processing clientInfo, fields count:', Object.keys(rawData.clientInfo.fields || {}).length);
+          console.log('[DataProcessor] Client Name value:', rawData.clientInfo.fields?.['Client Name']);
           this.processRecord(rawData.clientInfo, 'Client Info', null, processed);
+          console.log('[DataProcessor] After clientInfo, processed count:', processed.length);
+          const clientNameField = processed.find(f => f.fieldName === 'Client Name');
+          console.log('[DataProcessor] Client Name field result:', clientNameField);
         }
         if (rawData.cases && Array.isArray(rawData.cases)) {
           rawData.cases.forEach((caseRecord, index) => {
