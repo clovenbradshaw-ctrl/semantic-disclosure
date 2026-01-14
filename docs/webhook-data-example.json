@@ -1,144 +1,248 @@
-{
-  "_meta": {
-    "generatedAt": "2026-01-14T12:00:00.000Z",
-    "recordCounts": {
-      "clientInfo": 1,
-      "cases": 2,
-      "applications": 2,
-      "hearings": 1,
-      "events": 2,
-      "unknown": 0
-    }
-  },
-  "client": {
-    "_recordId": "recABC123",
-    "id": "recABC123",
-    "Client Name": "Doe, John",
-    "First Name": "John",
-    "Last Name": "Doe",
-    "A#": "123-456-789",
-    "DOB": "1990-05-15",
-    "Country of Origin": "Honduras",
-    "Phone": "(555) 123-4567",
-    "Email": "john.doe@email.com",
-    "Address": "456 Oak Street, Nashville, TN 37201",
-    "Emergency Contact": "Jane Doe - (555) 987-6543"
-  },
-  "cases": [
-    {
-      "_recordId": "recDEF456",
-      "id": "recDEF456",
-      "Client_ID_Airtable": "recABC123",
-      "Matter Type": "Asylum - Defensive",
-      "Case Status": "Active",
-      "Court": "Nashville Immigration Court",
-      "Judge": "Hon. Robert Smith",
-      "Next Hearing": "2025-03-01T10:00:00.000Z",
-      "Filing Deadline": "2025-02-15",
-      "Case Number": "A123-456-789",
-      "Asylum Case Status": "Pending Decision",
-      "NTA Date": "2023-05-20",
-      "Case Notes": "Client asylum case proceeding. Next hearing is individual merits."
+[
+  {
+    "_meta": {
+      "generatedAt": "2026-01-14T12:00:00.000Z",
+      "recordCounts": {
+        "client": 1,
+        "cases": 2,
+        "applications": 2,
+        "hearings": 1,
+        "events": 2
+      }
     },
-    {
-      "_recordId": "recGHI789",
-      "id": "recGHI789",
-      "Client_ID_Airtable": "recABC123",
-      "Matter Type": "USCIS - I-765 EAD",
-      "Case Status": "Active",
-      "USCIS Receipt Number": "SRC2412345678",
-      "Priority Date": "2024-12-01",
-      "EAD Stage": "Filed",
-      "EAD Receipt Date": "2024-12-15"
-    }
-  ],
-  "applications": [
-    {
-      "_recordId": "appJKL012",
-      "_parentCaseId": "recGHI789",
-      "id": "appJKL012",
-      "Case Master": ["recGHI789"],
-      "Application Type": "I-765",
-      "Form Number": "I-765",
-      "Filing Date": "2024-12-01",
-      "Receipt Number": "SRC2412345678",
-      "Status": "Pending",
-      "Notes": "EAD application based on pending asylum case."
+    "client": {
+      "_recordId": "recABC123",
+      "id": "recABC123",
+      "createdTime": "2025-11-15T17:40:16.000Z",
+      "Client Name": "Doe, John",
+      "First Name": "John",
+      "Family Name": "Doe",
+      "Full Client Name": "John Doe",
+      "Family Name (Pretty)": "Doe",
+      "Full_Name_Normal_Pretty": "John Doe",
+      "Country": "Honduras",
+      "PPID": "PP-12345",
+      "PracticePanther": "https://app.practicepanther.com/contacts/12345",
+      "Link to Practice Panther": "https://app.practicepanther.com/contacts/12345",
+      "Softr Client Page": "https://example.softr.app/client/recABC123",
+      "airtable_client_info_id": "recABC123",
+      "recordId": "recABC123",
+      "Case Master View Record ID": ["recDEF456", "recGHI789"],
+      "Case Master View // Activities": ["recDEF456", "recGHI789"],
+      "Airtable_Last_Modified": "2025-11-15T17:41:02.000Z",
+      "Client Details Page": "<a href='https://example.com/client/recABC123'>View Details</a>",
+      "Created Quarter": "2025-Q4",
+      "Created Date": "2025-11-15T17:40:16.000Z",
+      "Created": "2025-11-15T17:40:16.000Z",
+      "Case Tags Rollup (from Case Master View // Activities)": [null],
+      "Client ID": "CLI-10726",
+      "JSON for Email Matching": "{\n  \"client_name\": \"John Doe\",\n  \"client_email\": \"john.doe@email.com\",\n  \"client_id\": \"CLI-10726\",\n  \"full_name_normal_pretty\": \"John Doe\"\n}",
+      "Calculation": 0,
+      "Update Tracker Rollup (from Case Master View // Activities)": [null],
+      "Email Blank Formula": "null@blank.biz",
+      "Name Search Options": "John Doe, J. Doe, Doe John",
+      "Gmail_Search_Terms": "\"John Doe\" OR \"J Doe\" OR \"CLI-10726\"",
+      "box_shared_link": "https://app.box.com/s/abcdef123456",
+      "Box_Folder_ID": "123456789",
+      "Kenect Link": "https://kenect.com/thread/12345",
+      "Detained": "Not Specified Yet",
+      "Detainment Status / Location": "Not Specified Yet",
+      "Assigned Users Emails": "Case Manager: \"cm@lawfirm.com\", MCH Attny: \"mch@lawfirm.com\", ICH Attny: \"ich@lawfirm.com\"",
+      "COUNT as one": 1,
+      "FOIA Stage": ["Need to Send"],
+      "File Case Status Rollup (from Case Master View // Activities)": [null],
+      "Closed File (from Case Master View // Activities)": [null],
+      "AMINO": { "label": "AMINO", "url": "https://amino.example.com/client/recABC123" },
+      "Kenect Thread": { "label": "KENECT", "url": "" },
+      "# of EADs": 0,
+      "ID": 10726,
+      "Has Upcoming Event?": "True"
     },
-    {
-      "_recordId": "appMNO345",
-      "_parentCaseId": "recDEF456",
-      "id": "appMNO345",
-      "Case Master": ["recDEF456"],
-      "Application Type": "I-589",
-      "Form Number": "I-589",
-      "Filing Date": "2023-06-01",
-      "Receipt Number": "SRC2306789012",
-      "Status": "Interview Scheduled",
-      "Notes": "Asylum application with defensive posture."
-    }
-  ],
-  "hearings": [
-    {
-      "_id": "hearing001",
-      "_calendarType": "hearing",
-      "title": "Individual Merits Hearing - Immigration Court",
-      "description": "Merits hearing for asylum case. Bring all evidence and witnesses.",
-      "location": "Nashville Immigration Court, 110 9th Ave S, Nashville, TN 37203",
-      "startDateTime": "2025-03-01T10:00:00-06:00",
-      "endDateTime": "2025-03-01T12:00:00-06:00",
-      "isAllDay": false,
-      "htmlLink": "https://calendar.google.com/event?eid=hearing001",
-      "meetLink": null,
-      "status": "confirmed",
-      "attendees": [
-        {
+    "cases": [
+      {
+        "_recordId": "recDEF456",
+        "id": "recDEF456",
+        "createdTime": "2025-11-15T17:40:17.000Z",
+        "Client Name": "John Doe",
+        "First Name": ["John"],
+        "Family Name": ["Doe"],
+        "Created At": "2025-11-15 17:40:17",
+        "Link to Practice Panther": ["https://app.practicepanther.com/contacts/12345"],
+        "PP ID": ["PP-12345"],
+        "Created Airtable Record": "2025-11-15T17:40:17.000Z",
+        "Country": ["Honduras"],
+        "Last Modified By": {
+          "id": "usr123",
           "email": "attorney@lawfirm.com",
-          "name": "Sarah Johnson",
-          "responseStatus": "accepted"
+          "name": "Sarah Johnson"
         },
-        {
-          "email": "john.doe@email.com",
-          "name": "John Doe",
-          "responseStatus": "accepted"
-        }
-      ],
-      "created": "2024-12-01T08:00:00.000Z",
-      "updated": "2024-12-01T08:00:00.000Z"
-    }
-  ],
-  "events": [
-    {
-      "_id": "event001",
-      "_calendarType": "general",
-      "title": "Client Preparation Meeting",
-      "description": "Prepare client for upcoming merits hearing.",
-      "location": "Law Office - Conference Room A",
-      "startDateTime": "2025-02-25T14:00:00-06:00",
-      "endDateTime": "2025-02-25T16:00:00-06:00",
-      "isAllDay": false,
-      "htmlLink": "https://calendar.google.com/event?eid=event001",
-      "meetLink": "https://meet.google.com/abc-defg-hij",
-      "status": "confirmed",
-      "attendees": [],
-      "created": "2024-12-10T10:00:00.000Z",
-      "updated": "2024-12-10T10:00:00.000Z"
-    },
-    {
-      "_id": "event002",
-      "_calendarType": "general",
-      "title": "Evidence Submission Deadline",
-      "description": "Deadline to submit all evidence for merits hearing.",
-      "location": null,
-      "startDateTime": "2025-02-15",
-      "endDateTime": "2025-02-16",
-      "isAllDay": true,
-      "htmlLink": "https://calendar.google.com/event?eid=event002",
-      "meetLink": null,
-      "status": "confirmed",
-      "attendees": [],
-      "created": "2024-12-05T09:00:00.000Z",
-      "updated": "2024-12-05T09:00:00.000Z"
-    }
-  ]
-}
+        "USCIS FOIA Stage": "Need to Send",
+        "Created date": "2025-11-15T17:40:17.000Z",
+        "SIJ Visa Availability": { "specialValue": "NaN" },
+        "Appeal Engagement Deadline": { "error": "#ERROR" },
+        "box link": { "label": "box", "url": "https://app.box.com/s/abcdef123456" },
+        "Invoiced": { "label": "Invoiced ", "url": "" },
+        "Associated Case": ["recGHI789"],
+        "Est. Clock Days": { "specialValue": "NaN" },
+        "FOIA Button": { "label": "USCIS FOIA", "url": "" },
+        "Atty Rec Req Button": { "label": "Prev. Counsel File", "url": "" },
+        "OYD ": { "error": "#ERROR" },
+        "Today Date": "2026-01-14T12:00:00.000Z",
+        "Days Elapsed since Engagement": { "specialValue": "NaN" },
+        "OYD Calculator": { "specialValue": "NaN" },
+        "Engagement vs Sent Out": { "specialValue": "NaN" },
+        "Mail vs Rcpt Date": { "specialValue": "NaN" },
+        "Est. Age at biometrics": { "specialValue": "NaN" },
+        "42b calc": "No Entry Date",
+        "Mail vs Notice Date": { "specialValue": "NaN" },
+        "Sent vs Pending (EAD)": { "specialValue": "NaN" },
+        "Days to Next Hearing": { "specialValue": "NaN" },
+        "Case Master View Record ID": "recDEF456",
+        "Activity Details": { "label": "Edit", "url": "https://airtable.com/edit/recDEF456" },
+        "Family Name (Pretty)": { "error": "#ERROR!" },
+        "Client Name (Pretty)": { "error": "#ERROR!" },
+        "Update Tracker EADs": "2025-12-16T18:02:58.000Z",
+        "Update Tracker EAD Pers": {
+          "id": "usr123",
+          "email": "attorney@lawfirm.com",
+          "name": "Sarah Johnson"
+        },
+        "Call Up Date": { "error": "#ERROR" },
+        "Edit Client Info": ["recABC123"],
+        "Due Day Calculation": "No Due Date",
+        "Client_ID_Airtable": ["recABC123"],
+        "box_shared_link (from Edit Client Info)": ["https://app.box.com/s/abcdef123456"],
+        "Name Search Options (from Edit Client Info)": ["John Doe, J. Doe, Doe John"],
+        "Assigned Users Emails (from Edit Client Info)": ["Case Manager: \"cm@lawfirm.com\""],
+        "ICH email": [null],
+        "Address": ["123 Main St, Nashville, TN 37201"],
+        "AMINO (from Edit Client Info)": ["https://amino.example.com/client/recABC123"],
+        "AMINO": { "label": "AMINO", "url": "https://amino.example.com/client/recABC123" },
+        "Good Date Field": { "error": "#ERROR!" },
+        "USCIS K Gen": "https://documint.example.com/uscis-contract/recDEF456",
+        "USCIS K Button": { "label": "USCIS Contract", "url": "https://documint.example.com/uscis-contract/recDEF456" },
+        "CT K Gen": "https://documint.example.com/court-contract/recDEF456",
+        "Court K Button": { "label": "Removal Def Contract", "url": "https://documint.example.com/court-contract/recDEF456" },
+        "Appeal Contract Gen": "https://documint.example.com/appeal-contract/recDEF456",
+        "Appeal Contract Button": { "label": "Appeal Contract", "url": "https://documint.example.com/appeal-contract/recDEF456" },
+        "Calculate FOIA pending": { "specialValue": "NaN" },
+        "FOIA Est Complete": { "error": "#ERROR" },
+        "Time Elapsed": { "specialValue": "NaN" },
+        "Record ID": "recDEF456",
+        "Calculation": { "specialValue": "NaN" },
+        "Time Tracked": 0,
+        "AAF Deadline": { "error": "#ERROR" },
+        "Applications": ["appJKL012"],
+        "Notes Summary": [null],
+        "TESTER_12": "Filed"
+      },
+      {
+        "_recordId": "recGHI789",
+        "id": "recGHI789",
+        "createdTime": "2025-11-15T17:40:18.000Z",
+        "Client Name": "John Doe",
+        "First Name": ["John"],
+        "Family Name": ["Doe"],
+        "Created At": "2025-11-15 17:40:18",
+        "Link to Practice Panther": ["https://app.practicepanther.com/contacts/12345"],
+        "PP ID": ["PP-12345"],
+        "Created Airtable Record": "2025-11-15T17:40:18.000Z",
+        "Country": ["Honduras"],
+        "USCIS FOIA Stage": "Sent",
+        "Created date": "2025-11-15T17:40:18.000Z",
+        "SIJ Visa Availability": { "specialValue": "NaN" },
+        "box link": { "label": "box", "url": "https://app.box.com/s/abcdef123456" },
+        "Invoiced": { "label": "Invoiced ", "url": "" },
+        "Case Master View Record ID": "recGHI789",
+        "Activity Details": { "label": "Edit", "url": "https://airtable.com/edit/recGHI789" },
+        "Edit Client Info": ["recABC123"],
+        "Client_ID_Airtable": ["recABC123"],
+        "Record ID": "recGHI789",
+        "Applications": ["appMNO345"],
+        "Notes Summary": [null]
+      }
+    ],
+    "applications": [
+      {
+        "_recordId": "appJKL012",
+        "id": "appJKL012",
+        "createdTime": "2025-11-21T16:23:53.000Z",
+        "Name": "John Doe (I-918)",
+        "Application": "I-918",
+        "Status": "Engaged",
+        "Cert County/State": "Davidson County, TN",
+        "Amino": { "label": "AMINO", "url": "" }
+      },
+      {
+        "_recordId": "appMNO345",
+        "id": "appMNO345",
+        "createdTime": "2025-11-21T16:24:50.000Z",
+        "Name": "John Doe (I-765)",
+        "Application": "I-765",
+        "Status": "Potential",
+        "Notes": "EAD application based on pending asylum case.",
+        "Receipt Number": "SRC2412345678",
+        "USCIS Receipt Number (from Case Master) copy": "SRC2412345678",
+        "Amino": { "label": "AMINO", "url": "" }
+      }
+    ],
+    "hearings": [
+      {
+        "_calendarType": "hearing",
+        "title": "Individual Merits Hearing - Immigration Court",
+        "description": "Merits hearing for asylum case. Bring all evidence and witnesses.",
+        "location": "Nashville Immigration Court, 110 9th Ave S, Nashville, TN 37203",
+        "startDateTime": "2025-03-01T10:00:00-06:00",
+        "endDateTime": "2025-03-01T12:00:00-06:00",
+        "isAllDay": false,
+        "htmlLink": "https://calendar.google.com/event?eid=hearing001",
+        "meetLink": null,
+        "status": "confirmed",
+        "attendees": [
+          {
+            "email": "attorney@lawfirm.com",
+            "name": "Sarah Johnson",
+            "responseStatus": "accepted"
+          },
+          {
+            "email": "john.doe@email.com",
+            "name": "John Doe",
+            "responseStatus": "accepted"
+          }
+        ],
+        "created": "2024-12-01T08:00:00.000Z",
+        "updated": "2024-12-01T08:00:00.000Z"
+      }
+    ],
+    "events": [
+      {
+        "_calendarType": "general",
+        "title": "Client Preparation Meeting",
+        "description": "Prepare client for upcoming merits hearing.",
+        "location": "Law Office - Conference Room A",
+        "startDateTime": "2025-02-25T14:00:00-06:00",
+        "endDateTime": "2025-02-25T16:00:00-06:00",
+        "isAllDay": false,
+        "htmlLink": "https://calendar.google.com/event?eid=event001",
+        "meetLink": "https://meet.google.com/abc-defg-hij",
+        "status": "confirmed",
+        "attendees": [],
+        "created": "2024-12-10T10:00:00.000Z",
+        "updated": "2024-12-10T10:00:00.000Z"
+      },
+      {
+        "_calendarType": "general",
+        "title": "Untitled Event",
+        "description": null,
+        "location": null,
+        "startDateTime": null,
+        "endDateTime": null,
+        "isAllDay": true,
+        "htmlLink": null,
+        "meetLink": null,
+        "status": "confirmed",
+        "attendees": []
+      }
+    ]
+  }
+]

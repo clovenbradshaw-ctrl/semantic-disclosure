@@ -1,15 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Airtable Export – Client Summary Webhook Response",
-  "description": "Schema for the n8n Client Summary webhook response containing Client Info, Case Master View, Applications, and Events records",
+  "description": "Schema for the n8n Client Summary webhook response containing Client Info, Case Master View, Applications, Hearings, and Events records in nested 5-bucket format",
   "type": "array",
   "items": {
-    "oneOf": [
-      { "$ref": "#/definitions/clientInfoRecord" },
-      { "$ref": "#/definitions/caseMasterViewRecord" },
-      { "$ref": "#/definitions/applicationRecord" },
-      { "$ref": "#/definitions/eventRecord" }
-    ]
+    "$ref": "#/definitions/clientSummaryBundle"
   },
 
   "definitions": {
@@ -41,7 +36,7 @@
       "type": "object",
       "properties": {
         "label": { "type": "string" },
-        "url": { "type": "string", "format": "uri" }
+        "url": { "type": "string" }
       },
       "required": ["label", "url"],
       "additionalProperties": false
@@ -52,7 +47,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
+        "email": { "type": "string" },
         "name": { "type": "string" }
       },
       "required": ["id", "email", "name"],
@@ -92,426 +87,674 @@
       "required": ["url", "width", "height"]
     },
 
-    "dateTimeObject": {
-      "description": "Google Calendar date/time object",
-      "type": "object",
-      "properties": {
-        "dateTime": { "type": "string", "format": "date-time" },
-        "date": { "type": "string", "format": "date" },
-        "timeZone": { "type": "string" }
-      },
-      "additionalProperties": false
-    },
-
     "attendeeObject": {
-      "description": "Google Calendar event attendee",
+      "description": "Calendar event attendee",
       "type": "object",
       "properties": {
-        "email": { "type": "string", "format": "email" },
+        "email": { "type": "string" },
+        "name": { "type": ["string", "null"] },
         "displayName": { "type": ["string", "null"] },
         "responseStatus": {
-          "type": "string",
-          "enum": ["needsAction", "declined", "tentative", "accepted"]
+          "type": ["string", "null"],
+          "enum": ["needsAction", "declined", "tentative", "accepted", null]
         },
         "organizer": { "type": ["boolean", "null"] },
         "self": { "type": ["boolean", "null"] }
       },
-      "required": ["email"]
+      "additionalProperties": true
     },
 
-    "coreAirtableFields": {
-      "description": "Fields present on all Airtable records",
+    "metaObject": {
+      "description": "Metadata about the response",
       "type": "object",
       "properties": {
-        "_sourceTable": { "type": "string" },
-        "id": { "type": "string" },
-        "createdTime": { "type": "string", "format": "date-time" }
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "recordCounts": {
+          "type": "object",
+          "properties": {
+            "client": { "type": "integer" },
+            "cases": { "type": "integer" },
+            "applications": { "type": "integer" },
+            "hearings": { "type": "integer" },
+            "events": { "type": "integer" }
+          },
+          "additionalProperties": true
+        }
       },
-      "required": ["_sourceTable", "id"]
+      "required": ["generatedAt", "recordCounts"],
+      "additionalProperties": true
     },
 
-    "clientInfoRecord": {
+    "clientSummaryBundle": {
+      "description": "Complete client summary bundle with all related records",
+      "type": "object",
+      "properties": {
+        "_meta": { "$ref": "#/definitions/metaObject" },
+        "client": { "$ref": "#/definitions/clientRecord" },
+        "cases": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/caseRecord" }
+        },
+        "applications": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/applicationRecord" }
+        },
+        "hearings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/calendarEventRecord" }
+        },
+        "events": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/calendarEventRecord" }
+        }
+      },
+      "required": ["_meta", "client", "cases", "applications", "hearings", "events"],
+      "additionalProperties": false
+    },
+
+    "clientRecord": {
       "description": "Client Info table record",
-      "allOf": [
-        { "$ref": "#/definitions/coreAirtableFields" },
-        {
-          "type": "object",
-          "properties": {
-            "_sourceTable": { "const": "Client Info" },
+      "type": "object",
+      "properties": {
+        "_recordId": { "type": "string" },
+        "id": { "type": "string" },
+        "createdTime": { "type": "string", "format": "date-time" },
 
-            "Client Name": { "type": ["string", "null"] },
-            "First Name": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Family Name": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Middle Name": { "type": ["string", "null"] },
-            "Full Client Name": { "type": ["string", "null"] },
-            "Family Name (Pretty)": { "type": ["string", "null"] },
+        "Client Name": { "type": ["string", "null"] },
+        "First Name": { "type": ["string", "null"] },
+        "Family Name": { "type": ["string", "null"] },
+        "Middle Name": { "type": ["string", "null"] },
+        "Full Client Name": { "type": ["string", "null"] },
+        "Family Name (Pretty)": { "type": ["string", "null"] },
+        "Full_Name_Normal_Pretty": { "type": ["string", "null"] },
+        "Full_Name_Pretty_URL": { "type": ["string", "null"] },
 
-            "A#": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "A_number_airtable": { "type": ["string", "null"] },
+        "Country": { "type": ["string", "null"] },
 
-            "DOB": {
-              "type": ["array", "null"],
-              "items": { "type": "string", "format": "date" }
-            },
-            "Age": { "type": ["string", "integer", "null"] },
+        "A#": { "type": ["string", "null"] },
+        "A_number_airtable": { "type": ["string", "null"] },
 
-            "Country": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Place of Entry": { "type": ["string", "null"] },
-            "Entry Date": {
-              "type": ["array", "null"],
-              "items": { "type": "string", "format": "date" }
-            },
+        "DOB": { "type": ["string", "null"] },
+        "Age": { "type": ["string", "integer", "null"] },
 
-            "Address": { "type": ["string", "null"] },
-            "Phone Number": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Client Email": { "type": ["string", "null"], "format": "email" },
+        "Place of Entry": { "type": ["string", "null"] },
+        "Entry Date": { "type": ["string", "null"] },
 
-            "Case Manager": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "ICH Atty": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Custodian": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Address": { "type": ["string", "null"] },
+        "Address Formula": { "type": ["string", "null"] },
+        "Address Rich Text Formatted": { "type": ["string", "null"] },
+        "Compare Address": { "type": ["string", "null"] },
+        "Phone Number": { "type": ["string", "null"] },
+        "Client Email": { "type": ["string", "null"] },
+        "Email Blank Formula": { "type": ["string", "null"] },
+        "Phone search options": { "type": ["string", "null"] },
 
-            "PPID": { "type": ["string", "null"] },
-            "PracticePanther": { "type": ["string", "null"] },
-            "Link to Practice Panther": { "type": ["string", "null"] },
+        "Case Manager": { "type": ["string", "null"] },
+        "ICH Atty": { "type": ["string", "null"] },
+        "MCH Atty": { "type": ["string", "null"] },
+        "Custodian": { "type": ["string", "null"] },
+        "Assigned Users Emails": { "type": ["string", "null"] },
 
-            "airtable_client_info_id": { "type": ["string", "null"] },
-            "recordId": { "type": ["string", "null"] },
-            "Case Master View Record ID": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Client ID": { "type": ["string", "null"] },
+        "PPID": { "type": ["string", "null"] },
+        "PracticePanther": { "type": ["string", "null"] },
+        "Link to Practice Panther": { "type": ["string", "null"] },
 
-            "Case Master View // Activities": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "All Client Events": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "airtable_client_info_id": { "type": ["string", "null"] },
+        "recordId": { "type": ["string", "null"] },
+        "Case Master View Record ID": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Case Master View // Activities": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "All Client Events": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
 
-            "USCIS Applications": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Case Tags Rollup (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Update Tracker Rollup (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "File Case Status Rollup (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Closed File (from Case Master View // Activities)": {
+          "type": ["array", "null"],
+          "items": { "type": ["boolean", "null"] }
+        },
 
-            "Case Tags Rollup (from Case Master View // Activities)": {
-              "type": ["string", "null"]
-            },
-            "Hearing Type (from Case Master View // Activities)": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Hearing Date/Time (from Case Master View // Activities)": {
-              "type": ["array", "null"],
-              "items": { "type": "string", "format": "date-time" }
-            },
-            "Closed File (from Case Master View // Activities)": {
-              "type": ["array", "null"],
-              "items": { "type": "boolean" }
-            },
-            "Matter_Flatpack (from Case Master View // Activities)": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Client_Photo": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/attachmentObject" }
+        },
+        "Client Photo": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/attachmentObject" }
+        },
 
-            "Client_Photo": {
-              "type": ["array", "null"],
-              "items": { "$ref": "#/definitions/attachmentObject" }
-            },
-            "Client Photo": {
-              "type": ["array", "null"],
-              "items": { "$ref": "#/definitions/attachmentObject" }
-            },
+        "box_shared_link": { "type": ["string", "null"] },
+        "box_embed": { "type": ["string", "null"] },
+        "Box_Folder_ID": { "type": ["string", "null"] },
+        "smsFolder": { "type": ["string", "null"] },
 
-            "box_shared_link": { "type": ["string", "null"] },
-            "box link": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
+        "Box Sync Start": { "type": ["boolean", "null"] },
+        "CMV sync": { "type": ["boolean", "null"] },
 
-            "SIJ Engagement Interviews": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Created At": { "type": ["string", "null"] },
+        "Created": { "type": ["string", "null"] },
+        "Created Date": { "type": ["string", "null"] },
+        "Created Quarter": { "type": ["string", "null"] },
+        "Airtable_Last_Modified": { "type": ["string", "null"], "format": "date-time" },
+        "Sync Date": { "type": ["string", "null"] },
+        "xanoSyncTrigger": { "type": ["string", "null"] },
+        "Last Box URL Update": { "type": ["string", "null"] },
 
-            "Box Sync Start": { "type": ["boolean", "null"] },
-            "CMV sync": { "type": ["boolean", "null"] },
+        "Softr Client Page": { "type": ["string", "null"] },
+        "Client Details Page": { "type": ["string", "null"] },
+        "Open Client Page": { "type": ["string", "null"] },
+        "Kenect Link": { "type": ["string", "null"] },
+        "Calendar Event Create": { "type": ["string", "null"] },
+        "New case note URL": { "type": ["string", "null"] },
+        "New Client Event UTM": { "type": ["string", "null"] },
+        "Relationship Tab Link": { "type": ["string", "null"] },
+        "Profile HTML": { "type": ["string", "null"] },
+        "Bahr Import HTML": { "type": ["string", "null"] },
 
-            "Created At": { "type": ["string", "null"] },
-            "Airtable_Last_Modified": { "type": ["string", "null"], "format": "date-time" },
+        "JSON for Email Matching": { "type": ["string", "null"] },
+        "Gmail_Search_Terms": { "type": ["string", "null"] },
+        "Name Search Options": { "type": ["string", "null"] },
+        "name search 2.0": { "type": ["string", "null"] },
+        "SMS Message Match": { "type": ["string", "null"] },
 
-            "EAD Stage Ref": { "type": ["string", "null"] },
-            "EAD ID Ref": { "type": ["string", "null"] },
+        "Detained": { "type": ["string", "null"] },
+        "Detainment Status / Location": { "type": ["string", "null"] },
 
-            "Softr Client Page": { "type": ["string", "null"] },
-            "Client Details Page": { "type": ["string", "null"] },
-            "Kenect Link": { "type": ["string", "null"] },
+        "FOIA Stage": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
 
-            "bahr_import_flatpack_data": { "type": ["string", "null"] },
-            "xanoEngagementNote": { "type": ["string", "null"] },
+        "Calculation": { "type": ["number", "string", "null"] },
+        "Calculation 5": { "type": ["string", "null"] },
+        "Calculation 12": { "type": ["string", "null"] },
+        "Sorting 5 day + -": { "type": ["number", "null"] },
+        "sortingLastModAndFamily": { "type": ["string", "null"] },
+        "COUNT as one": { "type": ["number", "null"] },
+        "ID": { "type": ["number", "null"] },
+        "Unique ID / Second": { "type": ["string", "null"] },
+        "# of EADs": { "type": ["number", "null"] },
 
-            "Events": { "type": ["string", "null"] },
-            "Events 2": { "type": ["string", "null"] },
-            "Matters": { "type": ["string", "null"] },
+        "Concat Relationship": { "type": ["string", "null"] },
+        "Has Upcoming Event?": { "type": ["string", "null"] },
 
-            "AMINO": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
-            "Kenect Thread": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            }
-          },
-          "additionalProperties": true
-        }
-      ]
+        "AMINO": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Kenect Thread": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Invoiced Lookup": { "type": ["string", "null"] }
+      },
+      "required": ["_recordId", "id"],
+      "additionalProperties": true
     },
 
-    "caseMasterViewRecord": {
+    "caseRecord": {
       "description": "Case Master View table record",
-      "allOf": [
-        { "$ref": "#/definitions/coreAirtableFields" },
-        {
-          "type": "object",
-          "properties": {
-            "_sourceTable": { "const": "Case Master View" },
+      "type": "object",
+      "properties": {
+        "_recordId": { "type": "string" },
+        "id": { "type": "string" },
+        "createdTime": { "type": "string", "format": "date-time" },
 
-            "Description": { "type": ["string", "null"] },
-            "Case Notes": { "type": ["string", "null"] },
+        "Client Name": { "type": ["string", "null"] },
+        "First Name": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Family Name": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Family Name (Pretty)": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "Client Name (Pretty)": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
 
-            "Relief Sought": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "Case Type": { "type": ["string", "null"] },
-            "Case Tags": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Description": { "type": ["string", "null"] },
+        "Case Notes": { "type": ["string", "null"] },
+        "Notes Summary": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
 
-            "Hearing Date/Time": {
-              "type": ["array", "null"],
-              "items": { "type": "string", "format": "date-time" }
-            },
-            "Next Hearing": { "type": ["string", "null"], "format": "date-time" },
-            "Court/Office": { "type": ["string", "null"] },
-            "Judge": { "type": ["string", "null"] },
+        "Relief Sought": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Case Type": { "type": ["string", "null"] },
+        "Case Tags": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
 
-            "SIJ Case Status": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-            "SIJ County": { "type": ["string", "null"] },
-            "SIJ Eligible (child)": { "type": ["boolean", "null"] },
+        "Hearing Date/Time": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Next Hearing": { "type": ["string", "null"] },
+        "Hearing Type": { "type": ["string", "null"] },
+        "Court/Office": { "type": ["string", "null"] },
+        "Judge": { "type": ["string", "null"] },
 
-            "Closed File": { "type": ["boolean", "null"] },
-            "Closed Box #": { "type": ["integer", "null"] },
+        "SIJ Case Status": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "SIJ County": { "type": ["string", "null"] },
+        "SIJ Eligible (child)": { "type": ["boolean", "null"] },
 
-            "Client_ID_Airtable": { "type": ["string", "null"] },
-            "Client Info": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
+        "Closed File": { "type": ["boolean", "null"] },
+        "Closed Box #": { "type": ["integer", "null"] },
 
-            "Record ID": { "type": ["string", "null"] },
-            "Case Master View Record ID": { "type": ["string", "null"] },
+        "USCIS FOIA Stage": { "type": ["string", "null"] },
+        "USCIS Foia Track Link": { "type": ["string", "null"] },
 
-            "Matter_Flatpack": { "type": ["string", "null"] },
+        "Client_ID_Airtable": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Edit Client Info": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Associated Case": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "Applications": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
 
-            "SIJ Visa Availability": { "$ref": "#/definitions/valueOrError" },
-            "Appeal Engagement Deadline": { "$ref": "#/definitions/valueOrError" },
-            "OYD ": { "$ref": "#/definitions/valueOrError" },
-            "Days Elapsed since Engagement": { "$ref": "#/definitions/valueOrError" },
-            "OYD Calculator": { "$ref": "#/definitions/valueOrError" },
-            "Engagement vs Sent Out": { "$ref": "#/definitions/valueOrError" },
-            "Mail vs Rcpt Date": { "$ref": "#/definitions/valueOrError" },
-            "Est. Age at biometrics": { "$ref": "#/definitions/valueOrError" },
-            "Mail vs Notice Date": { "$ref": "#/definitions/valueOrError" },
-            "Sent vs Pending (EAD)": { "$ref": "#/definitions/valueOrError" },
-            "Days to Next Hearing": { "$ref": "#/definitions/valueOrError" },
+        "Record ID": { "type": ["string", "null"] },
+        "Case Master View Record ID": { "type": ["string", "null"] },
 
-            "42b calc": { "type": ["string", "null"] },
-            "Today Date": { "type": ["string", "null"], "format": "date-time" },
+        "Country": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Link to Practice Panther": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "PP ID": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
 
-            "box link": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
-            "Invoiced": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
-            "FOIA Button": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
-            "Atty Rec Req Button": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
-            "Activity Details": {
-              "anyOf": [
-                { "$ref": "#/definitions/linkObject" },
-                { "type": "null" }
-              ]
-            },
+        "box_shared_link (from Edit Client Info)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Name Search Options (from Edit Client Info)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Assigned Users Emails (from Edit Client Info)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "AMINO (from Edit Client Info)": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "ICH email": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
+        "Address": {
+          "type": ["array", "null"],
+          "items": { "type": ["string", "null"] }
+        },
 
-            "Last Modified By": {
-              "anyOf": [
-                { "$ref": "#/definitions/personObject" },
-                { "type": "null" }
-              ]
-            },
+        "Matter_Flatpack": { "type": ["string", "null"] },
 
-            "Created At": { "type": ["string", "null"], "format": "date-time" },
-            "Created Airtable Record": { "type": ["string", "null"], "format": "date-time" },
-            "Created date": { "type": ["string", "null"], "format": "date-time" },
+        "SIJ Visa Availability": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Appeal Engagement Deadline": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "OYD ": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Days Elapsed since Engagement": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "OYD Calculator": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Engagement vs Sent Out": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Mail vs Rcpt Date": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Est. Age at biometrics": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Mail vs Notice Date": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Sent vs Pending (EAD)": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Days to Next Hearing": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Est. Clock Days": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Calculate FOIA pending": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "FOIA Est Complete": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "Time Elapsed": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Calculation": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        },
+        "Call Up Date": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "Good Date Field": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "AAF Deadline": {
+          "anyOf": [
+            { "$ref": "#/definitions/valueOrError" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
 
-            "Update Tracker EADs": { "type": ["string", "null"], "format": "date-time" },
-            "Update Tracker EAD Pers": {
-              "anyOf": [
-                { "$ref": "#/definitions/personObject" },
-                { "type": "null" }
-              ]
-            },
+        "42b calc": { "type": ["string", "null"] },
+        "Due Day Calculation": { "type": ["string", "null"] },
+        "Today Date": { "type": ["string", "null"] },
+        "TESTER_12": { "type": ["string", "null"] },
+        "Time Tracked": { "type": ["number", "null"] },
 
-            "Initial Retainer $": { "type": ["number", "null"] },
-            "Total Contract $": { "type": ["number", "null"] }
-          },
-          "additionalProperties": true
-        }
-      ]
+        "box link": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Invoiced": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "FOIA Button": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Atty Rec Req Button": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Activity Details": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "AMINO": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "USCIS K Button": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Court K Button": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+        "Appeal Contract Button": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        },
+
+        "USCIS K Gen": { "type": ["string", "null"] },
+        "CT K Gen": { "type": ["string", "null"] },
+        "Appeal Contract Gen": { "type": ["string", "null"] },
+        "Atty Rec Req Email Writer": { "type": ["string", "null"] },
+
+        "Last Modified By": {
+          "anyOf": [
+            { "$ref": "#/definitions/personObject" },
+            { "type": "null" }
+          ]
+        },
+        "Update Tracker EAD Pers": {
+          "anyOf": [
+            { "$ref": "#/definitions/personObject" },
+            { "type": "null" }
+          ]
+        },
+
+        "Created At": { "type": ["string", "null"] },
+        "Created Airtable Record": { "type": ["string", "null"], "format": "date-time" },
+        "Created date": { "type": ["string", "null"], "format": "date-time" },
+        "Update Tracker EADs": { "type": ["string", "null"], "format": "date-time" },
+
+        "Initial Retainer $": { "type": ["number", "null"] },
+        "Total Contract $": { "type": ["number", "null"] }
+      },
+      "required": ["_recordId", "id"],
+      "additionalProperties": true
     },
 
     "applicationRecord": {
       "description": "Applications table record",
-      "allOf": [
-        { "$ref": "#/definitions/coreAirtableFields" },
-        {
-          "type": "object",
-          "properties": {
-            "_sourceTable": { "const": "Applications" },
-
-            "Application Type": { "type": ["string", "null"] },
-            "Current USCIS application": { "type": ["string", "null"] },
-
-            "Status": { "type": ["string", "null"] },
-            "Current Case Motion Status": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-
-            "USCIS (in Court)": { "type": ["boolean", "null"] },
-
-            "Case Master": {
-              "type": ["array", "null"],
-              "items": { "type": "string" }
-            },
-
-            "Receipt Number": { "type": ["string", "null"] },
-            "Priority Date": { "type": ["string", "null"], "format": "date" },
-            "Filing Date": { "type": ["string", "null"], "format": "date" },
-            "Approval Date": { "type": ["string", "null"], "format": "date" },
-            "Expiration Date": { "type": ["string", "null"], "format": "date" },
-
-            "Notes": { "type": ["string", "null"] },
-
-            "EAD Category": { "type": ["string", "null"] },
-            "EAD Stage": { "type": ["string", "null"] },
-
-            "Biometrics Date": { "type": ["string", "null"], "format": "date" },
-            "Biometrics Completed": { "type": ["boolean", "null"] },
-
-            "Interview Date": { "type": ["string", "null"], "format": "date-time" },
-            "Interview Location": { "type": ["string", "null"] },
-
-            "Record ID": { "type": ["string", "null"] }
-          },
-          "additionalProperties": true
-        }
-      ]
-    },
-
-    "eventRecord": {
-      "description": "Google Calendar event record",
       "type": "object",
       "properties": {
-        "_sourceTable": { "const": "Events" },
-
+        "_recordId": { "type": "string" },
         "id": { "type": "string" },
-        "iCalUID": { "type": ["string", "null"] },
-        "etag": { "type": ["string", "null"] },
+        "createdTime": { "type": "string", "format": "date-time" },
 
-        "summary": { "type": ["string", "null"] },
+        "Name": { "type": ["string", "null"] },
+        "Application": { "type": ["string", "null"] },
+        "Application Type": { "type": ["string", "null"] },
+        "Current USCIS application": { "type": ["string", "null"] },
+
+        "Status": { "type": ["string", "null"] },
+        "Current Case Motion Status": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+
+        "USCIS (in Court)": { "type": ["boolean", "null"] },
+
+        "Case Master": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+
+        "Receipt Number": { "type": ["string", "null"] },
+        "USCIS Receipt Number (from Case Master) copy": { "type": ["string", "null"] },
+        "Priority Date": { "type": ["string", "null"] },
+        "Filing Date": { "type": ["string", "null"] },
+        "Approval Date": { "type": ["string", "null"] },
+        "Expiration Date": { "type": ["string", "null"] },
+
+        "Cert County/State": { "type": ["string", "null"] },
+        "Notes": { "type": ["string", "null"] },
+
+        "EAD Category": { "type": ["string", "null"] },
+        "EAD Stage": { "type": ["string", "null"] },
+
+        "Biometrics Date": { "type": ["string", "null"] },
+        "Biometrics Completed": { "type": ["boolean", "null"] },
+
+        "Interview Date": { "type": ["string", "null"] },
+        "Interview Location": { "type": ["string", "null"] },
+
+        "Record ID": { "type": ["string", "null"] },
+
+        "Amino": {
+          "anyOf": [
+            { "$ref": "#/definitions/linkObject" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "required": ["_recordId", "id"],
+      "additionalProperties": true
+    },
+
+    "calendarEventRecord": {
+      "description": "Calendar event record (hearings or general events)",
+      "type": "object",
+      "properties": {
+        "_id": { "type": ["string", "null"] },
+        "_calendarType": {
+          "type": "string",
+          "enum": ["hearing", "general"]
+        },
+
+        "title": { "type": ["string", "null"] },
         "description": { "type": ["string", "null"] },
         "location": { "type": ["string", "null"] },
+
+        "startDateTime": { "type": ["string", "null"] },
+        "endDateTime": { "type": ["string", "null"] },
+        "isAllDay": { "type": ["boolean", "null"] },
+
+        "htmlLink": { "type": ["string", "null"] },
+        "meetLink": { "type": ["string", "null"] },
+        "hangoutLink": { "type": ["string", "null"] },
 
         "status": {
           "type": ["string", "null"],
           "enum": ["confirmed", "tentative", "cancelled", null]
-        },
-
-        "start": { "$ref": "#/definitions/dateTimeObject" },
-        "end": { "$ref": "#/definitions/dateTimeObject" },
-
-        "created": { "type": ["string", "null"], "format": "date-time" },
-        "updated": { "type": ["string", "null"], "format": "date-time" },
-
-        "creator": {
-          "type": ["object", "null"],
-          "properties": {
-            "email": { "type": "string", "format": "email" },
-            "displayName": { "type": ["string", "null"] },
-            "self": { "type": ["boolean", "null"] }
-          }
-        },
-        "organizer": {
-          "type": ["object", "null"],
-          "properties": {
-            "email": { "type": "string", "format": "email" },
-            "displayName": { "type": ["string", "null"] },
-            "self": { "type": ["boolean", "null"] }
-          }
         },
 
         "attendees": {
@@ -519,45 +762,10 @@
           "items": { "$ref": "#/definitions/attendeeObject" }
         },
 
-        "htmlLink": { "type": ["string", "null"], "format": "uri" },
-        "hangoutLink": { "type": ["string", "null"], "format": "uri" },
-
-        "recurringEventId": { "type": ["string", "null"] },
-        "originalStartTime": { "$ref": "#/definitions/dateTimeObject" },
-
-        "transparency": {
-          "type": ["string", "null"],
-          "enum": ["opaque", "transparent", null]
-        },
-        "visibility": {
-          "type": ["string", "null"],
-          "enum": ["default", "public", "private", "confidential", null]
-        },
-
-        "colorId": { "type": ["string", "null"] },
-
-        "reminders": {
-          "type": ["object", "null"],
-          "properties": {
-            "useDefault": { "type": "boolean" },
-            "overrides": {
-              "type": ["array", "null"],
-              "items": {
-                "type": "object",
-                "properties": {
-                  "method": { "type": "string", "enum": ["email", "popup"] },
-                  "minutes": { "type": "integer" }
-                }
-              }
-            }
-          }
-        },
-
-        "conferenceData": { "type": ["object", "null"] },
-        "attachments": { "type": ["array", "null"] },
-        "extendedProperties": { "type": ["object", "null"] }
+        "created": { "type": ["string", "null"], "format": "date-time" },
+        "updated": { "type": ["string", "null"], "format": "date-time" }
       },
-      "required": ["_sourceTable", "id"],
+      "required": ["_calendarType"],
       "additionalProperties": true
     }
   }
