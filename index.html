@@ -907,6 +907,8 @@
     function extractTimelineEvents(data) {
       const { client, cases, applications, hearings, events } = data;
       const timelineItems = [];
+      const now = new Date();
+      const multipleCases = cases && cases.length > 1;
 
       // Helper to check if a value is a valid date
       function isValidDate(val) {
@@ -917,83 +919,129 @@
         return !isNaN(d.getTime());
       }
 
-      // Client dates
+      // Helper to get case identifier when there are multiple cases
+      function getCaseLabel(c, idx) {
+        // Priority: Description > SIJ County > Court/Office > index
+        if (c.Description) return c.Description;
+        if (c['SIJ County']) return `SIJ (${c['SIJ County']})`;
+        const court = val(c['Court/Office']);
+        if (court) return court;
+        return `Case ${idx + 1}`;
+      }
+
+      // Helper to truncate long descriptions
+      function truncateDesc(desc, maxLen = 60) {
+        if (!desc || desc.length <= maxLen) return desc;
+        return desc.substring(0, maxLen).trim() + '...';
+      }
+
+      // ─── CLIENT DATES ───
       if (client) {
+        // Date of Birth - key biographical date
         if (isValidDate(client.DOB)) {
           timelineItems.push({
             date: new Date(client.DOB),
             label: 'Date of Birth',
             source: 'Client',
-            description: `${client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Client'} was born`,
+            fieldName: 'DOB',
             icon: '🎂',
             color: 'emerald'
           });
         }
+
+        // Entry Date - immigration-relevant
+        const entryDate = client['Entry Date'];
+        if (isValidDate(entryDate)) {
+          const placeOfEntry = client['Place of Entry'];
+          timelineItems.push({
+            date: new Date(entryDate),
+            label: 'Entry Date',
+            source: 'Client',
+            fieldName: 'Entry Date',
+            description: placeOfEntry ? `Entered at ${placeOfEntry}` : null,
+            icon: '🛬',
+            color: 'emerald'
+          });
+        }
+
+        // File opened
         if (isValidDate(client.createdTime)) {
           timelineItems.push({
             date: new Date(client.createdTime),
-            label: 'Client Record Created',
+            label: 'File Opened',
             source: 'Client',
-            description: `Client file opened for ${client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'client'}`,
+            fieldName: 'createdTime',
             icon: '📁',
             color: 'emerald'
           });
         }
       }
 
-      // Case dates
+      // ─── CASE DATES ───
       if (cases && cases.length > 0) {
         cases.forEach((c, idx) => {
-          const caseType = c.Description || 'Case';
+          const caseLabel = getCaseLabel(c, idx);
+          const prefix = multipleCases ? `${caseLabel}: ` : '';
           const court = val(c['Court/Office']);
+          const judge = c['Judge text'];
 
-          // Hearing Date/Time
+          // Hearing Date/Time - most critical date
           const hearingDate = val(c['Hearing Date/Time']);
           if (isValidDate(hearingDate)) {
             const d = new Date(hearingDate);
             const days = c['Days to Next Hearing'];
             const urgency = typeof days === 'number' ? getDaysUrgency(days) : null;
+            const isPast = d < now;
 
             timelineItems.push({
               date: d,
-              label: `${caseType} Hearing`,
+              label: `${prefix}Hearing`,
               source: 'Cases',
-              description: court ? `Hearing at ${court}` : 'Scheduled hearing',
-              judge: c['Judge text'],
-              daysAway: typeof days === 'number' ? days : null,
-              urgency: urgency,
+              fieldName: 'Hearing Date/Time',
+              caseId: c._recordId || c.id,
+              description: court || null,
+              judge: judge,
+              daysAway: (!isPast && typeof days === 'number') ? days : null,
               icon: '⚖️',
-              color: urgency && urgency.level === 'critical' ? 'red' : urgency && urgency.level === 'high' ? 'red' : urgency && urgency.level === 'medium' ? 'amber' : 'blue'
+              color: isPast ? 'slate' : (urgency && (urgency.level === 'critical' || urgency.level === 'high')) ? 'red' : 'amber'
             });
           }
 
-          // Case created
-          if (isValidDate(c.createdTime)) {
+          // One Year Deadline (OYD) - immigration deadline
+          const oyd = c['OYD '] || c['OYD'];
+          if (isValidDate(oyd)) {
+            const d = new Date(oyd);
+            const isPast = d < now;
+            const daysAway = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+
             timelineItems.push({
-              date: new Date(c.createdTime),
-              label: `${caseType} Opened`,
+              date: d,
+              label: `${prefix}One Year Deadline`,
               source: 'Cases',
-              description: court ? `Case filed at ${court}` : 'Case opened',
-              icon: '📋',
-              color: 'blue'
+              fieldName: 'OYD',
+              caseId: c._recordId || c.id,
+              daysAway: isPast ? null : daysAway,
+              icon: '⏰',
+              color: isPast ? 'slate' : daysAway <= 30 ? 'red' : daysAway <= 90 ? 'amber' : 'blue'
             });
           }
         });
       }
 
-      // Application dates
+      // ─── APPLICATION DATES ───
       if (applications && applications.length > 0) {
         applications.forEach(app => {
-          const appType = app.Application || app.Name || 'Application';
+          const appType = app.Application || 'Application';
+          const appName = app.Name;
           const status = app.Status;
 
           if (isValidDate(app.createdTime)) {
             timelineItems.push({
               date: new Date(app.createdTime),
-              label: `${appType} Created`,
+              label: `${appType} Filed`,
               source: 'Applications',
-              description: status ? `Status: ${status}` : 'Application initiated',
-              status: status,
+              fieldName: 'createdTime',
+              description: status ? `Status: ${status}` : null,
               icon: '📝',
               color: 'purple'
             });
@@ -1001,61 +1049,67 @@
         });
       }
 
-      // Calendar hearings
+      // ─── CALENDAR: HEARINGS ───
       if (hearings && hearings.length > 0) {
         hearings.forEach(hearing => {
           if (isValidDate(hearing.startDateTime)) {
             const d = new Date(hearing.startDateTime);
             const title = hearing.title || hearing.summary || 'Hearing';
-            const now = new Date();
             const isPast = d < now;
             const daysAway = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
 
             timelineItems.push({
               date: d,
               label: title,
-              source: 'Hearings Calendar',
-              description: hearing.location || 'Calendar hearing event',
+              source: 'Hearings',
+              fieldName: 'startDateTime',
+              description: hearing.location || null,
               location: hearing.location,
               meetLink: hearing.meetLink,
-              isPast: isPast,
               daysAway: isPast ? null : daysAway,
               icon: '🏛️',
-              color: isPast ? 'slate' : daysAway <= 14 ? 'red' : daysAway <= 30 ? 'amber' : 'amber',
-              calendarType: 'hearing'
+              color: isPast ? 'slate' : daysAway <= 14 ? 'red' : daysAway <= 30 ? 'amber' : 'amber'
             });
           }
         });
       }
 
-      // Calendar events
+      // ─── CALENDAR: EVENTS ───
       if (events && events.length > 0) {
         events.forEach(event => {
           if (isValidDate(event.startDateTime)) {
             const d = new Date(event.startDateTime);
             const title = event.title || event.summary || 'Event';
-            const now = new Date();
             const isPast = d < now;
             const daysAway = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+
+            // Extract a cleaner description (skip the structured metadata block)
+            let desc = event.location || null;
+            if (!desc && event.description) {
+              // Skip if description looks like structured metadata
+              const rawDesc = event.description;
+              if (!rawDesc.startsWith('━') && !rawDesc.includes('Client ID:')) {
+                desc = truncateDesc(rawDesc);
+              }
+            }
 
             timelineItems.push({
               date: d,
               label: title,
-              source: 'Events Calendar',
-              description: event.location || event.description || 'Scheduled event',
+              source: 'Events',
+              fieldName: 'startDateTime',
+              description: desc,
               location: event.location,
               meetLink: event.meetLink,
-              isPast: isPast,
               daysAway: isPast ? null : daysAway,
               icon: '📅',
-              color: isPast ? 'slate' : 'rose',
-              calendarType: 'general'
+              color: isPast ? 'slate' : 'rose'
             });
           }
         });
       }
 
-      // Sort by date (oldest to newest)
+      // Sort by date (chronological)
       timelineItems.sort((a, b) => a.date - b.date);
 
       return timelineItems;
@@ -1114,13 +1168,19 @@
           urgencyBadge = `<span class="ml-2 px-2 py-0.5 rounded text-xs ${urgencyClass}">in ${item.daysAway}d</span>`;
         }
 
+        // Only show description if it exists
+        let descLine = '';
+        if (item.description) {
+          descLine = `<p class="text-slate-300 text-sm mt-1">${escapeHtml(item.description)}</p>`;
+        }
+
         let judgeLine = '';
         if (item.judge) {
-          judgeLine = `<div class="text-xs text-slate-500 mt-1">Judge: ${escapeHtml(item.judge)}</div>`;
+          judgeLine = `<div class="text-xs text-slate-500 mt-1">Judge ${escapeHtml(item.judge)}</div>`;
         }
 
         let locationLine = '';
-        if (item.location) {
+        if (item.location && item.location !== item.description) {
           locationLine = `<div class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(item.location)}</div>`;
         }
 
@@ -1142,13 +1202,13 @@
             <!-- Content -->
             <div class="flex-1 ${colors.bg} ${colors.border} border rounded-lg p-3 -mt-1">
               <div class="flex items-start justify-between gap-2 flex-wrap">
-                <div>
+                <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="${colors.text} font-medium text-sm">${escapeHtml(item.label)}</span>
                     <span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-[10px] uppercase tracking-wider">${escapeHtml(item.source)}</span>
                     ${urgencyBadge}
                   </div>
-                  <p class="text-slate-300 text-sm mt-1">${escapeHtml(item.description)}</p>
+                  ${descLine}
                   ${judgeLine}
                   ${locationLine}
                   ${meetLinkLine}
