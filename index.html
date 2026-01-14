@@ -371,8 +371,17 @@
     // RENDER FUNCTIONS
     // ═══════════════════════════════════════════════════════════════
 
-    function renderHeader(_meta) {
-      const countBadges = Object.entries(_meta.recordCounts || {}).map(([type, count]) => {
+    function renderHeader(data) {
+      const _meta = data._meta || {};
+      // Count directly from the data
+      const counts = {
+        client: data.client ? 1 : 0,
+        cases: Array.isArray(data.cases) ? data.cases.length : 0,
+        applications: Array.isArray(data.applications) ? data.applications.length : 0,
+        hearings: Array.isArray(data.hearings) ? data.hearings.length : 0,
+        events: Array.isArray(data.events) ? data.events.length : 0
+      };
+      const countBadges = Object.entries(counts).map(([type, count]) => {
         const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
         return `<span class="px-2 py-1 rounded text-xs ${colorClass}">${type}: ${count}</span>`;
       }).join('');
@@ -400,14 +409,13 @@
     }
 
     function renderNarrativeView(data, detailed = false) {
-      const { _meta } = data;
       const paragraphs = detailed ? generateDetailedNarrative(data) : generateBriefNarrative(data);
 
       const contentClass = detailed ? 'space-y-3' : 'space-y-2';
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
-          ${renderHeader(_meta)}
+          ${renderHeader(data)}
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-6">
             <div class="${contentClass} text-slate-300 leading-relaxed">
               ${paragraphs.map(p => `<p>${p}</p>`).join('')}
@@ -418,7 +426,7 @@
     }
 
     function renderStructuredView(data) {
-      const { _meta, client, cases } = data;
+      const { client, cases, applications, hearings, events } = data;
 
       const casesByType = {};
       if (cases && cases.length > 0) {
@@ -561,11 +569,56 @@
         `;
       }
 
+      // Generic section renderer for arrays
+      function renderArraySection(title, items, icon, iconBg, iconColor) {
+        if (!items || items.length === 0) return '';
+
+        const sectionId = title.toLowerCase().replace(/\s+/g, '-');
+        const itemsHtml = items.map(item => {
+          // Display all non-internal fields
+          const fields = Object.entries(item)
+            .filter(([key]) => !key.startsWith('_'))
+            .slice(0, 6) // Show first 6 fields
+            .map(([key, value]) => {
+              let displayValue = value;
+              if (Array.isArray(value)) displayValue = value.join(', ');
+              if (typeof value === 'object' && value !== null) displayValue = JSON.stringify(value);
+              if (displayValue && String(displayValue).length > 50) displayValue = String(displayValue).substring(0, 50) + '...';
+              return `<div><span class="text-slate-500 text-xs">${escapeHtml(key)}:</span> <span class="text-slate-300 text-sm">${escapeHtml(String(displayValue || '—'))}</span></div>`;
+            }).join('');
+
+          return `<div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0"><div class="grid grid-cols-2 gap-2">${fields}</div></div>`;
+        }).join('');
+
+        return `
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
+            <button onclick="toggleSection('${sectionId}')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-full ${iconBg} ${iconColor} flex items-center justify-center text-sm font-medium">${items.length}</span>
+                <div class="text-left">
+                  <h2 class="font-medium text-slate-100">${escapeHtml(title)}</h2>
+                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'record')}</p>
+                </div>
+              </div>
+              <span id="arrow-${sectionId}" class="text-slate-500 transition-transform">▼</span>
+            </button>
+            <div id="content-${sectionId}" class="border-t border-slate-700/50 hidden">${itemsHtml}</div>
+          </div>
+        `;
+      }
+
+      const applicationsHtml = renderArraySection('Applications', applications, 'A', 'bg-purple-500/20', 'text-purple-400');
+      const hearingsHtml = renderArraySection('Hearings', hearings, 'H', 'bg-amber-500/20', 'text-amber-400');
+      const eventsHtml = renderArraySection('Events', events, 'E', 'bg-rose-500/20', 'text-rose-400');
+
       return `
         <div class="max-w-4xl mx-auto space-y-4">
-          ${renderHeader(_meta)}
+          ${renderHeader(data)}
           ${clientHtml}
           ${casesHtml}
+          ${applicationsHtml}
+          ${hearingsHtml}
+          ${eventsHtml}
         </div>
       `;
     }
