@@ -859,6 +859,17 @@
       return v;
     }
 
+    function formatFlatpackValue(value) {
+      if (Array.isArray(value)) {
+        return value.map(item => typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)).join(', ');
+      } else if (typeof value === 'boolean') {
+        return value ? 'Yes' : 'No';
+      } else if (typeof value === 'object' && value !== null) {
+        return JSON.stringify(value);
+      }
+      return String(value);
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // FLATPACK JSON PARSING - Extract nested JSON into unique fields
     // ═══════════════════════════════════════════════════════════════
@@ -1046,7 +1057,7 @@
           .slice(0, 3) // Show first 3 fields in brief view
           .map(([key, value]) => {
             const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+            const formattedValue = formatFlatpackValue(value);
             return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
           })
           .join(' · ');
@@ -1249,7 +1260,7 @@
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
           .map(([key, value]) => {
             const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+            const formattedValue = formatFlatpackValue(value);
             return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: <span class="text-gray-800">${escapeHtml(formattedValue)}</span>`;
           });
         sections.push(flatpackItems.join(' · '));
@@ -1329,7 +1340,7 @@
                 .filter(([key, value]) => key !== 'description' && value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
                   const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                  const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+                  const formattedValue = formatFlatpackValue(value);
                   return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
                 });
               if (flatpackFields.length > 0) {
@@ -1614,20 +1625,13 @@
             .replace(/[_.]/g, ' ')
             .replace(/\b\w/g, l => l.toUpperCase());
 
-          // Format the value
-          let formattedValue = value;
-          if (Array.isArray(value)) {
-            formattedValue = value.join(', ');
-          } else if (typeof value === 'boolean') {
-            formattedValue = value ? 'Yes' : 'No';
-          } else if (typeof value === 'object') {
-            formattedValue = JSON.stringify(value);
-          }
+          // Format the value using centralized helper
+          const formattedValue = formatFlatpackValue(value);
 
           return `
             <div>
               <p class="text-gray-400 text-xs uppercase tracking-wide">${escapeHtml(formattedKey)}</p>
-              <p class="text-gray-800 text-sm">${escapeHtml(String(formattedValue))}</p>
+              <p class="text-gray-800 text-sm">${escapeHtml(formattedValue)}</p>
             </div>
           `;
         })
@@ -1789,7 +1793,7 @@
                 .filter(([key, value]) => value !== null && value !== undefined && value !== '')
                 .map(([key, value]) => {
                   const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                  let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
+                  const formattedValue = formatFlatpackValue(value);
                   return `<span class="text-gray-500"><span class="text-gray-400">${escapeHtml(formattedKey)}:</span> ${escapeHtml(formattedValue)}</span>`;
                 })
                 .join(' · ');
