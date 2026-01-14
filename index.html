@@ -909,6 +909,7 @@
       const timelineItems = [];
       const now = new Date();
       const multipleCases = cases && cases.length > 1;
+      const clientName = client ? (client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Client').split(',')[0].trim() : 'Client';
 
       // Helper to check if a value is a valid date
       function isValidDate(val) {
@@ -921,7 +922,6 @@
 
       // Helper to get case identifier when there are multiple cases
       function getCaseLabel(c, idx) {
-        // Priority: Description > SIJ County > Court/Office > index
         if (c.Description) return c.Description;
         if (c['SIJ County']) return `SIJ (${c['SIJ County']})`;
         const court = val(c['Court/Office']);
@@ -929,48 +929,35 @@
         return `Case ${idx + 1}`;
       }
 
-      // Helper to truncate long descriptions
-      function truncateDesc(desc, maxLen = 60) {
-        if (!desc || desc.length <= maxLen) return desc;
-        return desc.substring(0, maxLen).trim() + '...';
-      }
-
       // ─── CLIENT DATES ───
       if (client) {
-        // Date of Birth - key biographical date
         if (isValidDate(client.DOB)) {
           timelineItems.push({
             date: new Date(client.DOB),
-            label: 'Date of Birth',
+            statement: `${clientName} was born`,
             source: 'Client',
-            fieldName: 'DOB',
             icon: '🎂',
             color: 'emerald'
           });
         }
 
-        // Entry Date - immigration-relevant
         const entryDate = client['Entry Date'];
         if (isValidDate(entryDate)) {
           const placeOfEntry = client['Place of Entry'];
           timelineItems.push({
             date: new Date(entryDate),
-            label: 'Entry Date',
+            statement: placeOfEntry ? `Entered the U.S. at ${placeOfEntry}` : 'Entered the United States',
             source: 'Client',
-            fieldName: 'Entry Date',
-            description: placeOfEntry ? `Entered at ${placeOfEntry}` : null,
             icon: '🛬',
             color: 'emerald'
           });
         }
 
-        // File opened
         if (isValidDate(client.createdTime)) {
           timelineItems.push({
             date: new Date(client.createdTime),
-            label: 'File Opened',
+            statement: 'Client file opened',
             source: 'Client',
-            fieldName: 'createdTime',
             icon: '📁',
             color: 'emerald'
           });
@@ -981,11 +968,9 @@
       if (cases && cases.length > 0) {
         cases.forEach((c, idx) => {
           const caseLabel = getCaseLabel(c, idx);
-          const prefix = multipleCases ? `${caseLabel}: ` : '';
           const court = val(c['Court/Office']);
           const judge = c['Judge text'];
 
-          // Hearing Date/Time - most critical date
           const hearingDate = val(c['Hearing Date/Time']);
           if (isValidDate(hearingDate)) {
             const d = new Date(hearingDate);
@@ -993,21 +978,20 @@
             const urgency = typeof days === 'number' ? getDaysUrgency(days) : null;
             const isPast = d < now;
 
+            let statement = multipleCases ? `${caseLabel} hearing` : 'Court hearing';
+            if (court) statement += ` at ${court}`;
+
             timelineItems.push({
               date: d,
-              label: `${prefix}Hearing`,
+              statement: statement,
+              detail: judge ? `Before Judge ${judge}` : null,
               source: 'Cases',
-              fieldName: 'Hearing Date/Time',
-              caseId: c._recordId || c.id,
-              description: court || null,
-              judge: judge,
               daysAway: (!isPast && typeof days === 'number') ? days : null,
               icon: '⚖️',
               color: isPast ? 'slate' : (urgency && (urgency.level === 'critical' || urgency.level === 'high')) ? 'red' : 'amber'
             });
           }
 
-          // One Year Deadline (OYD) - immigration deadline
           const oyd = c['OYD '] || c['OYD'];
           if (isValidDate(oyd)) {
             const d = new Date(oyd);
@@ -1016,10 +1000,8 @@
 
             timelineItems.push({
               date: d,
-              label: `${prefix}One Year Deadline`,
+              statement: multipleCases ? `${caseLabel}: One-year filing deadline` : 'One-year filing deadline',
               source: 'Cases',
-              fieldName: 'OYD',
-              caseId: c._recordId || c.id,
               daysAway: isPast ? null : daysAway,
               icon: '⏰',
               color: isPast ? 'slate' : daysAway <= 30 ? 'red' : daysAway <= 90 ? 'amber' : 'blue'
@@ -1032,16 +1014,16 @@
       if (applications && applications.length > 0) {
         applications.forEach(app => {
           const appType = app.Application || 'Application';
-          const appName = app.Name;
           const status = app.Status;
 
           if (isValidDate(app.createdTime)) {
+            let statement = `${appType} application filed`;
+            if (status) statement += ` — ${status}`;
+
             timelineItems.push({
               date: new Date(app.createdTime),
-              label: `${appType} Filed`,
+              statement: statement,
               source: 'Applications',
-              fieldName: 'createdTime',
-              description: status ? `Status: ${status}` : null,
               icon: '📝',
               color: 'purple'
             });
@@ -1060,11 +1042,9 @@
 
             timelineItems.push({
               date: d,
-              label: title,
+              statement: title,
+              detail: hearing.location || null,
               source: 'Hearings',
-              fieldName: 'startDateTime',
-              description: hearing.location || null,
-              location: hearing.location,
               meetLink: hearing.meetLink,
               daysAway: isPast ? null : daysAway,
               icon: '🏛️',
@@ -1083,23 +1063,11 @@
             const isPast = d < now;
             const daysAway = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
 
-            // Extract a cleaner description (skip the structured metadata block)
-            let desc = event.location || null;
-            if (!desc && event.description) {
-              // Skip if description looks like structured metadata
-              const rawDesc = event.description;
-              if (!rawDesc.startsWith('━') && !rawDesc.includes('Client ID:')) {
-                desc = truncateDesc(rawDesc);
-              }
-            }
-
             timelineItems.push({
               date: d,
-              label: title,
+              statement: title,
+              detail: event.location || null,
               source: 'Events',
-              fieldName: 'startDateTime',
-              description: desc,
-              location: event.location,
               meetLink: event.meetLink,
               daysAway: isPast ? null : daysAway,
               icon: '📅',
@@ -1109,9 +1077,7 @@
         });
       }
 
-      // Sort by date (chronological)
       timelineItems.sort((a, b) => a.date - b.date);
-
       return timelineItems;
     }
 
@@ -1130,119 +1096,81 @@
         `;
       }
 
-      // Group items by relative time period
       const past = timelineItems.filter(item => item.date < now);
       const future = timelineItems.filter(item => item.date >= now);
 
-      // Color mapping
       const colorMap = {
-        emerald: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50', dot: 'bg-emerald-500' },
-        blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/50', dot: 'bg-blue-500' },
-        purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/50', dot: 'bg-purple-500' },
-        amber: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50', dot: 'bg-amber-500' },
-        red: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50', dot: 'bg-red-500' },
-        rose: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/50', dot: 'bg-rose-500' },
-        slate: { bg: 'bg-slate-700/30', text: 'text-slate-400', border: 'border-slate-600/50', dot: 'bg-slate-500' }
+        emerald: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/40', dot: 'bg-emerald-500' },
+        blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/40', dot: 'bg-blue-500' },
+        purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/40', dot: 'bg-purple-500' },
+        amber: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/40', dot: 'bg-amber-500' },
+        red: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40', dot: 'bg-red-500' },
+        rose: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/40', dot: 'bg-rose-500' },
+        slate: { bg: 'bg-slate-700/20', text: 'text-slate-400', border: 'border-slate-600/40', dot: 'bg-slate-500' }
       };
 
-      function renderTimelineItem(item, index) {
+      function renderTimelineItem(item) {
         const colors = colorMap[item.color] || colorMap.slate;
-        const dateStr = item.date.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-        const timeStr = item.date.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit'
-        });
+        const dateStr = item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const hasTime = item.date.getHours() !== 0 || item.date.getMinutes() !== 0;
+        const timeStr = hasTime ? item.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
 
         let urgencyBadge = '';
         if (item.daysAway !== null && item.daysAway >= 0) {
-          const urgencyClass = item.daysAway <= 14 ? 'bg-red-500/30 text-red-400 font-bold' :
-                               item.daysAway <= 30 ? 'bg-red-500/20 text-red-400' :
-                               item.daysAway <= 60 ? 'bg-amber-500/20 text-amber-400' :
+          const urgencyClass = item.daysAway <= 14 ? 'bg-red-500/30 text-red-300 font-semibold' :
+                               item.daysAway <= 30 ? 'bg-red-500/20 text-red-300' :
+                               item.daysAway <= 60 ? 'bg-amber-500/20 text-amber-300' :
                                'bg-slate-700/50 text-slate-400';
-          urgencyBadge = `<span class="ml-2 px-2 py-0.5 rounded text-xs ${urgencyClass}">in ${item.daysAway}d</span>`;
+          urgencyBadge = `<span class="px-2 py-0.5 rounded text-xs ${urgencyClass}">in ${item.daysAway} days</span>`;
         }
 
-        // Only show description if it exists
-        let descLine = '';
-        if (item.description) {
-          descLine = `<p class="text-slate-300 text-sm mt-1">${escapeHtml(item.description)}</p>`;
-        }
-
-        let judgeLine = '';
-        if (item.judge) {
-          judgeLine = `<div class="text-xs text-slate-500 mt-1">Judge ${escapeHtml(item.judge)}</div>`;
-        }
-
-        let locationLine = '';
-        if (item.location && item.location !== item.description) {
-          locationLine = `<div class="text-xs text-slate-500 mt-1">📍 ${escapeHtml(item.location)}</div>`;
+        let detailLine = '';
+        if (item.detail) {
+          detailLine = `<p class="text-slate-400 text-sm mt-1">${escapeHtml(item.detail)}</p>`;
         }
 
         let meetLinkLine = '';
         if (item.meetLink) {
-          meetLinkLine = `<div class="text-xs mt-1"><a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline">🔗 Video Link</a></div>`;
+          meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-xs">Join Video</a>`;
         }
 
         return `
-          <div class="relative flex gap-4 pb-8 last:pb-0">
-            <!-- Timeline line -->
-            <div class="absolute left-[11px] top-6 bottom-0 w-0.5 bg-slate-700/50 last:hidden"></div>
-
-            <!-- Timeline dot -->
-            <div class="relative z-10 flex-shrink-0 w-6 h-6 rounded-full ${colors.dot} flex items-center justify-center text-xs shadow-lg">
-              <span class="text-white text-[10px]">${item.icon}</span>
+          <div class="flex gap-3 items-start">
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center">
+              <span class="text-lg">${item.icon}</span>
             </div>
-
-            <!-- Content -->
-            <div class="flex-1 ${colors.bg} ${colors.border} border rounded-lg p-3 -mt-1">
-              <div class="flex items-start justify-between gap-2 flex-wrap">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="${colors.text} font-medium text-sm">${escapeHtml(item.label)}</span>
-                    <span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-[10px] uppercase tracking-wider">${escapeHtml(item.source)}</span>
-                    ${urgencyBadge}
-                  </div>
-                  ${descLine}
-                  ${judgeLine}
-                  ${locationLine}
-                  ${meetLinkLine}
-                </div>
-                <div class="text-right flex-shrink-0">
-                  <div class="text-slate-200 text-sm font-medium">${dateStr}</div>
-                  ${hasTime ? `<div class="text-slate-400 text-xs">${timeStr}</div>` : ''}
-                </div>
+            <div class="flex-1 min-w-0">
+              <p class="${colors.text} font-medium">${escapeHtml(item.statement)}</p>
+              ${detailLine}
+              <div class="flex items-center gap-3 mt-1 flex-wrap">
+                <span class="text-slate-500 text-sm">${dateStr}${timeStr ? ` at ${timeStr}` : ''}</span>
+                ${urgencyBadge}
+                ${meetLinkLine}
               </div>
             </div>
           </div>
         `;
       }
 
-      // Render sections
       let pastHtml = '';
       if (past.length > 0) {
-        const pastItems = past.map((item, i) => renderTimelineItem(item, i)).join('');
+        // Show most recent past events first
+        const pastReversed = [...past].reverse();
+        const pastItems = pastReversed.map(item => renderTimelineItem(item)).join('</div><div class="py-3 border-t border-slate-700/30">');
         pastHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('timeline-past')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-slate-600/30 text-slate-400 flex items-center justify-center text-sm font-medium">${past.length}</span>
+                <span class="w-8 h-8 rounded-full bg-slate-600/30 text-slate-400 flex items-center justify-center text-sm">${past.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Past Events</h2>
-                  <p class="text-slate-400 text-sm">${past.length} historical ${pluralize(past.length, 'date')}</p>
+                  <h2 class="font-medium text-slate-100">History</h2>
+                  <p class="text-slate-500 text-sm">${past.length} past ${pluralize(past.length, 'event')}</p>
                 </div>
               </div>
               <span id="arrow-timeline-past" class="text-slate-500 transition-transform" style="transform: rotate(0deg)">▼</span>
             </button>
             <div id="content-timeline-past" class="px-4 pb-4 border-t border-slate-700/50 hidden">
-              <div class="mt-4">
-                ${pastItems}
-              </div>
+              <div class="py-3">${pastItems}</div>
             </div>
           </div>
         `;
@@ -1250,61 +1178,38 @@
 
       let futureHtml = '';
       if (future.length > 0) {
-        const futureItems = future.map((item, i) => renderTimelineItem(item, i)).join('');
+        const futureItems = future.map(item => renderTimelineItem(item)).join('</div><div class="py-3 border-t border-slate-700/30">');
         futureHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('timeline-future')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm font-medium">${future.length}</span>
+                <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">${future.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Upcoming Events</h2>
-                  <p class="text-slate-400 text-sm">${future.length} scheduled ${pluralize(future.length, 'date')}</p>
+                  <h2 class="font-medium text-slate-100">Upcoming</h2>
+                  <p class="text-slate-500 text-sm">${future.length} scheduled ${pluralize(future.length, 'event')}</p>
                 </div>
               </div>
               <span id="arrow-timeline-future" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
             <div id="content-timeline-future" class="px-4 pb-4 border-t border-slate-700/50">
-              <div class="mt-4">
-                ${futureItems}
-              </div>
+              <div class="py-3">${futureItems}</div>
             </div>
           </div>
         `;
       }
 
-      // "Now" indicator
       const nowIndicator = `
-        <div class="relative flex items-center gap-4 py-2">
-          <div class="w-6 flex justify-center">
-            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-lg shadow-green-500/50"></div>
-          </div>
-          <div class="flex-1 h-px bg-gradient-to-r from-green-500/50 via-green-500/20 to-transparent"></div>
-          <span class="text-green-400 text-xs font-medium uppercase tracking-wider">Today</span>
-          <div class="flex-1 h-px bg-gradient-to-l from-green-500/50 via-green-500/20 to-transparent"></div>
+        <div class="flex items-center gap-3 py-1">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <div class="flex-1 h-px bg-gradient-to-r from-green-500/40 to-transparent"></div>
+          <span class="text-green-400 text-xs font-medium">Today</span>
+          <div class="flex-1 h-px bg-gradient-to-l from-green-500/40 to-transparent"></div>
         </div>
       `;
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
           ${renderHeader(data)}
-
-          <!-- Timeline summary -->
-          <div class="bg-slate-800/50 rounded-lg border border-slate-700/50 p-4">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-              <div class="flex items-center gap-3">
-                <span class="text-2xl">📅</span>
-                <div>
-                  <h2 class="font-medium text-slate-100">Timeline</h2>
-                  <p class="text-slate-400 text-sm">${timelineItems.length} dated ${pluralize(timelineItems.length, 'event')} found</p>
-                </div>
-              </div>
-              <div class="flex gap-2 text-xs">
-                <span class="px-2 py-1 bg-slate-700/50 text-slate-400 rounded">${past.length} past</span>
-                <span class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded">${future.length} upcoming</span>
-              </div>
-            </div>
-          </div>
-
           ${futureHtml}
           ${past.length > 0 && future.length > 0 ? nowIndicator : ''}
           ${pastHtml}
