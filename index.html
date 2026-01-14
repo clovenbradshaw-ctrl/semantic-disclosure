@@ -23,16 +23,16 @@
   <script>
     const DATA_URL = 'https://n8n.intelechia.com/webhook/c68fda2a-9302-4efb-930b-7063b85ef595';
 
-    // View mode: 'structured' or 'narrative'
-    let currentView = 'narrative';
+    // View mode: 'brief', 'detailed', or 'structured'
+    let currentView = 'brief';
 
     function getRecordId() {
       const params = new URLSearchParams(window.location.search);
-      return params.get('recordId') || 'recbMn886NM6d8eWf';
+      return params.get('recordId');
     }
 
     function formatDate(dateStr) {
-      if (!dateStr) return '—';
+      if (!dateStr) return null;
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
@@ -41,16 +41,6 @@
       if (!dateStr) return null;
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
-    function formatAge(dob) {
-      if (!dob) return '—';
-      const birth = new Date(dob);
-      const now = new Date();
-      let age = now.getFullYear() - birth.getFullYear();
-      const m = now.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-      return `${age} years`;
     }
 
     function getAge(dob) {
@@ -68,6 +58,28 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function val(v) {
+      if (Array.isArray(v)) return v[0];
+      return v;
+    }
+
+    function list(v) {
+      if (Array.isArray(v)) return v.join(', ');
+      return v;
+    }
+
+    function pluralize(n, singular, plural) {
+      return n === 1 ? singular : (plural || singular + 's');
+    }
+
+    function getDaysUrgency(days) {
+      if (typeof days !== 'number') return null;
+      if (days <= 14) return { level: 'critical', label: 'urgent', class: 'text-red-400 font-bold' };
+      if (days <= 30) return { level: 'high', label: 'soon', class: 'text-red-400' };
+      if (days <= 60) return { level: 'medium', label: 'upcoming', class: 'text-amber-400' };
+      return { level: 'low', label: '', class: 'text-slate-400' };
     }
 
     function toggleSection(sectionId) {
@@ -93,76 +105,170 @@
       document.getElementById('app').innerHTML = `
         <div class="max-w-4xl mx-auto">
           <div class="bg-red-900/30 border border-red-500/50 rounded-lg p-6 max-w-md mx-auto mt-12">
-            <p class="text-red-400 font-medium">Error loading data</p>
+            <p class="text-red-400 font-medium">Error</p>
             <p class="text-red-300/70 text-sm mt-1">${escapeHtml(message)}</p>
           </div>
         </div>
       `;
     }
 
-    // Generate semantic narrative from the data
-    function generateNarrative(data) {
+    // ═══════════════════════════════════════════════════════════════
+    // BRIEF NARRATIVE - Executive summary style
+    // ═══════════════════════════════════════════════════════════════
+    function generateBriefNarrative(data) {
       const { client, cases } = data;
-      const paragraphs = [];
+      const lines = [];
 
-      // Client introduction
-      if (client) {
-        const name = client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'This client';
-        const age = getAge(client.DOB);
-        const country = client.Country;
-        const aNumber = client['A#'];
-
-        let intro = `<strong>${escapeHtml(name)}</strong>`;
-        if (age && country) {
-          intro += ` is a ${age}-year-old individual from ${escapeHtml(country)}`;
-        } else if (age) {
-          intro += ` is ${age} years old`;
-        } else if (country) {
-          intro += ` is from ${escapeHtml(country)}`;
-        }
-        if (aNumber) {
-          intro += ` with A# <span class="font-mono text-blue-300">${escapeHtml(aNumber)}</span>`;
-        }
-        intro += '.';
-        paragraphs.push(intro);
-
-        // Contact information
-        const phone = client['Phone Number'];
-        const address = client['Address Line 1'];
-        const city = client.City;
-        const state = client['State Formula'];
-
-        if (phone || address) {
-          let contact = 'They can be reached';
-          if (phone) {
-            contact += ` at <span class="font-mono text-emerald-300">${escapeHtml(phone)}</span>`;
-          }
-          if (address && city) {
-            contact += phone ? ' and' : '';
-            contact += ` reside at ${escapeHtml(address)}, ${escapeHtml(city)}${state ? ', ' + escapeHtml(state) : ''}`;
-          }
-          contact += '.';
-          paragraphs.push(contact);
-        }
-
-        // Tags and status
-        const tags = (client['CM Tags'] || []).filter(Boolean);
-        const sijStatus = client['SIJ Case Status'];
-
-        if (sijStatus) {
-          const statusText = Array.isArray(sijStatus) ? sijStatus.join(', ') : sijStatus;
-          paragraphs.push(`Their SIJ case status is currently <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded">${escapeHtml(statusText)}</span>.`);
-        }
-
-        if (tags.length > 0) {
-          const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
-          paragraphs.push(`Case management tags: ${tagSpans}`);
-        }
+      if (!client) {
+        return ['<span class="text-slate-500">No client information available.</span>'];
       }
 
-      // Cases narrative
+      // One-liner client intro
+      const name = client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown';
+      const age = getAge(client.DOB);
+      const country = client.Country;
+      const aNum = client['A#'];
+
+      let intro = `<strong class="text-slate-100">${escapeHtml(name)}</strong>`;
+      const details = [];
+      if (age) details.push(`${age}yo`);
+      if (country) details.push(`from ${escapeHtml(country)}`);
+      if (aNum) details.push(`A# <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`);
+      if (details.length) intro += ` (${details.join(', ')})`;
+
+      // SIJ status inline if present
+      const sijStatus = client['SIJ Case Status'];
+      if (sijStatus) {
+        const statusText = list(sijStatus);
+        intro += ` — SIJ: <span class="text-amber-300">${escapeHtml(statusText)}</span>`;
+      }
+
+      lines.push(intro);
+
+      // Cases summary
       if (cases && cases.length > 0) {
-        // Group by type
+        const casesByType = {};
+        cases.forEach(c => {
+          const type = c.Description || 'Other';
+          if (!casesByType[type]) casesByType[type] = [];
+          casesByType[type].push(c);
+        });
+
+        const typeSummary = Object.entries(casesByType)
+          .map(([type, arr]) => `${arr.length} ${escapeHtml(type)}`)
+          .join(', ');
+
+        lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>: ${typeSummary}`);
+
+        // Urgent hearings
+        const urgent = cases.filter(c => {
+          const days = c['Days to Next Hearing'];
+          return typeof days === 'number' && days <= 30;
+        }).sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
+
+        if (urgent.length > 0) {
+          const next = urgent[0];
+          const days = next['Days to Next Hearing'];
+          const urgency = getDaysUrgency(days);
+          const hearingDate = formatDate(val(next['Hearing Date/Time']));
+          const caseType = next.Description || 'case';
+
+          let urgentLine = `<span class="${urgency.class}">Next hearing in ${days} ${pluralize(days, 'day')}</span>`;
+          if (hearingDate) urgentLine += ` (${hearingDate})`;
+          urgentLine += ` for ${escapeHtml(caseType)}`;
+
+          const court = val(next['Court/Office']);
+          if (court) urgentLine += ` at ${escapeHtml(court)}`;
+
+          if (urgent.length > 1) {
+            urgentLine += `. <span class="text-slate-400">${urgent.length - 1} other ${pluralize(urgent.length - 1, 'hearing')} within 30 days.</span>`;
+          }
+
+          lines.push(urgentLine);
+        }
+      } else {
+        lines.push('<span class="text-slate-500">No active cases.</span>');
+      }
+
+      return lines;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DETAILED NARRATIVE - Full prose disclosure
+    // ═══════════════════════════════════════════════════════════════
+    function generateDetailedNarrative(data) {
+      const { client, cases } = data;
+      const sections = [];
+
+      if (!client) {
+        return ['<span class="text-slate-500">No client information available.</span>'];
+      }
+
+      // ─── Client Profile ───
+      const name = client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'The client';
+      const age = getAge(client.DOB);
+      const dob = formatDateLong(client.DOB);
+      const country = client.Country;
+      const aNum = client['A#'];
+
+      let profile = `<strong class="text-slate-100">${escapeHtml(name)}</strong>`;
+
+      if (age && country) {
+        profile += ` is a ${age}-year-old national of ${escapeHtml(country)}`;
+      } else if (age) {
+        profile += ` is ${age} years old`;
+      } else if (country) {
+        profile += ` is a national of ${escapeHtml(country)}`;
+      }
+
+      if (dob) {
+        profile += `, born ${dob}`;
+      }
+
+      if (aNum) {
+        profile += `. Their Alien Registration Number is <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`;
+      }
+
+      profile += '.';
+      sections.push(profile);
+
+      // Contact info
+      const phone = client['Phone Number'];
+      const addr = client['Address Line 1'];
+      const city = client.City;
+      const state = client['State Formula'];
+      const zip = client['Zip (5)'];
+
+      if (phone || addr) {
+        let contact = '';
+        if (phone) {
+          contact += `They can be contacted at <span class="font-mono text-emerald-300">${escapeHtml(phone)}</span>`;
+        }
+        if (addr) {
+          const fullAddr = [addr, city, state, zip].filter(Boolean).join(', ');
+          contact += phone ? ` and reside` : 'They reside';
+          contact += ` at ${escapeHtml(fullAddr)}`;
+        }
+        contact += '.';
+        sections.push(contact);
+      }
+
+      // Status and tags
+      const sijStatus = client['SIJ Case Status'];
+      const tags = (client['CM Tags'] || []).filter(Boolean);
+
+      if (sijStatus) {
+        const statusText = list(sijStatus);
+        sections.push(`Their Special Immigrant Juvenile (SIJ) case status is <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded">${escapeHtml(statusText)}</span>.`);
+      }
+
+      if (tags.length > 0) {
+        const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
+        sections.push(`Case management notes: ${tagSpans}`);
+      }
+
+      // ─── Cases ───
+      if (cases && cases.length > 0) {
         const casesByType = {};
         cases.forEach(c => {
           const type = c.Description || 'Other';
@@ -171,115 +277,142 @@
         });
 
         const typeCount = Object.keys(casesByType).length;
-        paragraphs.push(`<br><strong>Case Summary:</strong> There ${cases.length === 1 ? 'is' : 'are'} <span class="text-blue-300 font-semibold">${cases.length} active case${cases.length !== 1 ? 's' : ''}</span> across ${typeCount} category${typeCount !== 1 ? 'ies' : 'y'}.`);
+        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Case Portfolio</span>`);
+        sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span> across ${typeCount} ${pluralize(typeCount, 'category', 'categories')}.`);
 
-        // Narrative for each case type
+        // Detail each case type
         for (const [type, typeCases] of Object.entries(casesByType)) {
-          let typeNarrative = `<br><span class="text-slate-300 font-medium">${escapeHtml(type)}</span> (${typeCases.length}): `;
+          sections.push(`<br><span class="text-slate-200 font-medium border-b border-slate-600 pb-1">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeCases.length})</span>`);
 
-          const caseDescriptions = typeCases.map(c => {
+          typeCases.forEach((c, idx) => {
             const parts = [];
-            const court = c['Court/Office'];
+            const court = val(c['Court/Office']);
             const judge = c['Judge text'];
-            const hearing = c['Hearing Date/Time'];
-            const daysToHearing = c['Days to Next Hearing'];
+            const hearing = val(c['Hearing Date/Time']);
+            const days = c['Days to Next Hearing'];
+
+            // Build case narrative
+            let caseText = '';
 
             if (court) {
-              const courtText = Array.isArray(court) ? court.join(', ') : court;
-              parts.push(`at ${escapeHtml(courtText)}`);
+              caseText += `Case pending at <span class="text-slate-200">${escapeHtml(court)}</span>`;
+            } else {
+              caseText += 'Case pending';
             }
+
             if (judge) {
-              parts.push(`before Judge ${escapeHtml(judge)}`);
+              caseText += ` before <span class="text-slate-200">Judge ${escapeHtml(judge)}</span>`;
             }
+
+            caseText += '.';
+
+            // Hearing info
             if (hearing) {
-              const hearingDate = formatDateLong(Array.isArray(hearing) ? hearing[0] : hearing);
-              if (hearingDate) {
-                let hearingText = `next hearing on <span class="text-emerald-300">${hearingDate}</span>`;
-                if (typeof daysToHearing === 'number') {
-                  const urgencyClass = daysToHearing <= 30 ? 'text-red-400 font-semibold' :
-                                       daysToHearing <= 60 ? 'text-amber-400' : 'text-slate-400';
-                  hearingText += ` <span class="${urgencyClass}">(${daysToHearing} days)</span>`;
+              const hearingDate = formatDateLong(hearing);
+              const urgency = getDaysUrgency(days);
+
+              if (typeof days === 'number') {
+                if (days <= 14) {
+                  caseText += ` <span class="${urgency.class}">Hearing in ${days} ${pluralize(days, 'day')} (${hearingDate})</span> — immediate preparation required.`;
+                } else if (days <= 30) {
+                  caseText += ` <span class="${urgency.class}">Next hearing on ${hearingDate} (${days} days)</span>.`;
+                } else if (days <= 60) {
+                  caseText += ` <span class="${urgency.class}">Hearing scheduled for ${hearingDate} (${days} days)</span>.`;
+                } else {
+                  caseText += ` Hearing scheduled for ${hearingDate} (${days} days).`;
                 }
-                parts.push(hearingText);
+              } else if (hearingDate) {
+                caseText += ` Next hearing on ${hearingDate}.`;
               }
             }
 
-            return parts.length > 0 ? parts.join(', ') : 'details pending';
-          });
+            sections.push(caseText);
 
-          typeNarrative += caseDescriptions.join('; ') + '.';
-          paragraphs.push(typeNarrative);
-
-          // Add notes if present
-          typeCases.forEach(c => {
+            // Notes
             if (c['Case Notes'] && c['Case Notes'].trim()) {
-              paragraphs.push(`<details class="ml-4 my-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Notes for case ${escapeHtml(c._recordId)}</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap">${escapeHtml(c['Case Notes'])}</pre></details>`);
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Case notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`);
             }
           });
         }
 
-        // Urgency summary
-        const urgentCases = cases.filter(c => typeof c['Days to Next Hearing'] === 'number' && c['Days to Next Hearing'] <= 30);
-        const soonCases = cases.filter(c => typeof c['Days to Next Hearing'] === 'number' && c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
+        // ─── Timeline Summary ───
+        const allWithHearings = cases
+          .filter(c => typeof c['Days to Next Hearing'] === 'number')
+          .sort((a, b) => a['Days to Next Hearing'] - b['Days to Next Hearing']);
 
-        if (urgentCases.length > 0 || soonCases.length > 0) {
-          let urgencyNote = '<br><strong>Timeline Alerts:</strong> ';
-          if (urgentCases.length > 0) {
-            urgencyNote += `<span class="text-red-400">${urgentCases.length} case${urgentCases.length !== 1 ? 's' : ''} require${urgentCases.length === 1 ? 's' : ''} immediate attention (hearing within 30 days)</span>`;
+        const critical = allWithHearings.filter(c => c['Days to Next Hearing'] <= 14);
+        const urgent = allWithHearings.filter(c => c['Days to Next Hearing'] > 14 && c['Days to Next Hearing'] <= 30);
+        const upcoming = allWithHearings.filter(c => c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
+
+        if (critical.length > 0 || urgent.length > 0 || upcoming.length > 0) {
+          sections.push(`<br><span class="text-lg font-semibold text-slate-200">Timeline Overview</span>`);
+
+          const alerts = [];
+          if (critical.length > 0) {
+            alerts.push(`<span class="text-red-400 font-bold">${critical.length} ${pluralize(critical.length, 'hearing')} within 2 weeks requiring immediate attention</span>`);
           }
-          if (urgentCases.length > 0 && soonCases.length > 0) {
-            urgencyNote += ' and ';
+          if (urgent.length > 0) {
+            alerts.push(`<span class="text-red-400">${urgent.length} ${pluralize(urgent.length, 'hearing')} within 30 days</span>`);
           }
-          if (soonCases.length > 0) {
-            urgencyNote += `<span class="text-amber-400">${soonCases.length} case${soonCases.length !== 1 ? 's have' : ' has'} hearings within 60 days</span>`;
+          if (upcoming.length > 0) {
+            alerts.push(`<span class="text-amber-400">${upcoming.length} ${pluralize(upcoming.length, 'hearing')} within 60 days</span>`);
           }
-          urgencyNote += '.';
-          paragraphs.push(urgencyNote);
+
+          sections.push(alerts.join(' · '));
         }
       } else {
-        paragraphs.push('<br><span class="text-slate-500">No active cases on file.</span>');
+        sections.push(`<br><span class="text-slate-500">No active cases currently on file for this client.</span>`);
       }
 
-      return paragraphs;
+      return sections;
     }
 
-    function renderNarrativeView(data) {
-      const { _meta } = data;
-      const paragraphs = generateNarrative(data);
+    // ═══════════════════════════════════════════════════════════════
+    // RENDER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    function renderHeader(_meta) {
+      const countBadges = Object.entries(_meta.recordCounts || {}).map(([type, count]) => {
+        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
+        return `<span class="px-2 py-1 rounded text-xs ${colorClass}">${type}: ${count}</span>`;
+      }).join('');
+
+      const viewButtons = ['brief', 'detailed', 'structured'].map(view => {
+        const label = view.charAt(0).toUpperCase() + view.slice(1);
+        const active = currentView === view;
+        return `<button onclick="switchView('${view}')" class="px-3 py-1 text-sm rounded transition-colors ${active ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}">${label}</button>`;
+      }).join('');
 
       return `
-        <div class="max-w-4xl mx-auto space-y-4">
-          ${renderHeader(_meta)}
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-6">
-            <div class="prose prose-invert max-w-none">
-              <div class="space-y-3 text-slate-300 leading-relaxed">
-                ${paragraphs.map(p => `<p>${p}</p>`).join('')}
-              </div>
+        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h1 class="text-lg font-semibold text-slate-100">Client Record</h1>
+            <div class="flex items-center gap-3">
+              <div class="flex gap-1 bg-slate-700/30 p-1 rounded-lg">${viewButtons}</div>
             </div>
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-700/30">
+            <p class="text-slate-500 text-xs">Generated: ${formatDate(_meta.generatedAt) || 'Unknown'}</p>
+            <div class="flex gap-2">${countBadges}</div>
           </div>
         </div>
       `;
     }
 
-    function renderHeader(_meta) {
-      const countBadges = Object.entries(_meta.recordCounts).map(([type, count]) => {
-        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
-        return `<span class="px-2 py-1 rounded ${colorClass}">${type}: ${count}</span>`;
-      }).join('');
+    function renderNarrativeView(data, detailed = false) {
+      const { _meta } = data;
+      const paragraphs = detailed ? generateDetailedNarrative(data) : generateBriefNarrative(data);
+
+      const contentClass = detailed ? 'space-y-3' : 'space-y-2';
 
       return `
-        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h1 class="text-lg font-semibold text-slate-100">Client Record Viewer</h1>
-            <div class="flex items-center gap-4">
-              <div class="flex gap-1 bg-slate-700/50 p-1 rounded-lg">
-                <button onclick="switchView('narrative')" class="px-3 py-1 text-sm rounded ${currentView === 'narrative' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}">Narrative</button>
-                <button onclick="switchView('structured')" class="px-3 py-1 text-sm rounded ${currentView === 'structured' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200'}">Structured</button>
-              </div>
-              <div class="flex gap-3 text-xs">${countBadges}</div>
+        <div class="max-w-4xl mx-auto space-y-4">
+          ${renderHeader(_meta)}
+          <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-6">
+            <div class="${contentClass} text-slate-300 leading-relaxed">
+              ${paragraphs.map(p => `<p>${p}</p>`).join('')}
             </div>
           </div>
-          <p class="text-slate-500 text-xs mt-2">Generated: ${formatDate(_meta.generatedAt)}</p>
         </div>
       `;
     }
@@ -287,7 +420,6 @@
     function renderStructuredView(data) {
       const { _meta, client, cases } = data;
 
-      // Group cases by type
       const casesByType = {};
       if (cases && cases.length > 0) {
         cases.forEach(c => {
@@ -297,7 +429,6 @@
         });
       }
 
-      // Client section
       let clientHtml = '';
       if (client) {
         const tags = (client['CM Tags'] || []).filter(Boolean).map(tag =>
@@ -307,9 +438,7 @@
         const sijStatus = client['SIJ Case Status']
           ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
               <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">SIJ Status</p>
-              <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-sm">
-                ${escapeHtml(Array.isArray(client['SIJ Case Status']) ? client['SIJ Case Status'].join(', ') : client['SIJ Case Status'])}
-              </span>
+              <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-sm">${escapeHtml(list(client['SIJ Case Status']))}</span>
             </div>`
           : '';
 
@@ -321,17 +450,17 @@
           : '';
 
         const address = client['Address Line 1']
-          ? `${client['Address Line 1']}, ${client.City || ''} ${client['State Formula'] || ''} ${client['Zip (5)'] || ''}`
+          ? [client['Address Line 1'], client.City, client['State Formula'], client['Zip (5)']].filter(Boolean).join(', ')
           : '—';
 
         clientHtml = `
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">👤</span>
+                <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">C</span>
                 <div class="text-left">
                   <h2 class="font-medium text-slate-100">Client</h2>
-                  <p class="text-slate-400 text-sm">${escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'])}</p>
+                  <p class="text-slate-400 text-sm">${escapeHtml(client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown')}</p>
                 </div>
               </div>
               <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
@@ -343,8 +472,8 @@
                   <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
                 </div>
                 <div>
-                  <p class="text-slate-500 text-xs uppercase tracking-wide">DOB</p>
-                  <p class="text-slate-200 text-sm">${formatDate(client.DOB)} (${formatAge(client.DOB)})</p>
+                  <p class="text-slate-500 text-xs uppercase tracking-wide">DOB / Age</p>
+                  <p class="text-slate-200 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
                 </div>
                 <div>
                   <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
@@ -366,46 +495,32 @@
         `;
       }
 
-      // Cases section
       let casesHtml = '';
       if (cases && cases.length > 0) {
         const caseTypesHtml = Object.entries(casesByType).map(([type, typeCases]) => {
-          const caseItemsHtml = typeCases.map(caseItem => {
-            const court = caseItem['Court/Office']
-              ? `<span>📍 ${escapeHtml(Array.isArray(caseItem['Court/Office']) ? caseItem['Court/Office'].join(', ') : caseItem['Court/Office'])}</span>`
-              : '';
-            const judge = caseItem['Judge text']
-              ? `<span>⚖️ ${escapeHtml(caseItem['Judge text'])}</span>`
-              : '';
-            const hearing = caseItem['Hearing Date/Time']
-              ? `<span>📅 ${formatDate(Array.isArray(caseItem['Hearing Date/Time']) ? caseItem['Hearing Date/Time'][0] : caseItem['Hearing Date/Time'])}</span>`
-              : '';
+          const caseItemsHtml = typeCases.map(c => {
+            const court = c['Court/Office'] ? `<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>` : '';
+            const judge = c['Judge text'] ? `<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>` : '';
+            const hearing = c['Hearing Date/Time'] ? `<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>` : '';
 
             let daysBadge = '';
-            if (caseItem['Days to Next Hearing'] && typeof caseItem['Days to Next Hearing'] === 'number') {
-              const days = caseItem['Days to Next Hearing'];
-              const colorClass = days <= 30 ? 'bg-red-500/20 text-red-300' :
-                                 days <= 60 ? 'bg-amber-500/20 text-amber-300' :
-                                 'bg-slate-700/50 text-slate-400';
-              daysBadge = `<span class="shrink-0 px-2 py-1 rounded text-xs ${colorClass}">${days}d</span>`;
+            const days = c['Days to Next Hearing'];
+            if (typeof days === 'number') {
+              const urgency = getDaysUrgency(days);
+              const bgClass = days <= 14 ? 'bg-red-500/30' : days <= 30 ? 'bg-red-500/20' : days <= 60 ? 'bg-amber-500/20' : 'bg-slate-700/50';
+              daysBadge = `<span class="shrink-0 px-2 py-1 rounded text-xs ${bgClass} ${urgency.class}">${days}d</span>`;
             }
 
             let notesHtml = '';
-            if (caseItem['Case Notes'] && caseItem['Case Notes'].trim()) {
-              notesHtml = `
-                <details class="mt-2">
-                  <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary>
-                  <pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 overflow-x-auto whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(caseItem['Case Notes'])}</pre>
-                </details>
-              `;
+            if (c['Case Notes'] && c['Case Notes'].trim()) {
+              notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
             }
 
             return `
               <div class="px-4 py-3 hover:bg-slate-700/10 transition-colors">
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1 min-w-0">
-                    <p class="text-slate-300 text-sm font-mono truncate">${escapeHtml(caseItem._recordId)}</p>
-                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
+                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm">
                       ${court}${judge}${hearing}
                     </div>
                   </div>
@@ -421,12 +536,10 @@
               <div class="px-4 py-3 bg-slate-700/20">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-medium text-slate-200">${escapeHtml(type)}</h3>
-                  <span class="text-xs text-slate-500">${typeCases.length} case${typeCases.length !== 1 ? 's' : ''}</span>
+                  <span class="text-xs text-slate-500">${typeCases.length}</span>
                 </div>
               </div>
-              <div class="divide-y divide-slate-700/20">
-                ${caseItemsHtml}
-              </div>
+              <div class="divide-y divide-slate-700/20">${caseItemsHtml}</div>
             </div>
           `;
         }).join('');
@@ -435,40 +548,24 @@
           <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
             <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">📁</span>
+                <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-medium">${cases.length}</span>
                 <div class="text-left">
                   <h2 class="font-medium text-slate-100">Cases</h2>
-                  <p class="text-slate-400 text-sm">${cases.length} total · ${Object.keys(casesByType).length} types</p>
+                  <p class="text-slate-400 text-sm">${Object.keys(casesByType).length} ${pluralize(Object.keys(casesByType).length, 'type')}</p>
                 </div>
               </div>
               <span id="arrow-cases" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
-            <div id="content-cases" class="border-t border-slate-700/50">
-              ${caseTypesHtml}
-            </div>
+            <div id="content-cases" class="border-t border-slate-700/50">${caseTypesHtml}</div>
           </div>
         `;
       }
-
-      // Empty sections notice
-      const emptySections = Object.entries(_meta.recordCounts)
-        .filter(([key, count]) => count === 0)
-        .map(([key]) => key);
-
-      const emptyNotice = emptySections.length > 0
-        ? `<div class="bg-slate-800/30 rounded-lg p-4 border border-slate-700/30">
-            <p class="text-slate-500 text-sm">
-              <span class="text-slate-400">Empty sections:</span> ${emptySections.join(', ')}
-            </p>
-          </div>`
-        : '';
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
           ${renderHeader(_meta)}
           ${clientHtml}
           ${casesHtml}
-          ${emptyNotice}
         </div>
       `;
     }
@@ -476,20 +573,35 @@
     function renderData(data) {
       window.currentData = data;
 
-      if (currentView === 'narrative') {
-        document.getElementById('app').innerHTML = renderNarrativeView(data);
+      if (currentView === 'brief') {
+        document.getElementById('app').innerHTML = renderNarrativeView(data, false);
+      } else if (currentView === 'detailed') {
+        document.getElementById('app').innerHTML = renderNarrativeView(data, true);
       } else {
         document.getElementById('app').innerHTML = renderStructuredView(data);
       }
     }
 
-    // Fetch and render
+    // ═══════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════
     async function init() {
+      const recordId = getRecordId();
+
+      if (!recordId) {
+        renderError('Missing recordId parameter. Please provide a recordId in the URL (e.g., ?recordId=recXXX)');
+        return;
+      }
+
       try {
-        const recordId = getRecordId();
         const response = await fetch(`${DATA_URL}?recordId=${recordId}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
         const json = await response.json();
+
+        if (!json || !json[0]) {
+          throw new Error('No data returned for this record');
+        }
+
         renderData(json[0]);
       } catch (err) {
         renderError(err.message);
