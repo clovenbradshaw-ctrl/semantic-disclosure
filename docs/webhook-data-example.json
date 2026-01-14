@@ -1,0 +1,140 @@
+{
+  "records": [
+    {
+      "_sourceTable": "Client Info",
+      "id": "recABC123",
+      "createdTime": "2025-12-26T19:41:06.000Z",
+      "Client Name": "Doe, John",
+      "Created At": "2025-12-26 19:41:06",
+      "Created Airtable Record": "2025-12-26T19:41:06.000Z",
+      "Last Modified By": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      },
+      "Created date": "2025-12-26T19:41:06.000Z",
+      "SIJ Visa Availability": { "specialValue": "NaN" },
+      "Appeal Engagement Deadline": { "error": "#ERROR" },
+      "OYD ": { "error": "#ERROR" },
+      "Today Date": "2026-01-14T00:20:24.500Z",
+      "Days Elapsed since Engagement": { "specialValue": "NaN" },
+      "Mail vs Rcpt Date": { "specialValue": "NaN" },
+      "Est. Age at biometrics": { "specialValue": "NaN" },
+      "42b calc": "No Entry Date",
+      "Mail vs Notice Date": { "specialValue": "NaN" },
+      "Sent vs Pending (EAD)": { "specialValue": "NaN" },
+      "Days to Next Hearing": { "specialValue": "NaN" },
+      "box link": { "label": "box", "url": "" },
+      "Invoiced": { "label": "Invoiced ", "url": "" },
+      "FOIA Button": { "label": "USCIS FOIA", "url": "" },
+      "Atty Rec Req Button": { "label": "Prev. Counsel File", "url": "" },
+      "Activity Details": {
+        "label": "Edit",
+        "url": "https://example.com/record/recABC123"
+      },
+      "Case Notes": "Initial intake completed; documents pending.",
+      "Description": "SIJ Custody",
+      "Update Tracker EADs": "2026-01-05T19:20:00.000Z",
+      "Update Tracker EAD Pers": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      }
+    },
+    {
+      "_sourceTable": "Case Master View",
+      "id": "recDEF456",
+      "createdTime": "2025-12-26T19:41:06.000Z",
+      "Client Name": "Doe, John",
+      "Created At": "2025-12-26 19:41:06",
+      "Created Airtable Record": "2025-12-26T19:41:06.000Z",
+      "Last Modified By": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      },
+      "Created date": "2025-12-26T19:41:06.000Z",
+      "SIJ Visa Availability": { "specialValue": "NaN" },
+      "Appeal Engagement Deadline": { "error": "#ERROR" },
+      "OYD ": { "error": "#ERROR" },
+      "Today Date": "2026-01-14T00:20:24.500Z",
+      "Mail vs Rcpt Date": { "specialValue": "NaN" },
+      "Est. Age at biometrics": { "specialValue": "NaN" },
+      "42b calc": "No Entry Date",
+      "Activity Details": {
+        "label": "Edit",
+        "url": "https://example.com/case/recDEF456"
+      },
+      "Description": "SIJ Custody",
+      "Update Tracker EADs": "2026-01-05T19:20:00.000Z",
+      "Update Tracker EAD Pers": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      }
+    },
+    {
+      "_sourceTable": "Events",
+      "id": "evtGHI789",
+      "createdTime": "2025-12-26T19:41:06.000Z",
+      "Client Name": "Doe, John",
+      "Created At": "2025-12-26 19:41:06",
+      "Created Airtable Record": "2025-12-26T19:41:06.000Z",
+      "Last Modified By": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      },
+      "Created date": "2025-12-26T19:41:06.000Z",
+      "SIJ Visa Availability": { "specialValue": "NaN" },
+      "Appeal Engagement Deadline": { "error": "#ERROR" },
+      "OYD ": { "error": "#ERROR" },
+      "Today Date": "2026-01-14T00:20:24.500Z",
+      "Activity Details": {
+        "label": "Edit",
+        "url": "https://example.com/event/evtGHI789"
+      },
+      "Description": "Hearing",
+      "Start Date": "2026-02-01T10:00:00.000Z",
+      "End Date": "2026-02-01T11:00:00.000Z",
+      "Location": "Conference Room A",
+      "Update Tracker EADs": "2026-01-05T19:20:00.000Z",
+      "Update Tracker EAD Pers": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      }
+    },
+    {
+      "_sourceTable": "Applications",
+      "id": "appJKL012",
+      "createdTime": "2025-12-26T19:41:06.000Z",
+      "Client Name": "Doe, John",
+      "Created At": "2025-12-26 19:41:06",
+      "Created Airtable Record": "2025-12-26T19:41:06.000Z",
+      "Last Modified By": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      },
+      "Created date": "2025-12-26T19:41:06.000Z",
+      "Current USCIS application": "I-485: Filed",
+      "SIJ Visa Availability": { "specialValue": "NaN" },
+      "Appeal Engagement Deadline": { "error": "#ERROR" },
+      "OYD ": { "error": "#ERROR" },
+      "Today Date": "2026-01-14T00:20:24.500Z",
+      "Activity Details": {
+        "label": "Edit",
+        "url": "https://example.com/application/appJKL012"
+      },
+      "Description": "Adjustment of Status",
+      "Case Master View ID": "recDEF456",
+      "Update Tracker EADs": "2026-01-05T19:20:00.000Z",
+      "Update Tracker EAD Pers": {
+        "id": "usrXYZ",
+        "email": "john.doe@example.com",
+        "name": "John Doe"
+      }
+    }
+  ]
+}
