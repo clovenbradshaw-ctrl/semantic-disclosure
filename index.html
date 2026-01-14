@@ -103,9 +103,9 @@
         { key: 'flatpack', label: 'Matter Details (Flatpack)', views: { structured: true, brief: true, detailed: true, timeline: false } },
       ],
       cases: [
-        { key: 'type', label: 'Case Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
-        { key: 'court', label: 'Court/Office', views: { structured: true, brief: true, detailed: true, timeline: true } },
-        { key: 'judge', label: 'Judge', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'type', label: 'Case Type', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'court', label: 'Court/Office', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'judge', label: 'Judge', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'hearingDate', label: 'Hearing Date', views: { structured: true, brief: true, detailed: true, timeline: true } },
         { key: 'daysToHearing', label: 'Days to Hearing', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'oyd', label: 'One-Year Deadline (OYD)', views: { structured: false, brief: false, detailed: true, timeline: true } },
@@ -113,20 +113,20 @@
         { key: 'flatpack', label: 'Case Flatpack Data', views: { structured: true, brief: false, detailed: true, timeline: false } },
       ],
       applications: [
-        { key: 'type', label: 'Application Type', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'type', label: 'Application Type', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'name', label: 'Name/Matter', views: { structured: true, brief: false, detailed: true, timeline: false } },
-        { key: 'status', label: 'Status', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'status', label: 'Status', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'receiptNumber', label: 'Receipt Number', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'filedDate', label: 'Filed Date', views: { structured: false, brief: false, detailed: true, timeline: true } },
         { key: 'certCounty', label: 'County/State', views: { structured: false, brief: false, detailed: true, timeline: false } },
         { key: 'notes', label: 'Notes', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ],
       events: [
-        { key: 'title', label: 'Title', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'title', label: 'Title', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'dateTime', label: 'Date/Time', views: { structured: true, brief: true, detailed: true, timeline: true } },
-        { key: 'location', label: 'Location', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'location', label: 'Location', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'calendarType', label: 'Calendar Type', views: { structured: true, brief: false, detailed: true, timeline: false } },
-        { key: 'meetLink', label: 'Video Link', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'meetLink', label: 'Video Link', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'description', label: 'Description', views: { structured: false, brief: false, detailed: true, timeline: false } },
         { key: 'attendees', label: 'Attendees', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ]
@@ -319,11 +319,12 @@
             // Skip if we already have this key
             if (addedKeys[category].has(key)) continue;
 
-            // Add new field with all views visible by default
+            // Add new field - timeline only enabled for date fields
+            const isDate = isDateField(category, key);
             newRegistry[category].push({
               key: key,
               label: fieldName,
-              views: { structured: true, brief: true, detailed: true, timeline: true },
+              views: { structured: true, brief: true, detailed: true, timeline: isDate },
               // Store original field name for data access
               sourceField: fieldName
             });
@@ -436,6 +437,12 @@
     }
 
     function setFieldVisibility(category, key, visible, view = currentView) {
+      // Timeline view only allows date fields
+      if (view === 'timeline' && visible && !isDateField(category, key)) {
+        console.warn(`Cannot enable non-date field "${key}" for timeline view`);
+        return;
+      }
+
       const prefs = loadFieldPrefs();
       if (!prefs[view]) prefs[view] = {};
       if (!prefs[view][category]) prefs[view][category] = [];
