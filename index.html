@@ -780,8 +780,34 @@
     }
 
     function getRecordId() {
+      // 1. Check query parameters (standard approach)
       const params = new URLSearchParams(window.location.search);
-      return params.get('recordId');
+      const queryRecordId = params.get('recordId');
+      if (queryRecordId) return queryRecordId;
+
+      // 2. Check URL path for Softr detail page pattern (e.g., /page-name/recXXXXXX)
+      // Airtable record IDs start with 'rec' followed by alphanumeric characters
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      for (const segment of pathSegments.reverse()) {
+        if (/^rec[a-zA-Z0-9]+$/.test(segment)) {
+          return segment;
+        }
+      }
+
+      // 3. Check hash for record ID (some Softr configurations)
+      const hash = window.location.hash.replace('#', '');
+      if (/^rec[a-zA-Z0-9]+$/.test(hash)) {
+        return hash;
+      }
+
+      // 4. Check hash as query params (e.g., #recordId=recXXX)
+      if (hash.includes('=')) {
+        const hashParams = new URLSearchParams(hash);
+        const hashRecordId = hashParams.get('recordId');
+        if (hashRecordId) return hashRecordId;
+      }
+
+      return null;
     }
 
     function formatDate(dateStr) {
