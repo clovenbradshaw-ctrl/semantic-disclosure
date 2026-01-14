@@ -4414,11 +4414,19 @@
      * @returns {Object} Normalized { clientInfo, cases } structure
      */
     transform(rawData) {
+      console.log('[DataTransformer] Raw data type:', typeof rawData, Array.isArray(rawData) ? 'array' : '');
+
       // Handle response with schema included: { schema: [...], data: [...] }
       if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
         console.log('[DataTransformer] Schema detected in response');
         SchemaProcessor.init(rawData.schema);
         rawData = rawData.data || rawData.records || [];
+      }
+
+      // Handle n8n webhook format: { records: [...] }
+      if (rawData && rawData.records && Array.isArray(rawData.records)) {
+        console.log('[DataTransformer] Detected { records: [...] } format with', rawData.records.length, 'records');
+        rawData = rawData.records;
       }
 
       // Handle already-normalized data with potential schema
@@ -4432,8 +4440,8 @@
 
       // Handle flat array of records (actual Airtable format)
       if (!Array.isArray(rawData) || rawData.length === 0) {
-        console.warn('[DataTransformer] Empty or invalid data received');
-        return { clientInfo: { fields: {} }, cases: [] };
+        console.warn('[DataTransformer] Empty or invalid data received:', rawData);
+        return { clientInfo: { fields: {} }, cases: [], events: [], applications: [] };
       }
 
       // Filter out empty objects from the array
@@ -4446,11 +4454,10 @@
         return { clientInfo: { fields: {} }, cases: [] };
       }
 
-      // Identify Client Info record vs Case records
-      // Client Info records have unique fields like "Full Client Name", "Address Line 1", etc.
-      const { clientInfoRecord, caseRecords } = this.separateRecordTypes(records);
+      // Separate records by table type
+      const { clientInfoRecord, caseRecords, eventRecords, applicationRecords } = this.separateRecordTypes(records);
 
-      // Extract client fields from the appropriate source
+      // Extract client fields - try from Client Info record first, then fall back to Case record
       const clientFields = clientInfoRecord
         ? this.extractClientFieldsFromClientInfo(clientInfoRecord)
         : this.extractClientFields(caseRecords[0] || {});
@@ -4458,34 +4465,29 @@
       // Transform case records
       const transformedCases = caseRecords.map((record, index) => this.transformCase(record, index));
 
+      // Transform event records
+      const events = eventRecords.map((record, index) => this.transformEvent(record, index));
+
+      // Transform application records
+      const applications = applicationRecords.map((record, index) => this.transformApplication(record, index));
+
       // Deduplicate cases by recordId AND caseIdentifier
-      // This prevents duplicate tabs when:
-      // 1. Same recordId appears multiple times in the data
-      // 2. Different records have the same case description (same logical case)
       const seenRecordIds = new Set();
       const seenCaseIdentifiers = new Set();
       const cases = transformedCases.filter(caseRecord => {
-        // First check: skip if we've seen this exact recordId before
         if (caseRecord.recordId && seenRecordIds.has(caseRecord.recordId)) {
-          console.log(`[DataTransformer] Skipping duplicate recordId: ${caseRecord.recordId}`);
           return false;
         }
-
-        // Second check: skip if we've seen this caseIdentifier before
-        // (unless it's a generic "Case X" identifier which should be kept)
         const isGenericLabel = /^Case \d+$/.test(caseRecord.caseIdentifier);
         if (!isGenericLabel && seenCaseIdentifiers.has(caseRecord.caseIdentifier)) {
-          console.log(`[DataTransformer] Skipping duplicate caseIdentifier: ${caseRecord.caseIdentifier}`);
           return false;
         }
-
-        // Track both keys
         if (caseRecord.recordId) seenRecordIds.add(caseRecord.recordId);
         seenCaseIdentifiers.add(caseRecord.caseIdentifier);
         return true;
       });
 
-      console.log(`[DataTransformer] After deduplication: ${cases.length} cases (was ${transformedCases.length})`);
+      console.log(`[DataTransformer] Result: ${cases.length} cases, ${events.length} events, ${applications.length} applications`);
 
       return {
         clientInfo: {
@@ -4495,17 +4497,21 @@
                     caseRecords[0]?.id,
           fields: clientFields
         },
-        cases
+        cases,
+        events,
+        applications
       };
     },
 
     /**
-     * Separate Client Info records from Case Master View records
+     * Separate records by source table type
      * Uses _sourceTable field when available, falls back to field-based heuristics
      */
     separateRecordTypes(records) {
       let clientInfoRecord = null;
       const caseRecords = [];
+      const eventRecords = [];
+      const applicationRecords = [];
 
       for (const record of records) {
         const sourceTable = record._sourceTable;
@@ -4513,12 +4519,30 @@
         // Primary detection: use _sourceTable field if available
         if (sourceTable) {
           const tableLower = sourceTable.toLowerCase();
-          if (tableLower.includes('client info') && !tableLower.includes('case') && !tableLower.includes('master')) {
+
+          if (tableLower === 'client info' || (tableLower.includes('client info') && !tableLower.includes('case'))) {
             clientInfoRecord = record;
             console.log(`[DataTransformer] Client Info record via _sourceTable: ${sourceTable}`);
             continue;
           }
-          // Otherwise it's a case record - continue to add below
+
+          if (tableLower === 'events' || tableLower.includes('event')) {
+            eventRecords.push(record);
+            continue;
+          }
+
+          if (tableLower === 'applications' || tableLower.includes('application')) {
+            applicationRecords.push(record);
+            continue;
+          }
+
+          if (tableLower.includes('case master') || tableLower === 'case master view') {
+            caseRecords.push(record);
+            continue;
+          }
+
+          // Any other table - treat as case record by default
+          caseRecords.push(record);
         } else {
           // Fallback: field-based heuristics for older response formats
           const clientInfoIndicators = [
@@ -4539,14 +4563,14 @@
             console.log('[DataTransformer] Client Info record via field heuristics');
             continue;
           }
-        }
 
-        // Default: treat as Case Master View record
-        caseRecords.push(record);
+          // Default: treat as Case Master View record
+          caseRecords.push(record);
+        }
       }
 
-      console.log(`[DataTransformer] Found ${caseRecords.length} case records, clientInfo: ${clientInfoRecord ? 'yes' : 'no'}`);
-      return { clientInfoRecord, caseRecords };
+      console.log(`[DataTransformer] Separated records - clientInfo: ${clientInfoRecord ? 'yes' : 'no'}, cases: ${caseRecords.length}, events: ${eventRecords.length}, applications: ${applicationRecords.length}`);
+      return { clientInfoRecord, caseRecords, eventRecords, applicationRecords };
     },
 
     /**
@@ -4670,6 +4694,54 @@
       return {
         recordId: record.id || record['Case Master View Record ID'] || `case-${index}`,
         caseIdentifier,
+        fields
+      };
+    },
+
+    /**
+     * Transform a single event record
+     */
+    transformEvent(record, index) {
+      const fields = {};
+      const skipFields = new Set(['id', 'createdTime', '_sourceTable', 'Client Name']);
+
+      for (const [fieldName, rawValue] of Object.entries(record)) {
+        if (skipFields.has(fieldName)) continue;
+        const value = this.normalizeValue(rawValue, fieldName);
+        if (value !== null) {
+          fields[fieldName] = value;
+        }
+      }
+
+      return {
+        recordId: record.id || `event-${index}`,
+        title: record.Description || record.summary || `Event ${index + 1}`,
+        startDate: record['Start Date'] || record.start?.dateTime || record.start?.date,
+        endDate: record['End Date'] || record.end?.dateTime || record.end?.date,
+        location: record.Location || record.location,
+        fields
+      };
+    },
+
+    /**
+     * Transform a single application record
+     */
+    transformApplication(record, index) {
+      const fields = {};
+      const skipFields = new Set(['id', 'createdTime', '_sourceTable', 'Client Name']);
+
+      for (const [fieldName, rawValue] of Object.entries(record)) {
+        if (skipFields.has(fieldName)) continue;
+        const value = this.normalizeValue(rawValue, fieldName);
+        if (value !== null) {
+          fields[fieldName] = value;
+        }
+      }
+
+      return {
+        recordId: record.id || `app-${index}`,
+        type: record['Current USCIS application'] || record.Description || `Application ${index + 1}`,
+        caseId: record['Case Master View ID'],
         fields
       };
     },
@@ -5500,36 +5572,64 @@
     },
 
     /**
-     * Extract events from Google Calendar data
-     * This is the primary source for the Events tab
+     * Extract events from multiple sources:
+     * 1. normalizedData.events (from webhook Events table)
+     * 2. Google Calendar data
+     * 3. Legacy extraction from processed fields
      */
     extractEvents() {
       const events = [];
+      const seenIds = new Set();
 
-      // Primary source: Google Calendar data (window.GOOGLE_CALENDAR_DATA)
-      if (window.GOOGLE_CALENDAR_DATA) {
-        const calendarEvents = GoogleCalendarParser.parseEvents(window.GOOGLE_CALENDAR_DATA);
-        console.log('[Renderer] Loaded', calendarEvents.length, 'events from Google Calendar');
-        events.push(...calendarEvents);
-      }
+      // Helper to add event if not duplicate
+      const addEvent = (event) => {
+        const key = event.id || `${event.date}-${event.title}`;
+        if (seenIds.has(key)) return;
+        seenIds.add(key);
+        events.push(event);
+      };
 
-      // Secondary: Extract calendar-like events from the main data
-      // (for records that look like calendar events with date + title)
-      const dataEvents = DataFetcher.extractCalendarEventsFromData(this.data);
-      for (const event of dataEvents) {
-        // Avoid duplicates by checking ID and date+title
-        const isDuplicate = events.some(e =>
-          e.id === event.id ||
-          (e.date === event.date && e.title === event.title)
-        );
-        if (!isDuplicate) {
-          events.push(event);
+      // Primary source: Events from normalized webhook data (Events table records)
+      if (this.normalizedData?.events?.length > 0) {
+        console.log('[Renderer] Loading', this.normalizedData.events.length, 'events from webhook Events table');
+        for (const event of this.normalizedData.events) {
+          addEvent({
+            id: event.recordId,
+            date: event.startDate,
+            endDate: event.endDate,
+            title: event.title,
+            location: event.location,
+            description: event.fields?.Description || '',
+            details: event.fields?.Details || '',
+            recordId: event.recordId,
+            fields: event.fields,
+            matter: this.inferMatterFromCase(event.title),
+            urgency: event.startDate ? MatterDetector.getDateUrgency(event.startDate) : 'unknown',
+            source: 'webhook',
+            group: 'Calendar',
+            isCalendarEvent: true
+          });
         }
       }
 
-      // If still no events, fall back to legacy extraction from Events table
+      // Secondary source: Google Calendar data (window.GOOGLE_CALENDAR_DATA)
+      if (window.GOOGLE_CALENDAR_DATA) {
+        const calendarEvents = GoogleCalendarParser.parseEvents(window.GOOGLE_CALENDAR_DATA);
+        console.log('[Renderer] Loaded', calendarEvents.length, 'events from Google Calendar');
+        for (const event of calendarEvents) {
+          addEvent(event);
+        }
+      }
+
+      // Tertiary: Extract calendar-like events from main data
+      const dataEvents = DataFetcher.extractCalendarEventsFromData(this.data);
+      for (const event of dataEvents) {
+        addEvent(event);
+      }
+
+      // If still no events, fall back to legacy extraction
       if (events.length === 0) {
-        console.log('[Renderer] No calendar events found, using legacy extraction');
+        console.log('[Renderer] No events found, using legacy extraction');
         const legacyEvents = this.extractLegacyEvents();
         events.push(...legacyEvents);
       }
@@ -5603,22 +5703,49 @@
     },
 
     /**
-     * Extract application records
+     * Extract application records from:
+     * 1. normalizedData.applications (from webhook Applications table)
+     * 2. Legacy extraction from processed fields
      */
     extractApplications() {
-      const appFields = this.tabData?.applications?.fields || [];
       const applications = [];
+      const seenIds = new Set();
 
-      // Group by case/record
+      // Primary source: Applications from normalized webhook data
+      if (this.normalizedData?.applications?.length > 0) {
+        console.log('[Renderer] Loading', this.normalizedData.applications.length, 'applications from webhook');
+        for (const app of this.normalizedData.applications) {
+          if (seenIds.has(app.recordId)) continue;
+          seenIds.add(app.recordId);
+          applications.push({
+            recordId: app.recordId,
+            name: app.type,
+            application: app.type,
+            status: app.fields?.Status,
+            receiptNumber: app.fields?.['Receipt Number'],
+            receiptDate: app.fields?.['Filed Date'],
+            matter: this.inferMatterFromCase(app.type),
+            caseId: app.caseId,
+            fields: app.fields,
+            source: 'webhook'
+          });
+        }
+      }
+
+      // Secondary: Legacy extraction from processed fields
+      const appFields = this.tabData?.applications?.fields || [];
       const byRecord = {};
       for (const field of appFields) {
         const recordId = field.recordId || 'default';
+        if (seenIds.has(recordId)) continue;
         if (!byRecord[recordId]) byRecord[recordId] = {};
         byRecord[recordId][field.fieldName] = field.value;
         byRecord[recordId].caseLabel = field.caseLabel;
       }
 
       for (const [recordId, fields] of Object.entries(byRecord)) {
+        if (seenIds.has(recordId)) continue;
+        seenIds.add(recordId);
         applications.push({
           recordId,
           name: fields['Name'] || fields['Application'],
@@ -5627,10 +5754,12 @@
           receiptNumber: fields['Receipt Number'],
           receiptDate: fields['Receipt Date'],
           matter: this.inferMatterFromCase(fields.caseLabel),
-          fields
+          fields,
+          source: 'legacy'
         });
       }
 
+      console.log('[Renderer] Total applications:', applications.length);
       return applications;
     },
 
