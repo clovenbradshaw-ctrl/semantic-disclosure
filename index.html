@@ -1910,6 +1910,24 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           if (!Array.isArray(rawData)) rawData = [rawData];
         }
 
+        // Handle array-wrapped master record format: [{ _meta, client, cases, ... }]
+        if (Array.isArray(rawData) && rawData.length === 1 && rawData[0] && rawData[0]._meta && rawData[0].client) {
+          DebugLogger.info('DataTransformer: Detected array-wrapped master record format, unwrapping');
+          rawData = rawData[0];
+        }
+
+        // Handle master record format: { _meta, client, cases, applications, hearings, events }
+        if (rawData && rawData._meta && rawData.client && !Array.isArray(rawData)) {
+          DebugLogger.info('DataTransformer: Detected master record format', {
+            hasClient: !!rawData.client,
+            caseCount: rawData.cases?.length || 0,
+            applicationCount: rawData.applications?.length || 0,
+            hearingCount: rawData.hearings?.length || 0,
+            eventCount: rawData.events?.length || 0
+          });
+          return this.transformMasterRecord(rawData);
+        }
+
         // Handle response with schema included: { schema: [...], data: [...] }
         if (rawData && rawData.schema && Array.isArray(rawData.schema)) {
           DebugLogger.info('DataTransformer: Schema detected in response');
@@ -1974,6 +1992,62 @@ console.log('[Test Page] Schema loaded with', window.MOCK_SCHEMA.length, 'tables
           caseCount: cases.length,
           eventCount: events.length,
           hasClientInfoRecord: !!clientInfoRecord
+        });
+
+        return result;
+      },
+
+      /**
+       * Transform master record format (5-bucket format from webhook)
+       * Input: { _meta, client, cases, applications, hearings, events }
+       * Output: normalized { clientInfo, cases, events } format
+       */
+      transformMasterRecord(masterData) {
+        const { _meta, client, cases = [], applications = [], hearings = [], events = [] } = masterData;
+
+        // Transform client object to clientInfo format
+        const clientFields = {};
+        if (client) {
+          for (const [key, value] of Object.entries(client)) {
+            // Skip internal fields
+            if (key.startsWith('_')) continue;
+            clientFields[key] = this.unwrapValue(value);
+          }
+        }
+
+        // Transform cases
+        const transformedCases = cases.map((caseRecord, index) => this.transformCase(caseRecord, index));
+
+        // Combine hearings and events into a single events array
+        const allEvents = [
+          ...hearings.map(h => ({ ...h, _eventType: 'hearing' })),
+          ...events.map(e => ({ ...e, _eventType: 'event' }))
+        ];
+
+        // Include applications as part of cases or keep separate based on your needs
+        // For now, we can add application info to cases or handle separately
+        const transformedApplications = applications.map((app, index) => ({
+          ...app,
+          _isApplication: true,
+          _applicationIndex: index
+        }));
+
+        const result = {
+          clientInfo: {
+            recordId: client?._recordId || client?.id || client?.recordId,
+            fields: clientFields
+          },
+          cases: transformedCases,
+          applications: transformedApplications,
+          events: allEvents,
+          _meta // Preserve metadata
+        };
+
+        DebugLogger.success('DataTransformer: Master record transformation complete', {
+          clientFieldCount: Object.keys(clientFields).length,
+          caseCount: transformedCases.length,
+          applicationCount: transformedApplications.length,
+          eventCount: allEvents.length
         });
 
         return result;
