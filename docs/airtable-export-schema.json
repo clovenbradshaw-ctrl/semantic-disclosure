@@ -157,6 +157,7 @@
       "type": "object",
       "properties": {
         "_recordId": { "type": "string" },
+        "_recordType": { "type": "string", "const": "client" },
         "id": { "type": "string" },
         "createdTime": { "type": "string", "format": "date-time" },
 
@@ -360,7 +361,7 @@
           "items": { "type": "string" }
         }
       },
-      "required": ["_recordId", "id"],
+      "required": ["_recordId", "_recordType", "id"],
       "additionalProperties": true
     },
 
@@ -369,6 +370,7 @@
       "type": "object",
       "properties": {
         "_recordId": { "type": "string" },
+        "_recordType": { "type": "string", "const": "case" },
         "id": { "type": "string" },
         "createdTime": { "type": "string", "format": "date-time" },
 
@@ -786,7 +788,7 @@
           "items": { "type": "string" }
         }
       },
-      "required": ["_recordId", "id"],
+      "required": ["_recordId", "_recordType", "id"],
       "additionalProperties": true
     },
 
@@ -795,6 +797,8 @@
       "type": "object",
       "properties": {
         "_recordId": { "type": "string" },
+        "_recordType": { "type": "string", "const": "application" },
+        "_parentCaseId": { "type": ["string", "null"] },
         "id": { "type": "string" },
         "createdTime": { "type": "string", "format": "date-time" },
 
@@ -844,7 +848,7 @@
           ]
         }
       },
-      "required": ["_recordId", "id"],
+      "required": ["_recordId", "_recordType", "id"],
       "additionalProperties": true
     },
 
@@ -853,6 +857,10 @@
       "type": "object",
       "properties": {
         "_id": { "type": ["string", "null"] },
+        "_recordType": {
+          "type": "string",
+          "enum": ["hearing", "event"]
+        },
         "_calendarType": {
           "type": "string",
           "enum": ["hearing", "general"]
@@ -883,7 +891,7 @@
         "created": { "type": ["string", "null"], "format": "date-time" },
         "updated": { "type": ["string", "null"], "format": "date-time" }
       },
-      "required": ["_calendarType"],
+      "required": ["_recordType", "_calendarType"],
       "additionalProperties": true
     }
   }
