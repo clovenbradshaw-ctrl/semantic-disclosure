@@ -14,19 +14,19 @@
       transition: background-color 0.15s ease, transform 0.15s ease;
     }
     #settings-modal [data-field-key]:hover {
-      background-color: rgba(51, 65, 85, 0.3);
+      background-color: rgba(243, 244, 246, 0.8);
     }
     #settings-modal .group:hover .opacity-50 {
       opacity: 1;
     }
   </style>
 </head>
-<body class="min-h-screen bg-slate-900 text-slate-100">
+<body class="min-h-screen bg-gray-50 text-gray-900">
   <div id="app" class="p-4 md:p-6">
     <div class="max-w-4xl mx-auto">
       <div class="text-center py-12">
         <div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p class="text-slate-400 text-sm">Loading client data...</p>
+        <p class="text-gray-500 text-sm">Loading client data...</p>
       </div>
     </div>
   </div>
@@ -56,7 +56,7 @@
     function renderExternalLinkIcon(url, title = 'Open in Softr') {
       return `
         <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
-           class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+           class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100/50 rounded-lg transition-colors"
            onclick="event.stopPropagation()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -68,7 +68,7 @@
     function renderCalendarLinkIcon(url, title = 'Open in Google Calendar') {
       return `
         <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
-           class="inline-flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded transition-colors"
+           class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-amber-600 hover:bg-gray-100/50 rounded transition-colors"
            onclick="event.stopPropagation()">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -557,8 +557,8 @@
         return `
           <button onclick="switchSettingsView('${view}')"
                   class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors ${active
-                    ? 'bg-slate-700 text-slate-100 border-b-2 border-blue-500'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}">
+                    ? 'bg-gray-100 text-gray-900 border-b-2 border-blue-500'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}">
             ${viewLabels[view]}
           </button>
         `;
@@ -586,26 +586,26 @@
 
           const position = idx + 1; // 1-indexed for display
           return `
-            <div class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-slate-700/30 group" data-field-key="${f.key}">
+            <div class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-100/30 group" data-field-key="${f.key}">
               <input type="number"
                      value="${position}"
                      min="1"
                      max="${fields.length}"
                      onchange="handlePositionChange('${category}', '${f.key}', this.value, event)"
-                     class="w-10 h-6 text-xs text-center bg-slate-700 border border-slate-600 rounded text-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                     class="w-10 h-6 text-xs text-center bg-gray-100 border border-gray-300 rounded text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                      title="Type a position number to move this field">
               <div class="flex flex-col gap-0.5 opacity-50 group-hover:opacity-100">
                 <button onclick="handleMoveField('${category}', '${f.key}', 'up', event)"
-                        class="p-0.5 hover:bg-slate-600/50 rounded ${isFirst ? 'invisible' : ''}"
+                        class="p-0.5 hover:bg-gray-200/50 rounded ${isFirst ? 'invisible' : ''}"
                         title="Move up">
-                  <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                   </svg>
                 </button>
                 <button onclick="handleMoveField('${category}', '${f.key}', 'down', event)"
-                        class="p-0.5 hover:bg-slate-600/50 rounded ${isLast ? 'invisible' : ''}"
+                        class="p-0.5 hover:bg-gray-200/50 rounded ${isLast ? 'invisible' : ''}"
                         title="Move down">
-                  <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
                 </button>
@@ -615,11 +615,11 @@
                        data-category="${category}"
                        data-key="${f.key}"
                        data-view="${settingsCurrentView}"
-                       class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-800">
+                       class="w-4 h-4 rounded border-gray-300 bg-gray-100 text-blue-500 focus:ring-blue-500 focus:ring-offset-white">
                 <div class="flex flex-col">
-                  <span class="text-sm text-slate-300">${f.label}</span>
-                  <span class="text-xs text-slate-500 flex items-center gap-1.5">
-                    <span class="font-mono text-slate-400">${f.sourceField || f.label}</span>
+                  <span class="text-sm text-gray-700">${f.label}</span>
+                  <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                    <span class="font-mono text-gray-500">${f.sourceField || f.label}</span>
                   </span>
                 </div>
               </label>
@@ -635,11 +635,11 @@
             <div class="flex items-center gap-2 mb-2">
               <span class="text-lg">${catInfo.icon}</span>
               <div>
-                <h3 class="text-sm font-semibold text-slate-300">${catInfo.label}</h3>
-                <p class="text-xs text-slate-500">${sublabel}</p>
+                <h3 class="text-sm font-semibold text-gray-700">${catInfo.label}</h3>
+                <p class="text-xs text-gray-400">${sublabel}</p>
               </div>
             </div>
-            <div class="space-y-0.5 bg-slate-800/50 rounded-lg p-1" id="fields-${category}">
+            <div class="space-y-0.5 bg-white/50 rounded-lg p-1" id="fields-${category}">
               ${fieldsHtml}
             </div>
           </div>
@@ -654,7 +654,7 @@
           if (dateFields.length === 0) return '';
         }
         return `<button onclick="document.getElementById('settings-cat-${cat}').scrollIntoView({behavior:'smooth'})"
-                        class="flex items-center gap-1 px-2 py-1 rounded text-xs bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors">
+                        class="flex items-center gap-1 px-2 py-1 rounded text-xs bg-gray-100/50 hover:bg-gray-100 text-gray-700 transition-colors">
                   <span>${info.icon}</span>
                   <span>${info.label.replace(' Fields', '')}</span>
                 </button>`;
@@ -662,26 +662,26 @@
 
       const modalHtml = `
         <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
-          <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden">
-            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
               <div>
-                <h2 class="text-lg font-semibold text-slate-100">Field Settings</h2>
-                <p class="text-slate-500 text-xs mt-0.5">Customize fields for each view</p>
+                <h2 class="text-lg font-semibold text-gray-900">Field Settings</h2>
+                <p class="text-gray-400 text-xs mt-0.5">Customize fields for each view</p>
               </div>
-              <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-200 p-1">
+              <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-800 p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
 
-            <div class="border-b border-slate-700 bg-slate-800/80">
+            <div class="border-b border-gray-200 bg-white/80">
               <div class="flex gap-1 px-4 pt-2">${viewTabsHtml}</div>
             </div>
 
-            <div class="px-4 pt-3 pb-2 border-b border-slate-700/50 bg-slate-800">
-              <p class="text-slate-400 text-sm mb-2">
-                Configure which fields appear in the <span class="text-blue-400 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
+            <div class="px-4 pt-3 pb-2 border-b border-gray-200/50 bg-white">
+              <p class="text-gray-500 text-sm mb-2">
+                Configure which fields appear in the <span class="text-blue-600 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
               </p>
               <div class="flex flex-wrap gap-1.5">
                 ${categoryJumpLinks}
@@ -692,12 +692,12 @@
               ${categoriesHtml}
             </div>
 
-            <div class="flex items-center justify-between p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="flex items-center justify-between p-4 border-t border-gray-200 bg-white/50">
               <div class="flex gap-2">
-                <button onclick="resetViewAndRefresh()" class="text-sm text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded hover:bg-slate-700/50 transition-colors">
+                <button onclick="resetViewAndRefresh()" class="text-sm text-gray-500 hover:text-gray-800 px-3 py-1.5 rounded hover:bg-gray-100/50 transition-colors">
                   Reset This View
                 </button>
-                <button onclick="resetAllAndRefresh()" class="text-sm text-red-400/70 hover:text-red-400 px-3 py-1.5 rounded hover:bg-red-900/20 transition-colors">
+                <button onclick="resetAllAndRefresh()" class="text-sm text-red-600/70 hover:text-red-600 px-3 py-1.5 rounded hover:bg-red-100 transition-colors">
                   Reset All Views
                 </button>
               </div>
@@ -967,10 +967,10 @@
 
     function getDaysUrgency(days) {
       if (typeof days !== 'number') return null;
-      if (days <= 14) return { level: 'critical', label: 'urgent', class: 'text-red-400 font-bold' };
-      if (days <= 30) return { level: 'high', label: 'soon', class: 'text-red-400' };
-      if (days <= 60) return { level: 'medium', label: 'upcoming', class: 'text-amber-400' };
-      return { level: 'low', label: '', class: 'text-slate-400' };
+      if (days <= 14) return { level: 'critical', label: 'urgent', class: 'text-red-600 font-bold' };
+      if (days <= 30) return { level: 'high', label: 'soon', class: 'text-red-600' };
+      if (days <= 60) return { level: 'medium', label: 'upcoming', class: 'text-amber-600' };
+      return { level: 'low', label: '', class: 'text-gray-500' };
     }
 
     function toggleSection(sectionId) {
@@ -995,9 +995,9 @@
     function renderError(message) {
       document.getElementById('app').innerHTML = `
         <div class="max-w-4xl mx-auto">
-          <div class="bg-red-900/30 border border-red-500/50 rounded-lg p-6 max-w-md mx-auto mt-12">
-            <p class="text-red-400 font-medium">Error</p>
-            <p class="text-red-300/70 text-sm mt-1">${escapeHtml(message)}</p>
+          <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto mt-12">
+            <p class="text-red-600 font-medium">Error</p>
+            <p class="text-red-600/70 text-sm mt-1">${escapeHtml(message)}</p>
           </div>
         </div>
       `;
@@ -1011,7 +1011,7 @@
       const lines = [];
 
       if (!client) {
-        return ['<span class="text-slate-500">No client information available.</span>'];
+        return ['<span class="text-gray-400">No client information available.</span>'];
       }
 
       // One-liner client intro
@@ -1021,20 +1021,20 @@
       const aNum = client['A#'];
 
       let intro = isFieldVisible('client', 'name')
-        ? `<strong class="text-slate-100">${escapeHtml(name)}</strong>`
-        : '<strong class="text-slate-100">Client</strong>';
+        ? `<strong class="text-gray-900">${escapeHtml(name)}</strong>`
+        : '<strong class="text-gray-900">Client</strong>';
 
       const details = [];
       if (isFieldVisible('client', 'dob') && age) details.push(`${age}yo`);
       if (isFieldVisible('client', 'country') && country) details.push(`from ${escapeHtml(country)}`);
-      if (isFieldVisible('client', 'aNumber') && aNum) details.push(`A# <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`);
+      if (isFieldVisible('client', 'aNumber') && aNum) details.push(`A# <span class="font-mono text-blue-600">${escapeHtml(aNum)}</span>`);
       if (details.length) intro += ` (${details.join(', ')})`;
 
       // SIJ status inline if present
       const sijStatus = client['SIJ Case Status'];
       if (isFieldVisible('client', 'sijStatus') && sijStatus) {
         const statusText = list(sijStatus);
-        intro += ` — SIJ: <span class="text-amber-300">${escapeHtml(statusText)}</span>`;
+        intro += ` — SIJ: <span class="text-amber-600">${escapeHtml(statusText)}</span>`;
       }
 
       lines.push(intro);
@@ -1047,11 +1047,11 @@
           .map(([key, value]) => {
             const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
-            return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
+            return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
           })
           .join(' · ');
         if (flatpackSummary) {
-          lines.push(`<span class="text-slate-400 text-sm">${flatpackSummary}</span>`);
+          lines.push(`<span class="text-gray-500 text-sm">${flatpackSummary}</span>`);
         }
       }
 
@@ -1069,9 +1069,9 @@
           const typeSummary = Object.entries(casesByType)
             .map(([type, arr]) => `${arr.length} ${escapeHtml(type)}`)
             .join(', ');
-          lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>: ${typeSummary}`);
+          lines.push(`<span class="text-blue-600 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>: ${typeSummary}`);
         } else {
-          lines.push(`<span class="text-blue-300 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>`);
+          lines.push(`<span class="text-blue-600 font-medium">${cases.length} ${pluralize(cases.length, 'case')}</span>`);
         }
 
         // Urgent hearings
@@ -1096,14 +1096,14 @@
             if (isFieldVisible('cases', 'court') && court) urgentLine += ` at ${escapeHtml(court)}`;
 
             if (urgent.length > 1) {
-              urgentLine += `. <span class="text-slate-400">${urgent.length - 1} other ${pluralize(urgent.length - 1, 'hearing')} within 30 days.</span>`;
+              urgentLine += `. <span class="text-gray-500">${urgent.length - 1} other ${pluralize(urgent.length - 1, 'hearing')} within 30 days.</span>`;
             }
 
             lines.push(urgentLine);
           }
         }
       } else {
-        lines.push('<span class="text-slate-500">No active cases.</span>');
+        lines.push('<span class="text-gray-400">No active cases.</span>');
       }
 
       // Applications summary
@@ -1122,12 +1122,12 @@
                 ? [...new Set(arr.map(a => a.Status).filter(Boolean))]
                 : [];
               const statusStr = statuses.length > 0 ? ` (${statuses.join(', ')})` : '';
-              return `<span class="text-purple-300">${escapeHtml(type)}</span>${statusStr}`;
+              return `<span class="text-purple-600">${escapeHtml(type)}</span>${statusStr}`;
             })
             .join(', ');
-          lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>: ${appTypeSummary}`);
+          lines.push(`<span class="text-purple-600 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>: ${appTypeSummary}`);
         } else {
-          lines.push(`<span class="text-purple-400 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>`);
+          lines.push(`<span class="text-purple-600 font-medium">${applications.length} ${pluralize(applications.length, 'application')}</span>`);
         }
       }
 
@@ -1144,16 +1144,16 @@
           const eventTitle = isFieldVisible('events', 'title') ? (nextEvent.title || nextEvent.summary || 'Upcoming event') : 'Event';
           const location = (isFieldVisible('events', 'location') && nextEvent.location) ? ` at ${escapeHtml(nextEvent.location)}` : '';
 
-          let eventLine = `<span class="text-amber-400 font-medium">Next event:</span> ${escapeHtml(eventTitle)}`;
+          let eventLine = `<span class="text-amber-600 font-medium">Next event:</span> ${escapeHtml(eventTitle)}`;
           if (eventDate) eventLine += ` on ${eventDate}`;
           eventLine += location;
           lines.push(eventLine);
 
           if (upcomingEvents.length > 1) {
-            lines.push(`<span class="text-slate-400">${upcomingEvents.length - 1} more upcoming ${pluralize(upcomingEvents.length - 1, 'event')}.</span>`);
+            lines.push(`<span class="text-gray-500">${upcomingEvents.length - 1} more upcoming ${pluralize(upcomingEvents.length - 1, 'event')}.</span>`);
           }
         } else {
-          lines.push(`<span class="text-amber-300">${allCalendarItems.length} ${pluralize(allCalendarItems.length, 'event')} on file.</span>`);
+          lines.push(`<span class="text-amber-600">${allCalendarItems.length} ${pluralize(allCalendarItems.length, 'event')} on file.</span>`);
         }
       }
 
@@ -1168,7 +1168,7 @@
       const sections = [];
 
       if (!client) {
-        return ['<span class="text-slate-500">No client information available.</span>'];
+        return ['<span class="text-gray-400">No client information available.</span>'];
       }
 
       // ─── Client Profile ───
@@ -1179,8 +1179,8 @@
       const aNum = client['A#'];
 
       let profile = isFieldVisible('client', 'name')
-        ? `<strong class="text-slate-100">${escapeHtml(name)}</strong>`
-        : '<strong class="text-slate-100">The client</strong>';
+        ? `<strong class="text-gray-900">${escapeHtml(name)}</strong>`
+        : '<strong class="text-gray-900">The client</strong>';
 
       const showAge = isFieldVisible('client', 'dob') && age;
       const showCountry = isFieldVisible('client', 'country') && country;
@@ -1198,7 +1198,7 @@
       }
 
       if (isFieldVisible('client', 'aNumber') && aNum) {
-        profile += `. Their Alien Registration Number is <span class="font-mono text-blue-300">${escapeHtml(aNum)}</span>`;
+        profile += `. Their Alien Registration Number is <span class="font-mono text-blue-600">${escapeHtml(aNum)}</span>`;
       }
 
       profile += '.';
@@ -1217,7 +1217,7 @@
       if (showPhone || showAddr) {
         let contact = '';
         if (showPhone) {
-          contact += `They can be contacted at <span class="font-mono text-emerald-300">${escapeHtml(phone)}</span>`;
+          contact += `They can be contacted at <span class="font-mono text-emerald-600">${escapeHtml(phone)}</span>`;
         }
         if (showAddr) {
           const fullAddr = [addr, city, state, zip].filter(Boolean).join(', ');
@@ -1234,23 +1234,23 @@
 
       if (isFieldVisible('client', 'sijStatus') && sijStatus) {
         const statusText = list(sijStatus);
-        sections.push(`Their Special Immigrant Juvenile (SIJ) case status is <span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded">${escapeHtml(statusText)}</span>.`);
+        sections.push(`Their Special Immigrant Juvenile (SIJ) case status is <span class="px-2 py-0.5 bg-amber-500/20 text-amber-600 rounded">${escapeHtml(statusText)}</span>.`);
       }
 
       if (isFieldVisible('client', 'tags') && tags.length > 0) {
-        const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
+        const tagSpans = tags.map(t => `<span class="px-2 py-0.5 bg-purple-500/20 text-purple-600 rounded text-sm">${escapeHtml(t)}</span>`).join(' ');
         sections.push(`Case management notes: ${tagSpans}`);
       }
 
       // ─── Client Flatpack Data (controlled by visibility) ───
       if (isFieldVisible('client', 'flatpack') && client._flatpack && Object.keys(client._flatpack).length > 0) {
-        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Additional Matter Details</span>`);
+        sections.push(`<br><span class="text-lg font-semibold text-gray-800">Additional Matter Details</span>`);
         const flatpackItems = Object.entries(client._flatpack)
           .filter(([key, value]) => value !== null && value !== undefined && value !== '')
           .map(([key, value]) => {
             const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
-            return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: <span class="text-slate-200">${escapeHtml(formattedValue)}</span>`;
+            return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: <span class="text-gray-800">${escapeHtml(formattedValue)}</span>`;
           });
         sections.push(flatpackItems.join(' · '));
       }
@@ -1266,18 +1266,18 @@
         });
 
         const typeCount = Object.keys(casesByType).length;
-        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Case Portfolio</span>`);
+        sections.push(`<br><span class="text-lg font-semibold text-gray-800">Case Portfolio</span>`);
 
         if (isFieldVisible('cases', 'type')) {
-          sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span> across ${typeCount} ${pluralize(typeCount, 'category', 'categories')}.`);
+          sections.push(`This client has <span class="text-blue-600 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span> across ${typeCount} ${pluralize(typeCount, 'category', 'categories')}.`);
         } else {
-          sections.push(`This client has <span class="text-blue-300 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span>.`);
+          sections.push(`This client has <span class="text-blue-600 font-semibold">${cases.length} active ${pluralize(cases.length, 'case')}</span>.`);
         }
 
         // Detail each case type
         for (const [type, typeCases] of Object.entries(casesByType)) {
           if (isFieldVisible('cases', 'type')) {
-            sections.push(`<br><span class="text-slate-200 font-medium border-b border-slate-600 pb-1">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeCases.length})</span>`);
+            sections.push(`<br><span class="text-gray-800 font-medium border-b border-gray-300 pb-1">${escapeHtml(type)}</span> <span class="text-gray-400">(${typeCases.length})</span>`);
           }
 
           typeCases.forEach((c, idx) => {
@@ -1290,13 +1290,13 @@
             let caseText = '';
 
             if (isFieldVisible('cases', 'court') && court) {
-              caseText += `Case pending at <span class="text-slate-200">${escapeHtml(court)}</span>`;
+              caseText += `Case pending at <span class="text-gray-800">${escapeHtml(court)}</span>`;
             } else {
               caseText += 'Case pending';
             }
 
             if (isFieldVisible('cases', 'judge') && judge) {
-              caseText += ` before <span class="text-slate-200">Judge ${escapeHtml(judge)}</span>`;
+              caseText += ` before <span class="text-gray-800">Judge ${escapeHtml(judge)}</span>`;
             }
 
             caseText += '.';
@@ -1330,16 +1330,16 @@
                 .map(([key, value]) => {
                   const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                   const formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
-                  return `<span class="text-cyan-300">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
+                  return `<span class="text-cyan-600">${escapeHtml(formattedKey)}</span>: ${escapeHtml(formattedValue)}`;
                 });
               if (flatpackFields.length > 0) {
-                sections.push(`<span class="text-sm text-slate-400 ml-2">${flatpackFields.join(' · ')}</span>`);
+                sections.push(`<span class="text-sm text-gray-500 ml-2">${flatpackFields.join(' · ')}</span>`);
               }
             }
 
             // Notes
             if (isFieldVisible('cases', 'notes') && c['Case Notes'] && c['Case Notes'].trim()) {
-              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Case notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`);
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">Case notes</summary><pre class="mt-2 p-3 bg-white/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`);
             }
           });
         }
@@ -1355,29 +1355,29 @@
           const upcoming = allWithHearings.filter(c => c['Days to Next Hearing'] > 30 && c['Days to Next Hearing'] <= 60);
 
           if (critical.length > 0 || urgent.length > 0 || upcoming.length > 0) {
-            sections.push(`<br><span class="text-lg font-semibold text-slate-200">Timeline Overview</span>`);
+            sections.push(`<br><span class="text-lg font-semibold text-gray-800">Timeline Overview</span>`);
 
             const alerts = [];
             if (critical.length > 0) {
-              alerts.push(`<span class="text-red-400 font-bold">${critical.length} ${pluralize(critical.length, 'hearing')} within 2 weeks requiring immediate attention</span>`);
+              alerts.push(`<span class="text-red-600 font-bold">${critical.length} ${pluralize(critical.length, 'hearing')} within 2 weeks requiring immediate attention</span>`);
             }
             if (urgent.length > 0) {
-              alerts.push(`<span class="text-red-400">${urgent.length} ${pluralize(urgent.length, 'hearing')} within 30 days</span>`);
+              alerts.push(`<span class="text-red-600">${urgent.length} ${pluralize(urgent.length, 'hearing')} within 30 days</span>`);
             }
             if (upcoming.length > 0) {
-              alerts.push(`<span class="text-amber-400">${upcoming.length} ${pluralize(upcoming.length, 'hearing')} within 60 days</span>`);
+              alerts.push(`<span class="text-amber-600">${upcoming.length} ${pluralize(upcoming.length, 'hearing')} within 60 days</span>`);
             }
 
             sections.push(alerts.join(' · '));
           }
         }
       } else {
-        sections.push(`<br><span class="text-slate-500">No active cases currently on file for this client.</span>`);
+        sections.push(`<br><span class="text-gray-400">No active cases currently on file for this client.</span>`);
       }
 
       // ─── Applications ───
       if (applications && applications.length > 0) {
-        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Applications</span>`);
+        sections.push(`<br><span class="text-lg font-semibold text-gray-800">Applications</span>`);
 
         const appsByType = {};
         applications.forEach(app => {
@@ -1388,7 +1388,7 @@
 
         for (const [type, typeApps] of Object.entries(appsByType)) {
           if (isFieldVisible('applications', 'type')) {
-            sections.push(`<span class="text-purple-300 font-medium">${escapeHtml(type)}</span> <span class="text-slate-500">(${typeApps.length})</span>`);
+            sections.push(`<span class="text-purple-600 font-medium">${escapeHtml(type)}</span> <span class="text-gray-400">(${typeApps.length})</span>`);
           }
 
           typeApps.forEach(app => {
@@ -1396,26 +1396,26 @@
 
             // Application name/matter
             if (isFieldVisible('applications', 'name') && app.Name) {
-              parts.push(`<span class="text-slate-200">${escapeHtml(app.Name)}</span>`);
+              parts.push(`<span class="text-gray-800">${escapeHtml(app.Name)}</span>`);
             }
 
             // Status with color coding
             if (isFieldVisible('applications', 'status') && app.Status) {
               const statusColors = {
                 'Engaged': 'text-green-400',
-                'Potential': 'text-amber-400',
-                'Filed': 'text-blue-400',
-                'Pending': 'text-amber-400',
-                'Approved': 'text-emerald-400',
-                'Denied': 'text-red-400'
+                'Potential': 'text-amber-600',
+                'Filed': 'text-blue-600',
+                'Pending': 'text-amber-600',
+                'Approved': 'text-emerald-600',
+                'Denied': 'text-red-600'
               };
-              const statusClass = statusColors[app.Status] || 'text-slate-300';
+              const statusClass = statusColors[app.Status] || 'text-gray-700';
               parts.push(`Status: <span class="${statusClass}">${escapeHtml(app.Status)}</span>`);
             }
 
             // Receipt number
             if (isFieldVisible('applications', 'receiptNumber') && app['Receipt Number']) {
-              parts.push(`Receipt: <span class="font-mono text-blue-300">${escapeHtml(app['Receipt Number'])}</span>`);
+              parts.push(`Receipt: <span class="font-mono text-blue-600">${escapeHtml(app['Receipt Number'])}</span>`);
             }
 
             // Cert County/State
@@ -1429,7 +1429,7 @@
 
             // Notes
             if (isFieldVisible('applications', 'notes') && app.Notes && app.Notes.trim()) {
-              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Application notes</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(app.Notes)}</pre></details>`);
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">Application notes</summary><pre class="mt-2 p-3 bg-white/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(app.Notes)}</pre></details>`);
             }
           });
         }
@@ -1438,7 +1438,7 @@
       // ─── Calendar Events ───
       const allCalendarItems = [...(hearings || []), ...(events || [])];
       if (allCalendarItems.length > 0) {
-        sections.push(`<br><span class="text-lg font-semibold text-slate-200">Scheduled Events</span>`);
+        sections.push(`<br><span class="text-lg font-semibold text-gray-800">Scheduled Events</span>`);
 
         // Sort by date
         const sortedItems = allCalendarItems
@@ -1450,22 +1450,22 @@
         const pastItems = sortedItems.filter(item => new Date(getEventStartDate(item)) < now);
 
         if (upcomingItems.length > 0) {
-          sections.push(`<span class="text-amber-300 font-medium">Upcoming (${upcomingItems.length})</span>`);
+          sections.push(`<span class="text-amber-600 font-medium">Upcoming (${upcomingItems.length})</span>`);
 
           upcomingItems.forEach(item => {
             const eventTitle = item.title || item.summary || 'Event';
             const dateStr = formatDateLong(getEventStartDate(item));
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
-              ? ` at <span class="text-slate-300">${escapeHtml(item.location)}</span>`
+              ? ` at <span class="text-gray-700">${escapeHtml(item.location)}</span>`
               : '';
             const calType = (isFieldVisible('events', 'calendarType') && item._calendarType)
-              ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-400 rounded">${escapeHtml(item._calendarType)}</span> `
+              ? `<span class="text-xs px-1 py-0.5 bg-gray-100/50 text-gray-500 rounded">${escapeHtml(item._calendarType)}</span> `
               : '';
 
             let eventLine = calType;
             if (isFieldVisible('events', 'title')) {
-              eventLine += `<span class="text-slate-200">${escapeHtml(eventTitle)}</span>`;
+              eventLine += `<span class="text-gray-800">${escapeHtml(eventTitle)}</span>`;
             }
             if (isFieldVisible('events', 'dateTime')) {
               eventLine += ` on ${dateStr}`;
@@ -1474,41 +1474,41 @@
 
             // Meet link
             if (isFieldVisible('events', 'meetLink') && item.meetLink) {
-              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-sm">[Video Link]</a>`;
+              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
 
             // Description
             if (isFieldVisible('events', 'description') && item.description && item.description.trim()) {
-              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Event details</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">Event details</summary><pre class="mt-2 p-3 bg-white/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
             }
 
             // Attendees
             if (isFieldVisible('events', 'attendees') && item.attendees && item.attendees.length > 0) {
               const attendeeList = item.attendees.map(a => a.email || a.displayName || a).join(', ');
-              sections.push(`<span class="text-xs text-slate-500 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
+              sections.push(`<span class="text-xs text-gray-400 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
             }
           });
         }
 
         if (pastItems.length > 0) {
-          sections.push(`<br><span class="text-slate-400 font-medium">Past Events (${pastItems.length})</span>`);
+          sections.push(`<br><span class="text-gray-500 font-medium">Past Events (${pastItems.length})</span>`);
 
           pastItems.forEach(item => {
             const eventTitle = item.title || item.summary || 'Event';
             const dateStr = formatDateLong(getEventStartDate(item));
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
-              ? ` at <span class="text-slate-400">${escapeHtml(item.location)}</span>`
+              ? ` at <span class="text-gray-500">${escapeHtml(item.location)}</span>`
               : '';
             const calType = (isFieldVisible('events', 'calendarType') && item._calendarType)
-              ? `<span class="text-xs px-1 py-0.5 bg-slate-700/50 text-slate-500 rounded">${escapeHtml(item._calendarType)}</span> `
+              ? `<span class="text-xs px-1 py-0.5 bg-gray-100/50 text-gray-400 rounded">${escapeHtml(item._calendarType)}</span> `
               : '';
 
             let eventLine = calType;
             if (isFieldVisible('events', 'title')) {
-              eventLine += `<span class="text-slate-400">${escapeHtml(eventTitle)}</span>`;
+              eventLine += `<span class="text-gray-500">${escapeHtml(eventTitle)}</span>`;
             }
             if (isFieldVisible('events', 'dateTime')) {
               eventLine += ` on ${dateStr}`;
@@ -1517,20 +1517,20 @@
 
             // Meet link
             if (isFieldVisible('events', 'meetLink') && item.meetLink) {
-              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400/70 hover:underline text-sm">[Video Link]</a>`;
+              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600/70 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
 
             // Description
             if (isFieldVisible('events', 'description') && item.description && item.description.trim()) {
-              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">Event details</summary><pre class="mt-2 p-3 bg-slate-800/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
+              sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">Event details</summary><pre class="mt-2 p-3 bg-white/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(item.description)}</pre></details>`);
             }
 
             // Attendees
             if (isFieldVisible('events', 'attendees') && item.attendees && item.attendees.length > 0) {
               const attendeeList = item.attendees.map(a => a.email || a.displayName || a).join(', ');
-              sections.push(`<span class="text-xs text-slate-500 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
+              sections.push(`<span class="text-xs text-gray-400 ml-4">Attendees: ${escapeHtml(attendeeList)}</span>`);
             }
           });
         }
@@ -1553,23 +1553,23 @@
         events: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0)
       };
       const countBadges = Object.entries(counts).map(([type, count]) => {
-        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700/50 text-slate-500';
+        const colorClass = count > 0 ? 'bg-blue-500/20 text-blue-600' : 'bg-gray-100/50 text-gray-400';
         return `<span class="px-2 py-1 rounded text-xs ${colorClass}">${type}: ${count}</span>`;
       }).join('');
 
       const viewButtons = ['structured', 'brief', 'detailed', 'timeline'].map(view => {
         const label = view.charAt(0).toUpperCase() + view.slice(1);
         const active = currentView === view;
-        return `<button onclick="switchView('${view}')" class="px-3 py-1 text-sm rounded transition-colors ${active ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}">${label}</button>`;
+        return `<button onclick="switchView('${view}')" class="px-3 py-1 text-sm rounded transition-colors ${active ? 'bg-blue-500 text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}">${label}</button>`;
       }).join('');
 
       return `
-        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+        <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
           <div class="flex items-center justify-between flex-wrap gap-3">
-            <h1 class="text-lg font-semibold text-slate-100">Client Record</h1>
+            <h1 class="text-lg font-semibold text-gray-900">Client Record</h1>
             <div class="flex items-center gap-3">
-              <div class="flex gap-1 bg-slate-700/30 p-1 rounded-lg">${viewButtons}</div>
-              <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors" title="Field Settings">
+              <div class="flex gap-1 bg-gray-100/30 p-1 rounded-lg">${viewButtons}</div>
+              <button onclick="openSettingsModal()" class="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100/50 rounded-lg transition-colors" title="Field Settings">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -1577,8 +1577,8 @@
               </button>
             </div>
           </div>
-          <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-700/30">
-            <p class="text-slate-500 text-xs">Generated: ${formatDate(_meta.generatedAt) || 'Unknown'}</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/30">
+            <p class="text-gray-400 text-xs">Generated: ${formatDate(_meta.generatedAt) || 'Unknown'}</p>
             <div class="flex gap-2">${countBadges}</div>
           </div>
         </div>
@@ -1593,8 +1593,8 @@
       return `
         <div class="max-w-4xl mx-auto space-y-4">
           ${renderHeader(data)}
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-6">
-            <div class="${contentClass} text-slate-300 leading-relaxed">
+          <div class="bg-white rounded-lg border border-gray-200/50 p-6">
+            <div class="${contentClass} text-gray-700 leading-relaxed">
               ${paragraphs.map(p => `<p>${p}</p>`).join('')}
             </div>
           </div>
@@ -1625,8 +1625,8 @@
 
           return `
             <div>
-              <p class="text-slate-500 text-xs uppercase tracking-wide">${escapeHtml(formattedKey)}</p>
-              <p class="text-slate-200 text-sm">${escapeHtml(String(formattedValue))}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">${escapeHtml(formattedKey)}</p>
+              <p class="text-gray-800 text-sm">${escapeHtml(String(formattedValue))}</p>
             </div>
           `;
         })
@@ -1635,8 +1635,8 @@
       if (!fieldsHtml) return '';
 
       return `
-        <div class="mt-4 pt-4 border-t border-slate-700/30">
-          <p class="text-slate-400 text-xs uppercase tracking-wide mb-3 font-medium">${escapeHtml(title)}</p>
+        <div class="mt-4 pt-4 border-t border-gray-200/30">
+          <p class="text-gray-500 text-xs uppercase tracking-wide mb-3 font-medium">${escapeHtml(title)}</p>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             ${fieldsHtml}
           </div>
@@ -1659,19 +1659,19 @@
       let clientHtml = '';
       if (client) {
         const tags = (client['CM Tags'] || []).filter(Boolean).map(tag =>
-          `<span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">${escapeHtml(tag)}</span>`
+          `<span class="px-2 py-1 bg-purple-500/20 text-purple-600 rounded text-xs">${escapeHtml(tag)}</span>`
         ).join('');
 
         const sijStatus = (client['SIJ Case Status'] && isFieldVisible('client', 'sijStatus'))
-          ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
-              <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">SIJ Status</p>
-              <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-sm">${escapeHtml(list(client['SIJ Case Status']))}</span>
+          ? `<div class="mt-4 pt-4 border-t border-gray-200/30">
+              <p class="text-gray-400 text-xs uppercase tracking-wide mb-2">SIJ Status</p>
+              <span class="inline-block px-2 py-1 bg-amber-500/20 text-amber-600 rounded text-sm">${escapeHtml(list(client['SIJ Case Status']))}</span>
             </div>`
           : '';
 
         const tagsSection = (tags && isFieldVisible('client', 'tags'))
-          ? `<div class="mt-4 pt-4 border-t border-slate-700/30">
-              <p class="text-slate-500 text-xs uppercase tracking-wide mb-2">Tags</p>
+          ? `<div class="mt-4 pt-4 border-t border-gray-200/30">
+              <p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Tags</p>
               <div class="flex flex-wrap gap-2">${tags}</div>
             </div>`
           : '';
@@ -1684,32 +1684,32 @@
         const clientFieldRenderers = {
           aNumber: () => `
             <div>
-              <p class="text-slate-500 text-xs uppercase tracking-wide">A#</p>
-              <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">A#</p>
+              <p class="text-gray-800 font-mono text-sm">${escapeHtml(client['A#']) || '—'}</p>
             </div>
           `,
           dob: () => `
             <div>
-              <p class="text-slate-500 text-xs uppercase tracking-wide">DOB / Age</p>
-              <p class="text-slate-200 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">DOB / Age</p>
+              <p class="text-gray-800 text-sm">${formatDate(client.DOB) || '—'}${getAge(client.DOB) ? ` (${getAge(client.DOB)}yo)` : ''}</p>
             </div>
           `,
           country: () => `
             <div>
-              <p class="text-slate-500 text-xs uppercase tracking-wide">Country</p>
-              <p class="text-slate-200 text-sm">${escapeHtml(client.Country) || '—'}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">Country</p>
+              <p class="text-gray-800 text-sm">${escapeHtml(client.Country) || '—'}</p>
             </div>
           `,
           phone: () => `
             <div>
-              <p class="text-slate-500 text-xs uppercase tracking-wide">Phone</p>
-              <p class="text-slate-200 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">Phone</p>
+              <p class="text-gray-800 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
             </div>
           `,
           address: () => `
             <div class="col-span-2">
-              <p class="text-slate-500 text-xs uppercase tracking-wide">Address</p>
-              <p class="text-slate-200 text-sm">${escapeHtml(address)}</p>
+              <p class="text-gray-400 text-xs uppercase tracking-wide">Address</p>
+              <p class="text-gray-800 text-sm">${escapeHtml(address)}</p>
             </div>
           `
         };
@@ -1725,21 +1725,21 @@
 
         const clientSoftrUrl = getSoftrClientUrl(getRecordId());
         clientHtml = `
-          <div id="section-client" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
-            <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div id="section-client" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
+            <button onclick="toggleSection('client')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">C</span>
+                <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center text-sm font-medium">C</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Client</h2>
-                  <p class="text-slate-400 text-sm">${clientName}</p>
+                  <h2 class="font-medium text-gray-900">Client</h2>
+                  <p class="text-gray-500 text-sm">${clientName}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 ${renderExternalLinkIcon(clientSoftrUrl, 'Open Client in Softr')}
-                <span id="arrow-client" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+                <span id="arrow-client" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
               </div>
             </button>
-            <div id="content-client" class="px-4 pb-4 border-t border-slate-700/50">
+            <div id="content-client" class="px-4 pb-4 border-t border-gray-200/50">
               ${clientFields.length > 0 ? `<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">${clientFields.join('')}</div>` : ''}
               ${sijStatus}
               ${tagsSection}
@@ -1756,12 +1756,12 @@
           const caseItemsHtml = typeCases.map(c => {
             // Build case fields using ordered visibility
             const caseFieldRenderers = {
-              court: () => c['Court/Office'] ? `<span class="text-slate-400">${escapeHtml(list(c['Court/Office']))}</span>` : null,
-              judge: () => c['Judge text'] ? `<span class="text-slate-400">Judge ${escapeHtml(c['Judge text'])}</span>` : null,
-              hearingDate: () => c['Hearing Date/Time'] ? `<span class="text-slate-400">${formatDate(val(c['Hearing Date/Time']))}</span>` : null,
+              court: () => c['Court/Office'] ? `<span class="text-gray-500">${escapeHtml(list(c['Court/Office']))}</span>` : null,
+              judge: () => c['Judge text'] ? `<span class="text-gray-500">Judge ${escapeHtml(c['Judge text'])}</span>` : null,
+              hearingDate: () => c['Hearing Date/Time'] ? `<span class="text-gray-500">${formatDate(val(c['Hearing Date/Time']))}</span>` : null,
               oyd: () => {
                 const oyd = c['OYD '] || c['OYD'];
-                return oyd ? `<span class="text-amber-400">OYD: ${formatDate(oyd)}</span>` : null;
+                return oyd ? `<span class="text-amber-600">OYD: ${formatDate(oyd)}</span>` : null;
               }
             };
 
@@ -1772,13 +1772,13 @@
             const days = c['Days to Next Hearing'];
             if (isFieldVisible('cases', 'daysToHearing') && typeof days === 'number') {
               const urgency = getDaysUrgency(days);
-              const bgClass = days <= 14 ? 'bg-red-500/30' : days <= 30 ? 'bg-red-500/20' : days <= 60 ? 'bg-amber-500/20' : 'bg-slate-700/50';
+              const bgClass = days <= 14 ? 'bg-red-500/30' : days <= 30 ? 'bg-red-500/20' : days <= 60 ? 'bg-amber-500/20' : 'bg-gray-100/50';
               daysBadge = `<span class="shrink-0 px-2 py-1 rounded text-xs ${bgClass} ${urgency.class}">${days}d</span>`;
             }
 
             let notesHtml = '';
             if (isFieldVisible('cases', 'notes') && c['Case Notes'] && c['Case Notes'].trim()) {
-              notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
+              notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
             }
 
             // Flatpack fields for case (now controlled by visibility)
@@ -1789,7 +1789,7 @@
                 .map(([key, value]) => {
                   const formattedKey = key.replace(/[_.]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                   let formattedValue = Array.isArray(value) ? value.join(', ') : String(value);
-                  return `<span class="text-slate-400"><span class="text-slate-500">${escapeHtml(formattedKey)}:</span> ${escapeHtml(formattedValue)}</span>`;
+                  return `<span class="text-gray-500"><span class="text-gray-400">${escapeHtml(formattedKey)}:</span> ${escapeHtml(formattedValue)}</span>`;
                 })
                 .join(' · ');
               if (flatpackFields) {
@@ -1798,7 +1798,7 @@
             }
 
             return `
-              <div class="px-4 py-3 hover:bg-slate-700/10 transition-colors">
+              <div class="px-4 py-3 hover:bg-gray-100/10 transition-colors">
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm">
@@ -1814,35 +1814,35 @@
           }).join('');
 
           return `
-            <div class="border-b border-slate-700/30 last:border-b-0">
-              <div class="px-4 py-3 bg-slate-700/20">
+            <div class="border-b border-gray-200/30 last:border-b-0">
+              <div class="px-4 py-3 bg-gray-100/20">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-sm font-medium text-slate-200">${escapeHtml(type)}</h3>
-                  <span class="text-xs text-slate-500">${typeCases.length}</span>
+                  <h3 class="text-sm font-medium text-gray-800">${escapeHtml(type)}</h3>
+                  <span class="text-xs text-gray-400">${typeCases.length}</span>
                 </div>
               </div>
-              <div class="divide-y divide-slate-700/20">${caseItemsHtml}</div>
+              <div class="divide-y divide-gray-200">${caseItemsHtml}</div>
             </div>
           `;
         }).join('');
 
         const mattersSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab12');
         casesHtml = `
-          <div id="section-cases" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
-            <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div id="section-cases" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
+            <button onclick="toggleSection('cases')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-medium">${cases.length}</span>
+                <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-600 flex items-center justify-center text-sm font-medium">${cases.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Cases</h2>
-                  <p class="text-slate-400 text-sm">${Object.keys(casesByType).length} ${pluralize(Object.keys(casesByType).length, 'type')}</p>
+                  <h2 class="font-medium text-gray-900">Cases</h2>
+                  <p class="text-gray-500 text-sm">${Object.keys(casesByType).length} ${pluralize(Object.keys(casesByType).length, 'type')}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 ${renderExternalLinkIcon(mattersSoftrUrl, 'Open Matters in Softr')}
-                <span id="arrow-cases" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+                <span id="arrow-cases" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
               </div>
             </button>
-            <div id="content-cases" class="border-t border-slate-700/50">${caseTypesHtml}</div>
+            <div id="content-cases" class="border-t border-gray-200/50">${caseTypesHtml}</div>
           </div>
         `;
       }
@@ -1853,16 +1853,16 @@
 
         const statusColors = {
           'Engaged': 'bg-green-500/20 text-green-400',
-          'Potential': 'bg-amber-500/20 text-amber-400',
-          'Filed': 'bg-blue-500/20 text-blue-400',
-          'Pending': 'bg-amber-500/20 text-amber-400',
-          'Approved': 'bg-emerald-500/20 text-emerald-400',
-          'Denied': 'bg-red-500/20 text-red-400'
+          'Potential': 'bg-amber-500/20 text-amber-600',
+          'Filed': 'bg-blue-500/20 text-blue-600',
+          'Pending': 'bg-amber-500/20 text-amber-600',
+          'Approved': 'bg-emerald-500/20 text-emerald-600',
+          'Denied': 'bg-red-500/20 text-red-600'
         };
 
         const itemsHtml = items.map(app => {
           const status = app.Status;
-          const statusClass = statusColors[status] || 'bg-slate-700/50 text-slate-400';
+          const statusClass = statusColors[status] || 'bg-gray-100/50 text-gray-500';
           const statusBadge = (isFieldVisible('applications', 'status') && status)
             ? `<span class="px-2 py-1 rounded text-xs ${statusClass}">${escapeHtml(status)}</span>`
             : '';
@@ -1873,28 +1873,28 @@
 
           let notesHtml = '';
           if (isFieldVisible('applications', 'notes') && notes && notes.trim()) {
-            notesHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View notes</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
+            notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
           }
 
           // Build detail fields using ordered visibility
           const detailFieldRenderers = {
-            receiptNumber: () => app['Receipt Number'] ? `<div><span class="text-slate-500">Receipt:</span> <span class="font-mono text-blue-300">${escapeHtml(app['Receipt Number'])}</span></div>` : null,
-            certCounty: () => app['Cert County/State'] ? `<div><span class="text-slate-500">County/State:</span> <span class="text-slate-300">${escapeHtml(app['Cert County/State'])}</span></div>` : null,
-            filedDate: () => app.createdTime ? `<div><span class="text-slate-500">Filed:</span> <span class="text-slate-300">${formatDate(app.createdTime)}</span></div>` : null
+            receiptNumber: () => app['Receipt Number'] ? `<div><span class="text-gray-400">Receipt:</span> <span class="font-mono text-blue-600">${escapeHtml(app['Receipt Number'])}</span></div>` : null,
+            certCounty: () => app['Cert County/State'] ? `<div><span class="text-gray-400">County/State:</span> <span class="text-gray-700">${escapeHtml(app['Cert County/State'])}</span></div>` : null,
+            filedDate: () => app.createdTime ? `<div><span class="text-gray-400">Filed:</span> <span class="text-gray-700">${formatDate(app.createdTime)}</span></div>` : null
           };
 
           const orderedDetailFields = getVisibleFields('applications').filter(key => ['receiptNumber', 'certCounty', 'filedDate'].includes(key));
           const detailFields = orderedDetailFields.map(key => detailFieldRenderers[key]?.()).filter(Boolean);
 
           return `
-            <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0">
+            <div class="px-4 py-3 hover:bg-gray-100/10 border-b border-gray-200/20 last:border-b-0">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    ${appType ? `<span class="text-purple-300 font-medium text-sm">${escapeHtml(appType)}</span>` : ''}
+                    ${appType ? `<span class="text-purple-600 font-medium text-sm">${escapeHtml(appType)}</span>` : ''}
                     ${statusBadge}
                   </div>
-                  ${name ? `<p class="text-slate-200 text-sm">${escapeHtml(name)}</p>` : ''}
+                  ${name ? `<p class="text-gray-800 text-sm">${escapeHtml(name)}</p>` : ''}
                   ${detailFields.length > 0 ? `<div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">${detailFields.join('')}</div>` : ''}
                 </div>
               </div>
@@ -1905,21 +1905,21 @@
 
         const applicationsSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab15');
         return `
-          <div id="section-applications" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
-            <button onclick="toggleSection('applications')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div id="section-applications" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
+            <button onclick="toggleSection('applications')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-medium">${items.length}</span>
+                <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-600 flex items-center justify-center text-sm font-medium">${items.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Applications</h2>
-                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'application')}</p>
+                  <h2 class="font-medium text-gray-900">Applications</h2>
+                  <p class="text-gray-500 text-sm">${items.length} ${pluralize(items.length, 'application')}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
                 ${renderExternalLinkIcon(applicationsSoftrUrl, 'Open Applications in Softr')}
-                <span id="arrow-applications" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+                <span id="arrow-applications" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
               </div>
             </button>
-            <div id="content-applications" class="border-t border-slate-700/50">${itemsHtml}</div>
+            <div id="content-applications" class="border-t border-gray-200/50">${itemsHtml}</div>
           </div>
         `;
       }
@@ -1958,25 +1958,25 @@
 
           const pastClass = isPast ? 'opacity-60' : '';
           const calTypeBadge = (isFieldVisible('events', 'calendarType') && calType)
-            ? `<span class="px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded text-xs">${escapeHtml(calType)}</span>`
+            ? `<span class="px-1.5 py-0.5 bg-gray-100/50 text-gray-500 rounded text-xs">${escapeHtml(calType)}</span>`
             : '';
 
           let descHtml = '';
           if (isFieldVisible('events', 'description') && description && description.trim()) {
-            descHtml = `<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-400">View details</summary><pre class="mt-2 p-2 bg-slate-900/50 rounded text-xs text-slate-400 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
+            descHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View details</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
           }
 
           let attendeesHtml = '';
           if (isFieldVisible('events', 'attendees') && attendees.length > 0) {
             const attendeeList = attendees.map(a => a.email || a.displayName || a).join(', ');
-            attendeesHtml = `<div class="text-xs text-slate-500 mt-1">Attendees: ${escapeHtml(attendeeList)}</div>`;
+            attendeesHtml = `<div class="text-xs text-gray-400 mt-1">Attendees: ${escapeHtml(attendeeList)}</div>`;
           }
 
           // Build detail fields using ordered visibility
           const eventDetailRenderers = {
-            dateTime: () => `<div><span class="text-slate-500">When:</span> <span class="text-amber-300">${dateDisplay}</span></div>`,
-            location: () => location ? `<div><span class="text-slate-500">Where:</span> <span class="text-slate-300">${escapeHtml(location)}</span></div>` : null,
-            meetLink: () => meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-400 hover:underline">Video Link</a></div>` : null
+            dateTime: () => `<div><span class="text-gray-400">When:</span> <span class="text-amber-600">${dateDisplay}</span></div>`,
+            location: () => location ? `<div><span class="text-gray-400">Where:</span> <span class="text-gray-700">${escapeHtml(location)}</span></div>` : null,
+            meetLink: () => meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600 hover:underline">Video Link</a></div>` : null
           };
 
           const orderedEventFields = getVisibleFields('events').filter(key => ['dateTime', 'location', 'meetLink'].includes(key));
@@ -1986,17 +1986,17 @@
           detailFields.push(`<div>${renderCalendarLinkIcon(calendarUrl, 'Open in Google Calendar')}</div>`);
 
           const titleHtml = isFieldVisible('events', 'title')
-            ? `<span class="text-slate-200 font-medium text-sm">${escapeHtml(eventTitle)}</span>`
+            ? `<span class="text-gray-800 font-medium text-sm">${escapeHtml(eventTitle)}</span>`
             : '';
 
           return `
-            <div class="px-4 py-3 hover:bg-slate-700/10 border-b border-slate-700/20 last:border-b-0 ${pastClass}">
+            <div class="px-4 py-3 hover:bg-gray-100/10 border-b border-gray-200/20 last:border-b-0 ${pastClass}">
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-1">
                     ${titleHtml}
                     ${calTypeBadge}
-                    ${isPast ? '<span class="text-xs text-slate-500">(past)</span>' : ''}
+                    ${isPast ? '<span class="text-xs text-gray-400">(past)</span>' : ''}
                   </div>
                   ${detailFields.length > 0 ? `<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">${detailFields.join('')}</div>` : ''}
                   ${attendeesHtml}
@@ -2008,18 +2008,18 @@
         }).join('');
 
         return `
-          <div id="section-${sectionId}" class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden transition-all">
-            <button onclick="toggleSection('${sectionId}')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div id="section-${sectionId}" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
+            <button onclick="toggleSection('${sectionId}')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-full ${iconBg} ${iconColor} flex items-center justify-center text-sm font-medium">${items.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">${escapeHtml(title)}</h2>
-                  <p class="text-slate-400 text-sm">${items.length} ${pluralize(items.length, 'event')}</p>
+                  <h2 class="font-medium text-gray-900">${escapeHtml(title)}</h2>
+                  <p class="text-gray-500 text-sm">${items.length} ${pluralize(items.length, 'event')}</p>
                 </div>
               </div>
-              <span id="arrow-${sectionId}" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <span id="arrow-${sectionId}" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
-            <div id="content-${sectionId}" class="border-t border-slate-700/50">${itemsHtml}</div>
+            <div id="content-${sectionId}" class="border-t border-gray-200/50">${itemsHtml}</div>
           </div>
         `;
       }
@@ -2027,7 +2027,7 @@
       const applicationsHtml = renderApplicationsSection(applications);
       // Combine hearings and events into a single Events section
       const allCalendarEvents = [...(hearings || []), ...(events || [])];
-      const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-400');
+      const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-600');
 
       return `
         <div class="max-w-4xl mx-auto space-y-4">
@@ -2221,8 +2221,8 @@
         return `
           <div class="max-w-4xl mx-auto space-y-4">
             ${renderHeader(data)}
-            <div class="bg-slate-800 rounded-lg border border-slate-700/50 p-8 text-center">
-              <p class="text-slate-400">No dated events found in the record.</p>
+            <div class="bg-white rounded-lg border border-gray-200/50 p-8 text-center">
+              <p class="text-gray-500">No dated events found in the record.</p>
             </div>
           </div>
         `;
@@ -2232,13 +2232,13 @@
       const future = timelineItems.filter(item => item.date >= now);
 
       const colorMap = {
-        emerald: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/40' },
-        blue: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/40' },
-        purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/40' },
-        amber: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/40' },
-        red: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40' },
+        emerald: { bg: 'bg-emerald-500/20', text: 'text-emerald-600', border: 'border-emerald-500/40' },
+        blue: { bg: 'bg-blue-500/20', text: 'text-blue-600', border: 'border-blue-500/40' },
+        purple: { bg: 'bg-purple-500/20', text: 'text-purple-600', border: 'border-purple-500/40' },
+        amber: { bg: 'bg-amber-500/20', text: 'text-amber-600', border: 'border-amber-500/40' },
+        red: { bg: 'bg-red-500/20', text: 'text-red-600', border: 'border-red-500/40' },
         rose: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/40' },
-        slate: { bg: 'bg-slate-700/20', text: 'text-slate-400', border: 'border-slate-600/40' }
+        slate: { bg: 'bg-gray-100/20', text: 'text-gray-500', border: 'border-gray-300/40' }
       };
 
       function renderTimelineItem(item, isPast) {
@@ -2250,12 +2250,12 @@
 
         let detailLine = '';
         if (item.detail) {
-          detailLine = `<p class="text-slate-500 text-sm mt-1">${escapeHtml(item.detail)}</p>`;
+          detailLine = `<p class="text-gray-400 text-sm mt-1">${escapeHtml(item.detail)}</p>`;
         }
 
         let meetLinkLine = '';
         if (item.meetLink && !isPast) {
-          meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-400 hover:underline text-xs">Join Video</a>`;
+          meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600 hover:underline text-xs">Join Video</a>`;
         }
 
         // Add Google Calendar link for Events source
@@ -2266,16 +2266,16 @@
 
         // Record link - navigate to structured view and scroll to section
         const sourceColors = {
-          'Client': 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30',
-          'Cases': 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30',
-          'Applications': 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
-          'Events': 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+          'Client': 'bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30',
+          'Cases': 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30',
+          'Applications': 'bg-purple-500/20 text-purple-600 hover:bg-purple-500/30',
+          'Events': 'bg-amber-500/20 text-amber-600 hover:bg-amber-500/30'
         };
-        const sourceColor = isPast ? 'bg-slate-700/40 text-slate-500 hover:bg-slate-700/60' : (sourceColors[item.source] || 'bg-slate-700/40 text-slate-400');
+        const sourceColor = isPast ? 'bg-gray-100/40 text-gray-400 hover:bg-gray-100/60' : (sourceColors[item.source] || 'bg-gray-100/40 text-gray-500');
 
         const recordLink = item.sectionId
           ? `<button onclick="navigateToRecord('${item.sectionId}')" class="px-1.5 py-0.5 rounded text-[10px] font-medium ${sourceColor} transition-colors" title="View in ${item.source}">${escapeHtml(item.recordName || item.source)}</button>`
-          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700/40 text-slate-500">${item.source}</span>`;
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100/40 text-gray-400">${item.source}</span>`;
 
         return `
           <div class="flex gap-3 items-start">
@@ -2289,7 +2289,7 @@
               </div>
               ${detailLine}
               <div class="flex items-center gap-3 mt-1 flex-wrap">
-                <span class="text-slate-500 text-sm">${dateStr}${timeStr ? ` at ${timeStr}` : ''}</span>
+                <span class="text-gray-400 text-sm">${dateStr}${timeStr ? ` at ${timeStr}` : ''}</span>
                 ${meetLinkLine}
                 ${calendarLinkLine}
               </div>
@@ -2302,20 +2302,20 @@
       if (past.length > 0) {
         // Show most recent past events first
         const pastReversed = [...past].reverse();
-        const pastItems = pastReversed.map(item => renderTimelineItem(item, true)).join('</div><div class="py-3 border-t border-slate-700/30">');
+        const pastItems = pastReversed.map(item => renderTimelineItem(item, true)).join('</div><div class="py-3 border-t border-gray-200/30">');
         pastHtml = `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
-            <button onclick="toggleSection('timeline-past')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div class="bg-white rounded-lg border border-gray-200/50 overflow-hidden">
+            <button onclick="toggleSection('timeline-past')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-slate-600/30 text-slate-400 flex items-center justify-center text-sm">${past.length}</span>
+                <span class="w-8 h-8 rounded-full bg-gray-200/30 text-gray-500 flex items-center justify-center text-sm">${past.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">History</h2>
-                  <p class="text-slate-500 text-sm">${past.length} past ${pluralize(past.length, 'event')}</p>
+                  <h2 class="font-medium text-gray-900">History</h2>
+                  <p class="text-gray-400 text-sm">${past.length} past ${pluralize(past.length, 'event')}</p>
                 </div>
               </div>
-              <span id="arrow-timeline-past" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <span id="arrow-timeline-past" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
-            <div id="content-timeline-past" class="px-4 pb-4 border-t border-slate-700/50">
+            <div id="content-timeline-past" class="px-4 pb-4 border-t border-gray-200/50">
               <div class="py-3">${pastItems}</div>
             </div>
           </div>
@@ -2324,20 +2324,20 @@
 
       let futureHtml = '';
       if (future.length > 0) {
-        const futureItems = future.map(item => renderTimelineItem(item, false)).join('</div><div class="py-3 border-t border-slate-700/30">');
+        const futureItems = future.map(item => renderTimelineItem(item, false)).join('</div><div class="py-3 border-t border-gray-200/30">');
         futureHtml = `
-          <div class="bg-slate-800 rounded-lg border border-slate-700/50 overflow-hidden">
-            <button onclick="toggleSection('timeline-future')" class="w-full flex items-center justify-between p-4 hover:bg-slate-700/30 transition-colors">
+          <div class="bg-white rounded-lg border border-gray-200/50 overflow-hidden">
+            <button onclick="toggleSection('timeline-future')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">${future.length}</span>
+                <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center text-sm">${future.length}</span>
                 <div class="text-left">
-                  <h2 class="font-medium text-slate-100">Upcoming</h2>
-                  <p class="text-slate-500 text-sm">${future.length} scheduled ${pluralize(future.length, 'event')}</p>
+                  <h2 class="font-medium text-gray-900">Upcoming</h2>
+                  <p class="text-gray-400 text-sm">${future.length} scheduled ${pluralize(future.length, 'event')}</p>
                 </div>
               </div>
-              <span id="arrow-timeline-future" class="text-slate-500 transition-transform" style="transform: rotate(180deg)">▼</span>
+              <span id="arrow-timeline-future" class="text-gray-400 transition-transform" style="transform: rotate(180deg)">▼</span>
             </button>
-            <div id="content-timeline-future" class="px-4 pb-4 border-t border-slate-700/50">
+            <div id="content-timeline-future" class="px-4 pb-4 border-t border-gray-200/50">
               <div class="py-3">${futureItems}</div>
             </div>
           </div>
@@ -2373,13 +2373,13 @@
 
       // Update active view button
       document.querySelectorAll('[data-view]').forEach(btn => {
-        btn.classList.remove('bg-slate-700', 'text-slate-100');
-        btn.classList.add('text-slate-400');
+        btn.classList.remove('bg-gray-100', 'text-gray-900');
+        btn.classList.add('text-gray-500');
       });
       const activeBtn = document.querySelector(`[data-view="structured"]`);
       if (activeBtn) {
-        activeBtn.classList.add('bg-slate-700', 'text-slate-100');
-        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-gray-100', 'text-gray-900');
+        activeBtn.classList.remove('text-gray-500');
       }
 
       // Scroll to the section after a short delay to allow rendering
