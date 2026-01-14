@@ -822,6 +822,16 @@
       return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
+    // Helper to get event start date with fallbacks for different field names
+    function getEventStartDate(event) {
+      return event.startDateTime || event.dateTime || event.Date || event.Start || event['Start Time'] || null;
+    }
+
+    // Helper to get event end date with fallbacks for different field names
+    function getEventEndDate(event) {
+      return event.endDateTime || event.End || event['End Time'] || null;
+    }
+
     function getAge(dob) {
       if (!dob) return null;
       const birth = new Date(dob);
@@ -1125,12 +1135,12 @@
       const allCalendarItems = [...(hearings || []), ...(events || [])];
       if (allCalendarItems.length > 0) {
         const upcomingEvents = allCalendarItems
-          .filter(e => e.startDateTime && new Date(e.startDateTime) >= new Date())
-          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+          .filter(e => getEventStartDate(e) && new Date(getEventStartDate(e)) >= new Date())
+          .sort((a, b) => new Date(getEventStartDate(a)) - new Date(getEventStartDate(b)));
 
         if (upcomingEvents.length > 0) {
           const nextEvent = upcomingEvents[0];
-          const eventDate = isFieldVisible('events', 'dateTime') ? formatDate(nextEvent.startDateTime) : '';
+          const eventDate = isFieldVisible('events', 'dateTime') ? formatDate(getEventStartDate(nextEvent)) : '';
           const eventTitle = isFieldVisible('events', 'title') ? (nextEvent.title || nextEvent.summary || 'Upcoming event') : 'Event';
           const location = (isFieldVisible('events', 'location') && nextEvent.location) ? ` at ${escapeHtml(nextEvent.location)}` : '';
 
@@ -1432,19 +1442,19 @@
 
         // Sort by date
         const sortedItems = allCalendarItems
-          .filter(item => item.startDateTime)
-          .sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+          .filter(item => getEventStartDate(item))
+          .sort((a, b) => new Date(getEventStartDate(a)) - new Date(getEventStartDate(b)));
 
         const now = new Date();
-        const upcomingItems = sortedItems.filter(item => new Date(item.startDateTime) >= now);
-        const pastItems = sortedItems.filter(item => new Date(item.startDateTime) < now);
+        const upcomingItems = sortedItems.filter(item => new Date(getEventStartDate(item)) >= now);
+        const pastItems = sortedItems.filter(item => new Date(getEventStartDate(item)) < now);
 
         if (upcomingItems.length > 0) {
           sections.push(`<span class="text-amber-300 font-medium">Upcoming (${upcomingItems.length})</span>`);
 
           upcomingItems.forEach(item => {
             const eventTitle = item.title || item.summary || 'Event';
-            const dateStr = formatDateLong(item.startDateTime);
+            const dateStr = formatDateLong(getEventStartDate(item));
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
               ? ` at <span class="text-slate-300">${escapeHtml(item.location)}</span>`
@@ -1487,7 +1497,7 @@
 
           pastItems.forEach(item => {
             const eventTitle = item.title || item.summary || 'Event';
-            const dateStr = formatDateLong(item.startDateTime);
+            const dateStr = formatDateLong(getEventStartDate(item));
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
               ? ` at <span class="text-slate-400">${escapeHtml(item.location)}</span>`
@@ -1922,8 +1932,8 @@
 
         const itemsHtml = items.map(event => {
           const eventTitle = event.title || event.summary || 'Event';
-          const startDate = event.startDateTime;
-          const endDate = event.endDateTime;
+          const startDate = getEventStartDate(event);
+          const endDate = getEventEndDate(event);
           const location = event.location;
           const description = event.description;
           const meetLink = event.meetLink;
@@ -2177,12 +2187,13 @@
       const allCalendarEvents = [...(hearings || []), ...(events || [])];
       if (allCalendarEvents.length > 0) {
         allCalendarEvents.forEach(event => {
-          if (isValidDate(event.startDateTime)) {
+          const eventStartDate = getEventStartDate(event);
+          if (isValidDate(eventStartDate)) {
             const eventTitle = event.title || event.summary || 'Event';
             const eventRecordId = event.id || event.eventId;
 
             timelineItems.push({
-              date: new Date(event.startDateTime),
+              date: new Date(eventStartDate),
               statement: eventTitle,
               detail: event.location || null,
               source: 'Events',
