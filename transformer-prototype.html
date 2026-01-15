@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node Data Transformer - Prototype</title>
+  <style>
+    :root {
+      --color-source: #4F46E5;
+      --color-transform: #F59E0B;
+      --color-combine: #8B5CF6;
+      --color-output: #10B981;
+      --color-bg: #F8FAFC;
+      --color-grid: #E2E8F0;
+      --color-text: #1E293B;
+      --color-text-muted: #64748B;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--color-bg);
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar / Node Palette */
+    .sidebar {
+      width: 240px;
+      background: white;
+      border-right: 1px solid var(--color-grid);
+      padding: 16px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .sidebar h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+
+    .sidebar h2:not(:first-child) {
+      margin-top: 24px;
+    }
+
+    .palette-node {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: white;
+      border: 1px solid var(--color-grid);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      cursor: grab;
+      transition: all 0.15s;
+    }
+
+    .palette-node:hover {
+      border-color: var(--node-color);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .palette-node:active {
+      cursor: grabbing;
+    }
+
+    .palette-node__icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--node-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .palette-node__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    /* Canvas */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        radial-gradient(circle, var(--color-grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .canvas-viewport {
+      transform-origin: 0 0;
+    }
+
+    /* SVG Connections Layer */
+    .connections-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .connection {
+      stroke: #94A3B8;
+      stroke-width: 2;
+      fill: none;
+      pointer-events: stroke;
+    }
+
+    .connection:hover {
+      stroke: #64748B;
+      stroke-width: 3;
+    }
+
+    .connection--temp {
+      stroke: var(--color-source);
+      stroke-dasharray: 5 5;
+      pointer-events: none;
+    }
+
+    /* Nodes */
+    .node {
+      position: absolute;
+      width: 200px;
+      min-height: 80px;
+      background: white;
+      border: 2px solid var(--node-color, #94A3B8);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      cursor: move;
+      user-select: none;
+    }
+
+    .node--selected {
+      box-shadow: 0 0 0 2px var(--node-color), 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .node--running {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
+
+    .node__header {
+      padding: 10px 12px;
+      background: var(--node-color, #94A3B8);
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .node__icon {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .node__body {
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--color-text-muted);
+      border-bottom: 1px solid #F1F5F9;
+    }
+
+    .node__config-line {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .node__config-key {
+      color: #94A3B8;
+    }
+
+    .node__config-value {
+      color: var(--color-text);
+    }
+
+    .node__ports {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+
+    .node__ports-left,
+    .node__ports-right {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .node__ports-right {
+      align-items: flex-end;
+    }
+
+    .port {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      cursor: crosshair;
+    }
+
+    .port--output {
+      flex-direction: row-reverse;
+    }
+
+    .port__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--node-color, #94A3B8);
+      background: white;
+      transition: all 0.15s;
+    }
+
+    .port:hover .port__dot {
+      transform: scale(1.3);
+    }
+
+    .port--connected .port__dot {
+      background: var(--node-color, #94A3B8);
+    }
+
+    .port__label {
+      font-size: 10px;
+      color: var(--color-text-muted);
+    }
+
+    /* Data Preview Panel */
+    .preview-panel {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 360px;
+      max-height: 300px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
+      z-index: 20;
+    }
+
+    .preview-panel__header {
+      padding: 12px 16px;
+      background: #1E293B;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-panel__run {
+      background: #22C55E;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .preview-panel__run:hover {
+      background: #16A34A;
+    }
+
+    .preview-panel__body {
+      padding: 12px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 11px;
+      max-height: 240px;
+      overflow: auto;
+      background: #F8FAFC;
+    }
+
+    .preview-panel__body pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      position: absolute;
+      top: 16px;
+      left: 256px;
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .toolbar button {
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid var(--color-grid);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar button:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
+    }
+
+    /* Empty State */
+    .empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar: Node Palette -->
+    <aside class="sidebar">
+      <h2>Sources</h2>
+      <div class="palette-node" draggable="true" data-type="source" data-subtype="client" style="--node-color: #4F46E5">
+        <div class="palette-node__icon">U</div>
+        <span class="palette-node__label">Client</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="source" data-subtype="cases" style="--node-color: #7C3AED">
+        <div class="palette-node__icon">B</div>
+        <span class="palette-node__label">Cases</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="source" data-subtype="applications" style="--node-color: #2563EB">
+        <div class="palette-node__icon">F</div>
+        <span class="palette-node__label">Applications</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="source" data-subtype="hearings" style="--node-color: #DC2626">
+        <div class="palette-node__icon">C</div>
+        <span class="palette-node__label">Hearings</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="source" data-subtype="events" style="--node-color: #059669">
+        <div class="palette-node__icon">E</div>
+        <span class="palette-node__label">Events</span>
+      </div>
+
+      <h2>Transforms</h2>
+      <div class="palette-node" draggable="true" data-type="transform" data-subtype="filter" style="--node-color: #F59E0B">
+        <div class="palette-node__icon">F</div>
+        <span class="palette-node__label">Filter</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="transform" data-subtype="map" style="--node-color: #F59E0B">
+        <div class="palette-node__icon">M</div>
+        <span class="palette-node__label">Map Fields</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="transform" data-subtype="pick" style="--node-color: #F59E0B">
+        <div class="palette-node__icon">P</div>
+        <span class="palette-node__label">Pick Fields</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="transform" data-subtype="sort" style="--node-color: #F59E0B">
+        <div class="palette-node__icon">S</div>
+        <span class="palette-node__label">Sort</span>
+      </div>
+
+      <h2>Combine</h2>
+      <div class="palette-node" draggable="true" data-type="combine" data-subtype="merge" style="--node-color: #8B5CF6">
+        <div class="palette-node__icon">+</div>
+        <span class="palette-node__label">Merge</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="combine" data-subtype="join" style="--node-color: #8B5CF6">
+        <div class="palette-node__icon">J</div>
+        <span class="palette-node__label">Join</span>
+      </div>
+
+      <h2>Outputs</h2>
+      <div class="palette-node" draggable="true" data-type="output" data-subtype="triplets" style="--node-color: #10B981">
+        <div class="palette-node__icon">T</div>
+        <span class="palette-node__label">Triplets</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="output" data-subtype="view" style="--node-color: #10B981">
+        <div class="palette-node__icon">V</div>
+        <span class="palette-node__label">View</span>
+      </div>
+      <div class="palette-node" draggable="true" data-type="output" data-subtype="narrative" style="--node-color: #10B981">
+        <div class="palette-node__icon">N</div>
+        <span class="palette-node__label">Narrative</span>
+      </div>
+    </aside>
+
+    <!-- Main Canvas -->
+    <div class="canvas-container">
+      <div class="canvas" id="canvas">
+        <svg class="connections-layer" id="connections-svg"></svg>
+        <div class="canvas-viewport" id="viewport">
+          <!-- Nodes are rendered here -->
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button id="btn-clear">Clear Canvas</button>
+        <button id="btn-preset">Load Example</button>
+        <button id="btn-zoom-reset">Reset View</button>
+      </div>
+
+      <!-- Data Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-panel__header">
+          <span>Pipeline Output</span>
+          <button class="preview-panel__run" id="btn-run">Run Pipeline</button>
+        </div>
+        <div class="preview-panel__body">
+          <pre id="preview-output">// Output will appear here after running the pipeline</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // STATE
+    // ============================================================
+    const state = {
+      nodes: new Map(),
+      connections: [],
+      selectedNodeId: null,
+      dragging: null,
+      connecting: null,
+      viewport: { x: 0, y: 0, zoom: 1 },
+      nextNodeId: 1
+    };
+
+    // Sample data for pipeline execution
+    const SAMPLE_DATA = {
+      client: {
+        _recordId: 'recCLIENT123',
+        'Full Name': 'Rodriguez Garcia, Maria Elena',
+        'A#': '234-567-890',
+        'DOB': '1995-03-22',
+        'Country of Origin': 'Guatemala',
+        'Phone': '(615) 555-1234'
+      },
+      cases: [
+        {
+          _recordId: 'recCASE001',
+          'Matter Type': 'SIJ - Davidson County',
+          'Case Status': 'Active',
+          'Court': 'Memphis Immigration Court',
+          'Judge': 'Hon. Patricia Williams'
+        },
+        {
+          _recordId: 'recCASE002',
+          'Matter Type': 'Asylum',
+          'Case Status': 'Pending',
+          'Court': 'Nashville Immigration Court',
+          'Judge': 'Hon. Robert Chen'
+        }
+      ],
+      applications: [
+        {
+          _recordId: 'recAPP001',
+          _parentCaseId: 'recCASE001',
+          'Application Type': 'I-360',
+          'Status': 'Pending',
+          'Receipt Number': 'SRC2411234567'
+        }
+      ],
+      hearings: [
+        {
+          _id: 'evt001',
+          title: 'Individual Hearing - Immigration Court',
+          startDateTime: '2025-02-15T09:00:00-06:00',
+          location: 'Memphis Immigration Court'
+        }
+      ],
+      events: [
+        {
+          _id: 'evt003',
+          title: 'Biometrics Appointment',
+          startDateTime: '2025-02-05T10:30:00-06:00',
+          location: 'USCIS Nashville Field Office'
+        }
+      ]
+    };
+
+    // ============================================================
+    // NODE DEFINITIONS
+    // ============================================================
+    const NODE_DEFS = {
+      source: {
+        client: { color: '#4F46E5', icon: 'U', outputs: ['data'], inputs: [] },
+        cases: { color: '#7C3AED', icon: 'B', outputs: ['data'], inputs: [] },
+        applications: { color: '#2563EB', icon: 'F', outputs: ['data'], inputs: [] },
+        hearings: { color: '#DC2626', icon: 'C', outputs: ['data'], inputs: [] },
+        events: { color: '#059669', icon: 'E', outputs: ['data'], inputs: [] }
+      },
+      transform: {
+        filter: { color: '#F59E0B', icon: 'F', outputs: ['pass', 'fail'], inputs: ['data'] },
+        map: { color: '#F59E0B', icon: 'M', outputs: ['data'], inputs: ['data'] },
+        pick: { color: '#F59E0B', icon: 'P', outputs: ['data'], inputs: ['data'] },
+        sort: { color: '#F59E0B', icon: 'S', outputs: ['data'], inputs: ['data'] }
+      },
+      combine: {
+        merge: { color: '#8B5CF6', icon: '+', outputs: ['data'], inputs: ['data1', 'data2'] },
+        join: { color: '#8B5CF6', icon: 'J', outputs: ['data'], inputs: ['left', 'right'] }
+      },
+      output: {
+        triplets: { color: '#10B981', icon: 'T', outputs: [], inputs: ['data'] },
+        view: { color: '#10B981', icon: 'V', outputs: [], inputs: ['data'] },
+        narrative: { color: '#10B981', icon: 'N', outputs: [], inputs: ['data'] }
+      }
+    };
+
+    // Default configs for nodes
+    const DEFAULT_CONFIGS = {
+      filter: { field: 'Case Status', operator: 'equals', value: 'Active' },
+      map: { mappings: [{ from: 'Full Name', to: 'name' }] },
+      pick: { fields: ['name', 'DOB', 'status'] },
+      sort: { field: 'startDateTime', direction: 'asc' },
+      merge: { mode: 'append' },
+      join: { leftKey: '_recordId', rightKey: '_parentCaseId' },
+      triplets: { includeProvenance: true },
+      view: { viewType: 'structured' },
+      narrative: { template: '{name} from {Country of Origin}' }
+    };
+
+    // ============================================================
+    // DOM ELEMENTS
+    // ============================================================
+    const canvas = document.getElementById('canvas');
+    const viewport = document.getElementById('viewport');
+    const connectionsSvg = document.getElementById('connections-svg');
+    const previewOutput = document.getElementById('preview-output');
+
+    // ============================================================
+    // RENDER FUNCTIONS
+    // ============================================================
+    function renderNode(node) {
+      const def = NODE_DEFS[node.type]?.[node.subtype];
+      if (!def) return;
+
+      const el = document.createElement('div');
+      el.className = 'node' + (state.selectedNodeId === node.id ? ' node--selected' : '');
+      el.id = `node-${node.id}`;
+      el.style.cssText = `--node-color: ${def.color}; left: ${node.x}px; top: ${node.y}px;`;
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'node__header';
+      header.innerHTML = `<span class="node__icon">${def.icon}</span>${node.subtype}`;
+      el.appendChild(header);
+
+      // Body (config summary)
+      if (node.config && Object.keys(node.config).length > 0) {
+        const body = document.createElement('div');
+        body.className = 'node__body';
+        for (const [key, value] of Object.entries(node.config).slice(0, 3)) {
+          const line = document.createElement('div');
+          line.className = 'node__config-line';
+          const displayValue = typeof value === 'object' ? JSON.stringify(value).slice(0, 20) + '...' : value;
+          line.innerHTML = `<span class="node__config-key">${key}:</span><span class="node__config-value">${displayValue}</span>`;
+          body.appendChild(line);
+        }
+        el.appendChild(body);
+      }
+
+      // Ports
+      const ports = document.createElement('div');
+      ports.className = 'node__ports';
+
+      const portsLeft = document.createElement('div');
+      portsLeft.className = 'node__ports-left';
+      for (const input of def.inputs) {
+        const isConnected = state.connections.some(c => c.toNode === node.id && c.toPort === input);
+        const port = document.createElement('div');
+        port.className = 'port port--input' + (isConnected ? ' port--connected' : '');
+        port.dataset.nodeId = node.id;
+        port.dataset.port = input;
+        port.dataset.direction = 'input';
+        port.innerHTML = `<div class="port__dot"></div><span class="port__label">${input}</span>`;
+        portsLeft.appendChild(port);
+      }
+      ports.appendChild(portsLeft);
+
+      const portsRight = document.createElement('div');
+      portsRight.className = 'node__ports-right';
+      for (const output of def.outputs) {
+        const isConnected = state.connections.some(c => c.fromNode === node.id && c.fromPort === output);
+        const port = document.createElement('div');
+        port.className = 'port port--output' + (isConnected ? ' port--connected' : '');
+        port.dataset.nodeId = node.id;
+        port.dataset.port = output;
+        port.dataset.direction = 'output';
+        port.innerHTML = `<div class="port__dot"></div><span class="port__label">${output}</span>`;
+        portsRight.appendChild(port);
+      }
+      ports.appendChild(portsRight);
+
+      el.appendChild(ports);
+      viewport.appendChild(el);
+    }
+
+    function renderConnections() {
+      connectionsSvg.innerHTML = '';
+
+      for (const conn of state.connections) {
+        const fromNode = state.nodes.get(conn.fromNode);
+        const toNode = state.nodes.get(conn.toNode);
+        if (!fromNode || !toNode) continue;
+
+        const fromEl = document.querySelector(`#node-${conn.fromNode} .port--output[data-port="${conn.fromPort}"] .port__dot`);
+        const toEl = document.querySelector(`#node-${conn.toNode} .port--input[data-port="${conn.toPort}"] .port__dot`);
+        if (!fromEl || !toEl) continue;
+
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+
+        const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+        const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+        const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
+        const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const dx = Math.abs(x2 - x1) * 0.5;
+        path.setAttribute('d', `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
+        path.setAttribute('class', 'connection');
+        path.style.stroke = NODE_DEFS[fromNode.type]?.[fromNode.subtype]?.color || '#94A3B8';
+        connectionsSvg.appendChild(path);
+      }
+
+      // Temp connection while dragging
+      if (state.connecting) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const { x1, y1, x2, y2 } = state.connecting;
+        const dx = Math.abs(x2 - x1) * 0.5;
+        path.setAttribute('d', `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`);
+        path.setAttribute('class', 'connection connection--temp');
+        connectionsSvg.appendChild(path);
+      }
+    }
+
+    function render() {
+      // Clear viewport
+      viewport.innerHTML = '';
+
+      // Render all nodes
+      for (const node of state.nodes.values()) {
+        renderNode(node);
+      }
+
+      // Render connections
+      renderConnections();
+    }
+
+    // ============================================================
+    // NODE CREATION
+    // ============================================================
+    function createNode(type, subtype, x, y) {
+      const id = state.nextNodeId++;
+      const node = {
+        id,
+        type,
+        subtype,
+        x,
+        y,
+        config: { ...(DEFAULT_CONFIGS[subtype] || {}) }
+      };
+      state.nodes.set(id, node);
+      return node;
+    }
+
+    // ============================================================
+    // DRAG AND DROP
+    // ============================================================
+    let draggedPaletteNode = null;
+
+    document.querySelectorAll('.palette-node').forEach(el => {
+      el.addEventListener('dragstart', (e) => {
+        draggedPaletteNode = {
+          type: el.dataset.type,
+          subtype: el.dataset.subtype
+        };
+      });
+    });
+
+    canvas.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    canvas.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!draggedPaletteNode) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left - 100; // Center node under cursor
+      const y = e.clientY - rect.top - 40;
+
+      createNode(draggedPaletteNode.type, draggedPaletteNode.subtype, x, y);
+      draggedPaletteNode = null;
+      render();
+    });
+
+    // ============================================================
+    // NODE DRAGGING
+    // ============================================================
+    canvas.addEventListener('mousedown', (e) => {
+      const nodeEl = e.target.closest('.node');
+      const portEl = e.target.closest('.port');
+
+      if (portEl) {
+        // Start connection drag
+        const nodeId = parseInt(portEl.dataset.nodeId);
+        const port = portEl.dataset.port;
+        const direction = portEl.dataset.direction;
+
+        if (direction === 'output') {
+          const dotEl = portEl.querySelector('.port__dot');
+          const rect = dotEl.getBoundingClientRect();
+          const canvasRect = canvas.getBoundingClientRect();
+
+          state.connecting = {
+            fromNode: nodeId,
+            fromPort: port,
+            x1: rect.left + rect.width / 2 - canvasRect.left,
+            y1: rect.top + rect.height / 2 - canvasRect.top,
+            x2: e.clientX - canvasRect.left,
+            y2: e.clientY - canvasRect.top
+          };
+        }
+        e.stopPropagation();
+        return;
+      }
+
+      if (nodeEl) {
+        const nodeId = parseInt(nodeEl.id.replace('node-', ''));
+        state.selectedNodeId = nodeId;
+        state.dragging = {
+          nodeId,
+          startX: e.clientX,
+          startY: e.clientY,
+          nodeStartX: state.nodes.get(nodeId).x,
+          nodeStartY: state.nodes.get(nodeId).y
+        };
+        render();
+      } else {
+        state.selectedNodeId = null;
+        render();
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (state.dragging) {
+        const node = state.nodes.get(state.dragging.nodeId);
+        node.x = state.dragging.nodeStartX + (e.clientX - state.dragging.startX);
+        node.y = state.dragging.nodeStartY + (e.clientY - state.dragging.startY);
+        render();
+      }
+
+      if (state.connecting) {
+        const canvasRect = canvas.getBoundingClientRect();
+        state.connecting.x2 = e.clientX - canvasRect.left;
+        state.connecting.y2 = e.clientY - canvasRect.top;
+        renderConnections();
+      }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (state.connecting) {
+        const portEl = e.target.closest('.port--input');
+        if (portEl) {
+          const toNodeId = parseInt(portEl.dataset.nodeId);
+          const toPort = portEl.dataset.port;
+
+          // Don't connect to self
+          if (toNodeId !== state.connecting.fromNode) {
+            // Remove existing connection to this input
+            state.connections = state.connections.filter(
+              c => !(c.toNode === toNodeId && c.toPort === toPort)
+            );
+
+            // Add new connection
+            state.connections.push({
+              fromNode: state.connecting.fromNode,
+              fromPort: state.connecting.fromPort,
+              toNode: toNodeId,
+              toPort: toPort
+            });
+          }
+        }
+        state.connecting = null;
+        render();
+      }
+
+      state.dragging = null;
+    });
+
+    // ============================================================
+    // KEYBOARD
+    // ============================================================
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (state.selectedNodeId && !e.target.closest('input, textarea')) {
+          // Remove connections to/from this node
+          state.connections = state.connections.filter(
+            c => c.fromNode !== state.selectedNodeId && c.toNode !== state.selectedNodeId
+          );
+          state.nodes.delete(state.selectedNodeId);
+          state.selectedNodeId = null;
+          render();
+        }
+      }
+    });
+
+    // ============================================================
+    // PIPELINE EXECUTION
+    // ============================================================
+    function executePipeline() {
+      const nodeResults = new Map();
+
+      // Get execution order (simple: sources first, then others)
+      const sources = [...state.nodes.values()].filter(n => n.type === 'source');
+      const others = [...state.nodes.values()].filter(n => n.type !== 'source');
+      const execOrder = [...sources, ...others];
+
+      for (const node of execOrder) {
+        try {
+          const result = executeNode(node, nodeResults);
+          nodeResults.set(node.id, result);
+        } catch (err) {
+          nodeResults.set(node.id, { error: err.message });
+        }
+      }
+
+      // Get output from output nodes
+      const outputNodes = [...state.nodes.values()].filter(n => n.type === 'output');
+      if (outputNodes.length === 0) {
+        return { message: 'No output nodes. Add a Triplets, View, or Narrative node.' };
+      }
+
+      const outputs = {};
+      for (const node of outputNodes) {
+        outputs[`${node.subtype} (node ${node.id})`] = nodeResults.get(node.id);
+      }
+      return outputs;
+    }
+
+    function executeNode(node, results) {
+      const getInput = (portName) => {
+        const conn = state.connections.find(c => c.toNode === node.id && c.toPort === portName);
+        if (!conn) return null;
+        const result = results.get(conn.fromNode);
+        // Handle nodes with multiple outputs
+        if (result && typeof result === 'object' && conn.fromPort in result) {
+          return result[conn.fromPort];
+        }
+        return result;
+      };
+
+      switch (node.type) {
+        case 'source':
+          return executeSource(node);
+        case 'transform':
+          return executeTransform(node, getInput);
+        case 'combine':
+          return executeCombine(node, getInput);
+        case 'output':
+          return executeOutput(node, getInput);
+        default:
+          return null;
+      }
+    }
+
+    function executeSource(node) {
+      const data = SAMPLE_DATA[node.subtype];
+      return Array.isArray(data) ? data : [data];
+    }
+
+    function executeTransform(node, getInput) {
+      const input = getInput('data');
+      if (!input) return [];
+
+      switch (node.subtype) {
+        case 'filter': {
+          const { field, operator, value } = node.config;
+          const pass = [];
+          const fail = [];
+          for (const item of input) {
+            const itemValue = item[field];
+            let matches = false;
+            switch (operator) {
+              case 'equals': matches = itemValue === value; break;
+              case 'contains': matches = String(itemValue).includes(value); break;
+              case 'exists': matches = itemValue != null; break;
+            }
+            (matches ? pass : fail).push(item);
+          }
+          return { pass, fail };
+        }
+
+        case 'pick': {
+          const { fields } = node.config;
+          return input.map(item => {
+            const result = {};
+            for (const f of fields) {
+              if (f in item) result[f] = item[f];
+            }
+            return result;
+          });
+        }
+
+        case 'map': {
+          const { mappings } = node.config;
+          return input.map(item => {
+            const result = { ...item };
+            for (const { from, to } of mappings) {
+              if (from in result) {
+                result[to] = result[from];
+                if (from !== to) delete result[from];
+              }
+            }
+            return result;
+          });
+        }
+
+        case 'sort': {
+          const { field, direction } = node.config;
+          return [...input].sort((a, b) => {
+            const aVal = a[field], bVal = b[field];
+            const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+            return direction === 'desc' ? -cmp : cmp;
+          });
+        }
+
+        default:
+          return input;
+      }
+    }
+
+    function executeCombine(node, getInput) {
+      switch (node.subtype) {
+        case 'merge': {
+          const data1 = getInput('data1') || [];
+          const data2 = getInput('data2') || [];
+          return [...data1, ...data2];
+        }
+
+        case 'join': {
+          const left = getInput('left') || [];
+          const right = getInput('right') || [];
+          const { leftKey, rightKey } = node.config;
+          const leftIndex = new Map(left.map(item => [item[leftKey], item]));
+          const results = [];
+          for (const r of right) {
+            const l = leftIndex.get(r[rightKey]);
+            if (l) results.push({ ...l, ...r });
+          }
+          return results;
+        }
+
+        default:
+          return [];
+      }
+    }
+
+    function executeOutput(node, getInput) {
+      const input = getInput('data') || [];
+
+      switch (node.subtype) {
+        case 'triplets': {
+          const triplets = [];
+          for (const item of input) {
+            const recordId = item._recordId || item._id || 'unknown';
+            for (const [key, value] of Object.entries(item)) {
+              if (!key.startsWith('_') && value != null) {
+                triplets.push({
+                  subject: recordId,
+                  predicate: key,
+                  object: value
+                });
+              }
+            }
+          }
+          return triplets;
+        }
+
+        case 'view': {
+          return { viewType: node.config.viewType, records: input };
+        }
+
+        case 'narrative': {
+          const { template } = node.config;
+          return input.map(item => {
+            return template.replace(/\{(\w+)\}/g, (_, key) => item[key] || '');
+          });
+        }
+
+        default:
+          return input;
+      }
+    }
+
+    // ============================================================
+    // TOOLBAR HANDLERS
+    // ============================================================
+    document.getElementById('btn-run').addEventListener('click', () => {
+      const result = executePipeline();
+      previewOutput.textContent = JSON.stringify(result, null, 2);
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      state.nodes.clear();
+      state.connections = [];
+      state.selectedNodeId = null;
+      state.nextNodeId = 1;
+      render();
+      previewOutput.textContent = '// Output will appear here after running the pipeline';
+    });
+
+    document.getElementById('btn-preset').addEventListener('click', () => {
+      // Clear and load example pipeline
+      state.nodes.clear();
+      state.connections = [];
+      state.nextNodeId = 1;
+
+      // Create nodes
+      const clientNode = createNode('source', 'client', 50, 50);
+      const casesNode = createNode('source', 'cases', 50, 200);
+      const filterNode = createNode('transform', 'filter', 300, 125);
+      filterNode.config = { field: 'Case Status', operator: 'equals', value: 'Active' };
+      const mergeNode = createNode('combine', 'merge', 550, 100);
+      const tripletsNode = createNode('output', 'triplets', 800, 125);
+
+      // Create connections
+      state.connections = [
+        { fromNode: clientNode.id, fromPort: 'data', toNode: mergeNode.id, toPort: 'data1' },
+        { fromNode: casesNode.id, fromPort: 'data', toNode: filterNode.id, toPort: 'data' },
+        { fromNode: filterNode.id, fromPort: 'pass', toNode: mergeNode.id, toPort: 'data2' },
+        { fromNode: mergeNode.id, fromPort: 'data', toNode: tripletsNode.id, toPort: 'data' }
+      ];
+
+      render();
+    });
+
+    document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+      state.viewport = { x: 0, y: 0, zoom: 1 };
+      viewport.style.transform = '';
+    });
+
+    // ============================================================
+    // INITIAL RENDER
+    // ============================================================
+    render();
+  </script>
+</body>
+</html>
