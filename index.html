@@ -70,7 +70,7 @@
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900">
   <div id="app" class="p-3 sm:p-4 md:p-6">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <div class="text-center py-12">
         <div class="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
         <p class="text-gray-500 text-sm">Loading client data...</p>
@@ -1099,7 +1099,7 @@
 
     function renderError(message) {
       document.getElementById('app').innerHTML = `
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-6xl mx-auto">
           <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto mt-12">
             <p class="text-red-600 font-medium">Error</p>
             <p class="text-red-600/70 text-sm mt-1">${escapeHtml(message)}</p>
@@ -1719,7 +1719,7 @@
       const contentClass = detailed ? 'space-y-3' : 'space-y-2';
 
       return `
-        <div class="max-w-4xl mx-auto space-y-4">
+        <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
           <div class="bg-white rounded-lg border border-gray-200/50 p-6">
             <div class="${contentClass} text-gray-700 leading-relaxed">
@@ -1866,7 +1866,7 @@
               </div>
             </button>
             <div id="content-client" class="px-4 pb-4 border-t border-gray-200/50">
-              ${clientFields.length > 0 ? `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-4">${clientFields.join('')}</div>` : ''}
+              ${clientFields.length > 0 ? `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mt-4">${clientFields.join('')}</div>` : ''}
               ${sijStatus}
               ${tagsSection}
               ${(client._flatpack && isFieldVisible('client', 'flatpack')) ? renderFlatpackFields(client._flatpack, 'Matter Details (from Flatpack)') : ''}
@@ -2159,13 +2159,41 @@
       const allCalendarEvents = [...(hearings || []), ...(events || [])];
       const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-600');
 
+      // Build the two-column layout for xl screens
+      const hasLeftColumn = casesHtml || applicationsHtml;
+      const hasRightColumn = eventsHtml;
+      const hasBothColumns = hasLeftColumn && hasRightColumn;
+
+      let mainContent = '';
+      if (hasBothColumns) {
+        // Two-column layout on xl screens
+        mainContent = `
+          <div class="xl:grid xl:grid-cols-2 xl:gap-4 space-y-4 xl:space-y-0">
+            <div class="space-y-4">
+              ${casesHtml}
+              ${applicationsHtml}
+            </div>
+            <div class="space-y-4">
+              ${eventsHtml}
+            </div>
+          </div>
+        `;
+      } else {
+        // Single column fallback when one side is empty
+        mainContent = `
+          <div class="space-y-4">
+            ${casesHtml}
+            ${applicationsHtml}
+            ${eventsHtml}
+          </div>
+        `;
+      }
+
       return `
-        <div class="max-w-4xl mx-auto space-y-4">
+        <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
           ${clientHtml}
-          ${casesHtml}
-          ${applicationsHtml}
-          ${eventsHtml}
+          ${mainContent}
         </div>
       `;
     }
@@ -2349,7 +2377,7 @@
 
       if (timelineItems.length === 0) {
         return `
-          <div class="max-w-4xl mx-auto space-y-4">
+          <div class="max-w-6xl mx-auto space-y-4">
             ${renderHeader(data)}
             <div class="bg-white rounded-lg border border-gray-200/50 p-8 text-center">
               <p class="text-gray-500">No dated events found in the record.</p>
@@ -2484,7 +2512,7 @@
       `;
 
       return `
-        <div class="max-w-4xl mx-auto space-y-4">
+        <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
           ${futureHtml}
           ${past.length > 0 && future.length > 0 ? nowIndicator : ''}
