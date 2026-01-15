@@ -198,8 +198,26 @@
       'events': 'events',
       'event': 'events',
       'calendar': 'events',
-      'hearings': 'events'
+      'hearings': 'events',
+      'hearing': 'events',
+      'deadlines': 'events',
+      'deadlines 2.0': 'events'
     };
+
+    // Helper to find category from table name (uses partial matching as fallback)
+    function getCategoryFromTableName(tableName) {
+      const normalized = tableName.toLowerCase().trim();
+      // Exact match first
+      if (TABLE_TO_CATEGORY[normalized]) {
+        return TABLE_TO_CATEGORY[normalized];
+      }
+      // Partial matching fallback
+      if (normalized.includes('client')) return 'client';
+      if (normalized.includes('case') || normalized.includes('matter')) return 'cases';
+      if (normalized.includes('application')) return 'applications';
+      if (normalized.includes('event') || normalized.includes('hearing') || normalized.includes('calendar') || normalized.includes('deadline')) return 'events';
+      return null;
+    }
 
     // Fields to exclude from the field list (internal/system fields)
     const EXCLUDED_FIELDS = new Set([
@@ -333,8 +351,8 @@
         const tables = Array.isArray(schema) ? schema : (schema.tables || [schema]);
 
         for (const table of tables) {
-          const tableName = (table.name || table.tableName || '').toLowerCase().trim();
-          const category = TABLE_TO_CATEGORY[tableName];
+          const tableName = (table.name || table.tableName || '');
+          const category = getCategoryFromTableName(tableName);
 
           if (!category) {
             console.log(`Skipping unknown table: ${tableName}`);
@@ -366,13 +384,15 @@
             // Skip if we already have this key
             if (addedKeys[category].has(key)) continue;
 
-            // Add new field with all views visible by default
+            // Add new field - hidden by default so users can opt-in to any field they want
             newRegistry[category].push({
               key: key,
               label: fieldName,
-              views: { structured: true, brief: true, detailed: true, timeline: true },
+              views: { structured: false, brief: false, detailed: false, timeline: false },
               // Store original field name for data access
-              sourceField: fieldName
+              sourceField: fieldName,
+              // Mark as schema-derived field (not a core field)
+              fromSchema: true
             });
             addedKeys[category].add(key);
           }
@@ -470,7 +490,8 @@
         return {
           key: f.key,
           label: regField?.label || f.key,
-          visible: f.visible
+          visible: f.visible,
+          sourceField: regField?.sourceField
         };
       });
     }
