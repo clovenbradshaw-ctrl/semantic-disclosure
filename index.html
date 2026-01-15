@@ -812,6 +812,144 @@
       document.body.style.overflow = '';
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // GENERIC MODAL UTILITY - Handles callbacks safely
+    // ═══════════════════════════════════════════════════════════════
+
+    // Store for modal callbacks to ensure they're always accessible
+    const modalCallbacks = {};
+
+    function showModal({ id, title, content, onConfirm, onCancel, confirmText = 'Save', cancelText = 'Cancel' }) {
+      // Remove existing modal with same id if present
+      const existingModal = document.getElementById(id);
+      if (existingModal) existingModal.remove();
+
+      // Store callbacks with validation
+      modalCallbacks[id] = {
+        onConfirm: typeof onConfirm === 'function' ? onConfirm : null,
+        onCancel: typeof onCancel === 'function' ? onCancel : null
+      };
+
+      const modalHtml = `
+        <div id="${id}" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="handleModalBackdropClick(event, '${id}')">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-900">${escapeHtml(title)}</h2>
+              <button onclick="closeModal('${id}')" class="text-gray-400 hover:text-gray-600 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="p-4">
+              ${content}
+            </div>
+            <div class="flex justify-end gap-2 p-4 border-t border-gray-200 bg-gray-50/50 rounded-b-xl">
+              <button onclick="handleModalCancel('${id}')" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+                ${escapeHtml(cancelText)}
+              </button>
+              <button onclick="handleModalConfirm('${id}')" class="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium">
+                ${escapeHtml(confirmText)}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.body.style.overflow = 'hidden';
+    }
+
+    function handleModalBackdropClick(event, modalId) {
+      if (event.target.id === modalId) {
+        closeModal(modalId);
+      }
+    }
+
+    function handleModalConfirm(modalId) {
+      const callbacks = modalCallbacks[modalId];
+      if (callbacks && typeof callbacks.onConfirm === 'function') {
+        callbacks.onConfirm();
+      }
+      closeModal(modalId);
+    }
+
+    function handleModalCancel(modalId) {
+      const callbacks = modalCallbacks[modalId];
+      if (callbacks && typeof callbacks.onCancel === 'function') {
+        callbacks.onCancel();
+      }
+      closeModal(modalId);
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) modal.remove();
+      document.body.style.overflow = '';
+      // Clean up stored callbacks
+      delete modalCallbacks[modalId];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ADD SOURCE STEP MODAL - Select a data source to add as a step
+    // ═══════════════════════════════════════════════════════════════
+
+    // Available sources for the source step modal
+    let availableSources = [];
+
+    function setAvailableSources(sources) {
+      availableSources = Array.isArray(sources) ? sources : [];
+    }
+
+    function showAddSourceStepModal(options = {}) {
+      const { onConfirm, onCancel, sources } = options;
+
+      // Use provided sources or fall back to availableSources
+      const sourceList = Array.isArray(sources) ? sources : availableSources;
+
+      // Build select options
+      const optionsHtml = sourceList.map(source => {
+        const label = source.label || source.name || source;
+        const value = source.value || source.id || source;
+        const recordCount = source.recordCount ? ` (${source.recordCount} records)` : '';
+        return `<option value="${escapeHtml(String(value))}">${escapeHtml(label)}${recordCount}</option>`;
+      }).join('');
+
+      const content = `
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">Select Source</label>
+            <select id="source-step-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900">
+              ${optionsHtml || '<option value="">No sources available</option>'}
+            </select>
+          </div>
+        </div>
+      `;
+
+      // Create wrapper callbacks that get the selected value
+      const wrappedOnConfirm = () => {
+        const select = document.getElementById('source-step-select');
+        const selectedValue = select ? select.value : null;
+        const selectedSource = sourceList.find(s =>
+          (s.value || s.id || s) === selectedValue
+        );
+
+        if (typeof onConfirm === 'function') {
+          onConfirm(selectedSource, selectedValue);
+        }
+      };
+
+      showModal({
+        id: 'add-source-step-modal',
+        title: 'Add Source Step',
+        content: content,
+        onConfirm: wrappedOnConfirm,
+        onCancel: typeof onCancel === 'function' ? onCancel : null,
+        confirmText: 'Save',
+        cancelText: 'Cancel'
+      });
+    }
+
     function resetViewAndRefresh() {
       resetViewPrefs(settingsCurrentView);
       renderSettingsModal();
