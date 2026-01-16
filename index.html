@@ -178,16 +178,29 @@
         { key: 'attendees', label: 'Attendees', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ],
       notes: [
+        { key: 'id', label: 'ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
         { key: 'activity', label: 'Activity', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'type', label: 'Type', views: { structured: true, brief: true, detailed: true, timeline: false } },
         { key: 'date', label: 'Date', views: { structured: true, brief: true, detailed: true, timeline: true } },
         { key: 'description', label: 'Description', views: { structured: true, brief: false, detailed: true, timeline: false } },
         { key: 'contact', label: 'Contact', views: { structured: true, brief: false, detailed: true, timeline: false } },
-        { key: 'createdBy', label: 'Created By', views: { structured: false, brief: false, detailed: true, timeline: false } },
-        { key: 'dueDate', label: 'Due Date', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'clientPpId', label: 'Client PP ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
         { key: 'matter', label: 'Matter', views: { structured: true, brief: false, detailed: true, timeline: false } },
-        { key: 'source', label: 'Source', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'recordId', label: 'Record ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'createdBy', label: 'Created By', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'softrLink', label: 'Softr Link', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'updated', label: 'Updated', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'modified', label: 'Modified', views: { structured: false, brief: false, detailed: true, timeline: true } },
+        { key: 'dueDate', label: 'Due Date', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'lastUpdateBy', label: 'Last Update By', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'unixTimestamp', label: 'Unix Timestamp', views: { structured: false, brief: false, detailed: false, timeline: false } },
+        { key: 'timeRaw', label: 'Time Raw', views: { structured: false, brief: false, detailed: false, timeline: false } },
         { key: 'tags', label: 'Tags', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'ppNoteId', label: 'PP Note ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'matterId', label: 'Matter ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'source', label: 'Source', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'clientAirtableId', label: 'Client Airtable ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'eventId', label: 'Event ID', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ]
     };
 
@@ -1460,6 +1473,9 @@
       const createdBy = note.Created_By || '';
       const description = (note.Description || '').substring(0, 80);
       const hasMore = (note.Description || '').length > 80;
+      const matter = note.Matter || note.matter || '';
+      const contact = note.Contact || '';
+      const dueDate = note.Due_Date ? formatDate(note.Due_Date) : '';
 
       const typeColors = {
         'Call': 'bg-blue-100 text-blue-700',
@@ -1480,7 +1496,10 @@
           </td>
           <td class="py-2 px-3 font-medium text-gray-800">${escapeHtml(activity)}</td>
           <td class="py-2 px-3 text-gray-500 max-w-xs truncate">${escapeHtml(description)}${hasMore ? '...' : ''}</td>
+          <td class="py-2 px-3 text-gray-400 whitespace-nowrap max-w-[120px] truncate" title="${escapeHtml(matter)}">${escapeHtml(matter)}</td>
+          <td class="py-2 px-3 text-gray-400 whitespace-nowrap">${escapeHtml(contact)}</td>
           <td class="py-2 px-3 text-gray-400 whitespace-nowrap">${escapeHtml(createdBy)}</td>
+          ${dueDate ? `<td class="py-2 px-3 text-amber-600 whitespace-nowrap">${escapeHtml(dueDate)}</td>` : '<td class="py-2 px-3 text-gray-300">—</td>'}
         </tr>
       `;
     }
@@ -1519,7 +1538,10 @@
                     <th class="py-2 px-3 font-medium">Type</th>
                     <th class="py-2 px-3 font-medium">Activity</th>
                     <th class="py-2 px-3 font-medium">Description</th>
+                    <th class="py-2 px-3 font-medium">Matter</th>
+                    <th class="py-2 px-3 font-medium">Contact</th>
                     <th class="py-2 px-3 font-medium">By</th>
+                    <th class="py-2 px-3 font-medium">Due</th>
                   </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -1548,6 +1570,11 @@
         const description = note.Description || '';
         const createdBy = note.Created_By || '';
         const type = note.Type || 'Note';
+        const matter = note.Matter || note.matter || '';
+        const contact = note.Contact || '';
+        const dueDate = note.Due_Date ? formatDate(note.Due_Date) : '';
+        const tags = note.tags || [];
+        const source = note.source || '';
 
         const typeColors = {
           'Call': 'border-l-blue-400',
@@ -1560,18 +1587,34 @@
         };
         const borderClass = typeColors[type] || typeColors['General'];
 
+        // Build metadata items for the card
+        const metaItems = [];
+        if (contact) metaItems.push(`Contact: ${escapeHtml(contact)}`);
+        if (matter) metaItems.push(`Matter: ${escapeHtml(matter)}`);
+        if (dueDate) metaItems.push(`<span class="text-amber-600">Due: ${escapeHtml(dueDate)}</span>`);
+        if (source) metaItems.push(`<span class="italic">${escapeHtml(source)}</span>`);
+
+        // Tags rendering
+        const tagsHtml = tags.length > 0
+          ? `<div class="flex flex-wrap gap-1 mt-1">${tags.slice(0, 3).map(tag =>
+              `<span class="px-1 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">${escapeHtml(tag)}</span>`
+            ).join('')}${tags.length > 3 ? `<span class="text-gray-400 text-xs">+${tags.length - 3}</span>` : ''}</div>`
+          : '';
+
         return `
           <div class="bg-gray-50/50 rounded border-l-2 ${borderClass} p-2 text-xs">
             <div class="flex items-center justify-between gap-2 mb-1">
               <span class="font-medium text-gray-700 truncate">${escapeHtml(activity)}</span>
               <span class="text-gray-400 whitespace-nowrap">${escapeHtml(date)}</span>
             </div>
+            ${metaItems.length > 0 ? `<div class="flex flex-wrap gap-x-2 gap-y-0.5 text-gray-400 text-xs mb-1">${metaItems.join(' • ')}</div>` : ''}
             ${description ? `
               <details>
                 <summary class="text-gray-400 cursor-pointer hover:text-gray-500 text-xs">View note</summary>
                 <p class="mt-1 text-gray-500 whitespace-pre-wrap text-xs max-h-20 overflow-y-auto">${escapeHtml(description)}</p>
               </details>
             ` : ''}
+            ${tagsHtml}
             ${createdBy ? `<span class="text-gray-400 text-xs">— ${escapeHtml(createdBy)}</span>` : ''}
           </div>
         `;
@@ -2791,18 +2834,33 @@
         };
 
         const itemsHtml = items.map(note => {
+          // Extract all schema fields
+          const id = note.id || '';
           const activity = note.Activity || '';
           const type = note.Type || '';
           const noteDate = note.Date;
           const description = note.Description || '';
           const contact = note.Contact || '';
-          const createdBy = note.Created_By || '';
-          const dueDate = note.Due_Date;
+          const clientPpId = note.Client_PP_ID || '';
           const matter = note.Matter || note.matter || '';
-          const source = note.source || '';
+          const recordId = note.RecordId || '';
+          const createdBy = note.Created_By || '';
+          const softrLink = note.Softr_Link_to_clients || '';
+          const updated = note.Updated || '';
+          const modified = note.Modified || '';
+          const dueDate = note.Due_Date;
+          const lastUpdateBy = note.Last_Update_By || '';
+          const unixTimestamp = note.unix_timestamp || '';
+          const timeRaw = note.time_raw || '';
           const tags = note.tags || [];
+          const ppNoteId = note.pp_note_id || '';
+          const matterId = note.matter_id || '';
+          const source = note.source || '';
+          const clientAirtableId = note.client_airtable_id || '';
+          const eventId = note.eventId || '';
           const typeClass = typeColors[type] || typeColors['General'];
 
+          // Primary fields
           const activityHtml = isFieldVisible('notes', 'activity') && activity
             ? `<span class="text-gray-800 font-medium text-sm">${escapeHtml(activity)}</span>`
             : '';
@@ -2811,6 +2869,11 @@
             ? `<span class="px-2 py-0.5 rounded text-xs ${typeClass}">${escapeHtml(type)}</span>`
             : '';
 
+          const idHtml = isFieldVisible('notes', 'id') && id
+            ? `<span class="text-gray-300 text-xs font-mono">#${escapeHtml(String(id))}</span>`
+            : '';
+
+          // Date fields
           const dateHtml = isFieldVisible('notes', 'date') && noteDate
             ? `<span class="text-gray-500 text-xs">${formatDate(noteDate)}</span>`
             : '';
@@ -2819,35 +2882,94 @@
             ? `<span class="text-amber-600 text-xs">Due: ${formatDate(dueDate)}</span>`
             : '';
 
+          const updatedHtml = isFieldVisible('notes', 'updated') && updated
+            ? `<span class="text-gray-400 text-xs">Updated: ${formatDate(updated)}</span>`
+            : '';
+
+          const modifiedHtml = isFieldVisible('notes', 'modified') && modified
+            ? `<span class="text-gray-400 text-xs">Modified: ${formatDate(modified)}</span>`
+            : '';
+
+          // Entity reference fields
           const matterHtml = isFieldVisible('notes', 'matter') && matter
             ? `<span class="text-gray-400 text-xs">Matter: ${escapeHtml(matter)}</span>`
             : '';
 
+          const matterIdHtml = isFieldVisible('notes', 'matterId') && matterId
+            ? `<span class="text-gray-300 text-xs font-mono">Matter ID: ${escapeHtml(matterId)}</span>`
+            : '';
+
+          const eventIdHtml = isFieldVisible('notes', 'eventId') && eventId
+            ? `<span class="text-gray-300 text-xs font-mono">Event ID: ${escapeHtml(eventId)}</span>`
+            : '';
+
+          const recordIdHtml = isFieldVisible('notes', 'recordId') && recordId
+            ? `<span class="text-gray-300 text-xs font-mono">Record: ${escapeHtml(recordId)}</span>`
+            : '';
+
+          // Contact/Client fields
           const contactHtml = isFieldVisible('notes', 'contact') && contact
             ? `<span class="text-gray-500 text-xs">Contact: ${escapeHtml(contact)}</span>`
             : '';
 
+          const clientPpIdHtml = isFieldVisible('notes', 'clientPpId') && clientPpId
+            ? `<span class="text-gray-300 text-xs font-mono">Client PP: ${escapeHtml(clientPpId)}</span>`
+            : '';
+
+          const clientAirtableIdHtml = isFieldVisible('notes', 'clientAirtableId') && clientAirtableId
+            ? `<span class="text-gray-300 text-xs font-mono">Airtable: ${escapeHtml(clientAirtableId)}</span>`
+            : '';
+
+          // Author fields
           const createdByHtml = isFieldVisible('notes', 'createdBy') && createdBy
             ? `<span class="text-gray-400 text-xs">By: ${escapeHtml(createdBy)}</span>`
             : '';
 
+          const lastUpdateByHtml = isFieldVisible('notes', 'lastUpdateBy') && lastUpdateBy
+            ? `<span class="text-gray-400 text-xs">Last update by: ${escapeHtml(lastUpdateBy)}</span>`
+            : '';
+
+          // Source & ID fields
           const sourceHtml = isFieldVisible('notes', 'source') && source
             ? `<span class="text-gray-400 text-xs italic">${escapeHtml(source)}</span>`
             : '';
 
+          const ppNoteIdHtml = isFieldVisible('notes', 'ppNoteId') && ppNoteId
+            ? `<span class="text-gray-300 text-xs font-mono">PP Note: ${escapeHtml(ppNoteId)}</span>`
+            : '';
+
+          // Link field
+          const softrLinkHtml = isFieldVisible('notes', 'softrLink') && softrLink
+            ? `<a href="${escapeHtml(softrLink)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-600 text-xs underline">View in Softr</a>`
+            : '';
+
+          // Technical fields (usually hidden)
+          const unixTimestampHtml = isFieldVisible('notes', 'unixTimestamp') && unixTimestamp
+            ? `<span class="text-gray-300 text-xs font-mono">Unix: ${escapeHtml(unixTimestamp)}</span>`
+            : '';
+
+          const timeRawHtml = isFieldVisible('notes', 'timeRaw') && timeRaw
+            ? `<span class="text-gray-300 text-xs font-mono">Raw: ${escapeHtml(timeRaw)}</span>`
+            : '';
+
+          // Tags
           const tagsHtml = isFieldVisible('notes', 'tags') && tags.length > 0
             ? `<div class="flex flex-wrap gap-1 mt-1">${tags.map(tag =>
                 `<span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">${escapeHtml(tag)}</span>`
               ).join('')}</div>`
             : '';
 
+          // Description
           let descHtml = '';
           if (isFieldVisible('notes', 'description') && description && description.trim()) {
             descHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View description</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
           }
 
-          // Build metadata line
-          const metadataItems = [dateHtml, dueDateHtml, matterHtml, contactHtml, createdByHtml, sourceHtml].filter(Boolean);
+          // Build metadata lines - grouped logically
+          const primaryMetadata = [dateHtml, dueDateHtml, matterHtml, contactHtml, createdByHtml, sourceHtml].filter(Boolean);
+          const secondaryMetadata = [updatedHtml, modifiedHtml, lastUpdateByHtml, softrLinkHtml].filter(Boolean);
+          const idMetadata = [idHtml, recordIdHtml, matterIdHtml, eventIdHtml, ppNoteIdHtml, clientPpIdHtml, clientAirtableIdHtml].filter(Boolean);
+          const technicalMetadata = [unixTimestampHtml, timeRawHtml].filter(Boolean);
 
           return `
             <div class="px-4 py-3 hover:bg-gray-100/10 border-b border-gray-200/20 last:border-b-0">
@@ -2857,7 +2979,10 @@
                     ${activityHtml}
                     ${typeBadge}
                   </div>
-                  ${metadataItems.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs">${metadataItems.join('')}</div>` : ''}
+                  ${primaryMetadata.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs">${primaryMetadata.join('')}</div>` : ''}
+                  ${secondaryMetadata.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs mt-1">${secondaryMetadata.join('')}</div>` : ''}
+                  ${idMetadata.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs mt-1">${idMetadata.join('')}</div>` : ''}
+                  ${technicalMetadata.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs mt-1">${technicalMetadata.join('')}</div>` : ''}
                   ${tagsHtml}
                 </div>
               </div>
