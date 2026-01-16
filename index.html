@@ -305,6 +305,7 @@
         'Matter_Flatpack': 'flatpack'
       },
       applications: {
+        'Application': 'type',
         'Application Type': 'type',
         'Type': 'type',
         'Name': 'name',
@@ -312,8 +313,10 @@
         'Status': 'status',
         'Receipt Number': 'receiptNumber',
         'Receipt #': 'receiptNumber',
+        'Receipt Date': 'filedDate',
         'Filed Date': 'filedDate',
         'Date Filed': 'filedDate',
+        'Cert County/State': 'certCounty',
         'County': 'certCounty',
         'State': 'certCounty',
         'Notes': 'notes'
@@ -1231,7 +1234,57 @@
       return extracted;
     }
 
+    /**
+     * Flatten an Airtable export record that has fields wrapped in a `fields` object.
+     * Merges id, createdTime, and all fields.* properties to the top level.
+     * @param {Object} record - Record that may have { id, createdTime, fields: {...} } structure
+     * @returns {Object} Flattened record with all properties at top level
+     */
+    function flattenAirtableRecord(record) {
+      if (!record || typeof record !== 'object') return record;
+
+      // If record has a fields object, flatten it
+      if (record.fields && typeof record.fields === 'object') {
+        const { fields, ...rest } = record;
+        return { ...rest, ...fields };
+      }
+
+      return record;
+    }
+
+    /**
+     * Process applications array to handle both flat and nested formats.
+     * Supports: flat records, { records: [...] } format, and Airtable export { fields: {...} } format.
+     * @param {Array} applications - Raw applications array
+     * @returns {Array} Normalized flat array of application records
+     */
+    function normalizeApplications(applications) {
+      if (!applications || !Array.isArray(applications)) return [];
+
+      const normalized = [];
+
+      applications.forEach(appOrGroup => {
+        // Handle nested { records: [...] } structure
+        if (appOrGroup.records && Array.isArray(appOrGroup.records)) {
+          appOrGroup.records.forEach(app => {
+            normalized.push(flattenAirtableRecord(app));
+          });
+        }
+        // Handle single record (flat or with fields wrapper)
+        else {
+          normalized.push(flattenAirtableRecord(appOrGroup));
+        }
+      });
+
+      return normalized;
+    }
+
     function processDataWithFlatpack(data) {
+      // Normalize applications to handle Airtable export format with fields wrapper
+      if (data.applications && Array.isArray(data.applications)) {
+        data.applications = normalizeApplications(data.applications);
+      }
+
       // Process client flatpack fields
       if (data.client) {
         // Extract Matter_Flatpack from client (from Case Master View // Activities)
