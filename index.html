@@ -1297,6 +1297,235 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // NOTES LINKING & INDEXING UTILITIES
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Build an index of notes by their linked entities
+     * Returns { byCase: {caseId: [notes]}, byApplication: {...}, byEvent: {...}, unlinked: [notes] }
+     */
+    function buildNoteIndex(notes, cases, applications, events) {
+      const index = {
+        byCase: {},
+        byApplication: {},
+        byEvent: {},
+        unlinked: [],
+        all: notes || []
+      };
+
+      if (!notes || notes.length === 0) return index;
+
+      // Build lookup maps for matching
+      const caseIds = new Set((cases || []).map(c => c.id).filter(Boolean));
+      const appIds = new Set();
+      (applications || []).forEach(appOrGroup => {
+        // Handle nested structure: { records: [...] }
+        if (appOrGroup.records && Array.isArray(appOrGroup.records)) {
+          appOrGroup.records.forEach(app => {
+            if (app.id) appIds.add(app.id);
+          });
+        }
+        // Handle flat structure: { id: ..., Application: ... }
+        else if (appOrGroup.id) {
+          appIds.add(appOrGroup.id);
+        }
+      });
+      const eventIds = new Set((events || []).map(e => e.id || e.eventId).filter(Boolean));
+
+      notes.forEach(note => {
+        let linked = false;
+
+        // Link by matter_id to cases
+        if (note.matter_id) {
+          if (!index.byCase[note.matter_id]) index.byCase[note.matter_id] = [];
+          index.byCase[note.matter_id].push(note);
+          linked = true;
+        }
+
+        // Link by eventId to events
+        if (note.eventId) {
+          if (!index.byEvent[note.eventId]) index.byEvent[note.eventId] = [];
+          index.byEvent[note.eventId].push(note);
+          linked = true;
+        }
+
+        // Link by RecordId (could be case, application, or event)
+        if (note.RecordId) {
+          if (caseIds.has(note.RecordId)) {
+            if (!index.byCase[note.RecordId]) index.byCase[note.RecordId] = [];
+            index.byCase[note.RecordId].push(note);
+            linked = true;
+          }
+          if (appIds.has(note.RecordId)) {
+            if (!index.byApplication[note.RecordId]) index.byApplication[note.RecordId] = [];
+            index.byApplication[note.RecordId].push(note);
+            linked = true;
+          }
+          if (eventIds.has(note.RecordId)) {
+            if (!index.byEvent[note.RecordId]) index.byEvent[note.RecordId] = [];
+            index.byEvent[note.RecordId].push(note);
+            linked = true;
+          }
+        }
+
+        if (!linked) {
+          index.unlinked.push(note);
+        }
+      });
+
+      return index;
+    }
+
+    /**
+     * Get notes for a specific entity
+     */
+    function getNotesForEntity(noteIndex, entityType, entityId) {
+      if (!noteIndex || !entityId) return [];
+      const bucket = noteIndex[`by${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`];
+      return bucket ? (bucket[entityId] || []) : [];
+    }
+
+    /**
+     * Render a compact notes table row
+     */
+    function renderCompactNoteRow(note) {
+      const activity = note.Activity || '—';
+      const type = note.Type || '';
+      const date = note.Date ? formatDate(note.Date) : '';
+      const createdBy = note.Created_By || '';
+      const description = (note.Description || '').substring(0, 80);
+      const hasMore = (note.Description || '').length > 80;
+
+      const typeColors = {
+        'Call': 'bg-blue-100 text-blue-700',
+        'Email': 'bg-green-100 text-green-700',
+        'Meeting': 'bg-purple-100 text-purple-700',
+        'Task': 'bg-amber-100 text-amber-700',
+        'Case Note': 'bg-teal-100 text-teal-700',
+        'Note': 'bg-gray-100 text-gray-600',
+        'General': 'bg-gray-100 text-gray-600'
+      };
+      const typeClass = typeColors[type] || typeColors['General'];
+
+      return `
+        <tr class="border-b border-gray-100 hover:bg-gray-50/50 text-xs">
+          <td class="py-2 px-3 text-gray-500 whitespace-nowrap">${escapeHtml(date)}</td>
+          <td class="py-2 px-3">
+            <span class="px-1.5 py-0.5 rounded text-xs ${typeClass}">${escapeHtml(type || 'Note')}</span>
+          </td>
+          <td class="py-2 px-3 font-medium text-gray-800">${escapeHtml(activity)}</td>
+          <td class="py-2 px-3 text-gray-500 max-w-xs truncate">${escapeHtml(description)}${hasMore ? '...' : ''}</td>
+          <td class="py-2 px-3 text-gray-400 whitespace-nowrap">${escapeHtml(createdBy)}</td>
+        </tr>
+      `;
+    }
+
+    /**
+     * Render compact notes table for front page (collapsed by default)
+     */
+    function renderCompactNotesTable(notes) {
+      if (!notes || notes.length === 0) return '';
+
+      // Sort by date descending (most recent first)
+      const sortedNotes = [...notes].sort((a, b) => {
+        const dateA = a.Date || 0;
+        const dateB = b.Date || 0;
+        return dateB - dateA;
+      });
+
+      const rows = sortedNotes.map(renderCompactNoteRow).join('');
+
+      return `
+        <div id="section-notes-compact" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden">
+          <button onclick="toggleSection('notes-compact')" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs font-medium">${notes.length}</span>
+              <span class="text-sm font-medium text-gray-700">Recent Notes</span>
+              <span class="text-xs text-gray-400">(chronological)</span>
+            </div>
+            <span id="arrow-notes-compact" class="text-gray-400 transition-transform text-xs" style="transform: rotate(0deg)">▼</span>
+          </button>
+          <div id="content-notes-compact" class="hidden border-t border-gray-200/50">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-gray-50/80 text-xs text-gray-500 uppercase tracking-wide">
+                  <tr>
+                    <th class="py-2 px-3 font-medium">Date</th>
+                    <th class="py-2 px-3 font-medium">Type</th>
+                    <th class="py-2 px-3 font-medium">Activity</th>
+                    <th class="py-2 px-3 font-medium">Description</th>
+                    <th class="py-2 px-3 font-medium">By</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+            ${notes.length > 10 ? `<div class="p-2 text-center border-t border-gray-100"><span class="text-xs text-gray-400">Showing all ${notes.length} notes • See "Notes" section for full details</span></div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Render contextual note cards for embedding under entities
+     */
+    function renderContextualNoteCards(notes, maxShow = 3) {
+      if (!notes || notes.length === 0) return '';
+
+      // Sort by date descending
+      const sortedNotes = [...notes].sort((a, b) => (b.Date || 0) - (a.Date || 0));
+      const displayNotes = sortedNotes.slice(0, maxShow);
+      const remaining = sortedNotes.length - maxShow;
+
+      const cardsHtml = displayNotes.map(note => {
+        const activity = note.Activity || 'Note';
+        const date = note.Date ? formatDate(note.Date) : '';
+        const description = note.Description || '';
+        const createdBy = note.Created_By || '';
+        const type = note.Type || 'Note';
+
+        const typeColors = {
+          'Call': 'border-l-blue-400',
+          'Email': 'border-l-green-400',
+          'Meeting': 'border-l-purple-400',
+          'Task': 'border-l-amber-400',
+          'Case Note': 'border-l-teal-400',
+          'Note': 'border-l-gray-300',
+          'General': 'border-l-gray-300'
+        };
+        const borderClass = typeColors[type] || typeColors['General'];
+
+        return `
+          <div class="bg-gray-50/50 rounded border-l-2 ${borderClass} p-2 text-xs">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="font-medium text-gray-700 truncate">${escapeHtml(activity)}</span>
+              <span class="text-gray-400 whitespace-nowrap">${escapeHtml(date)}</span>
+            </div>
+            ${description ? `
+              <details>
+                <summary class="text-gray-400 cursor-pointer hover:text-gray-500 text-xs">View note</summary>
+                <p class="mt-1 text-gray-500 whitespace-pre-wrap text-xs max-h-20 overflow-y-auto">${escapeHtml(description)}</p>
+              </details>
+            ` : ''}
+            ${createdBy ? `<span class="text-gray-400 text-xs">— ${escapeHtml(createdBy)}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      const moreHtml = remaining > 0
+        ? `<div class="text-xs text-gray-400 text-center py-1">+ ${remaining} more note${remaining > 1 ? 's' : ''}</div>`
+        : '';
+
+      return `
+        <div class="mt-2 space-y-1.5">
+          <div class="text-xs text-gray-400 font-medium uppercase tracking-wide">Related Notes</div>
+          ${cardsHtml}
+          ${moreHtml}
+        </div>
+      `;
+    }
+
     function switchView(view) {
       currentView = view;
       if (window.currentData) {
@@ -2075,6 +2304,9 @@
     function renderStructuredView(data) {
       const { client, cases, applications, hearings, events, notes } = data;
 
+      // Build note index for contextual display
+      const noteIndex = buildNoteIndex(notes, cases, applications, events);
+
       const casesByType = {};
       if (cases && cases.length > 0) {
         cases.forEach(c => {
@@ -2206,8 +2438,13 @@
 
             let notesHtml = '';
             if (isFieldVisible('cases', 'notes') && c['Case Notes'] && c['Case Notes'].trim()) {
-              notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
+              notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View inline notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(c['Case Notes'])}</pre></details>`;
             }
+
+            // Contextual notes from note index (linked note records)
+            const caseId = c.id || c['Case Master View Record ID'];
+            const linkedNotes = caseId ? getNotesForEntity(noteIndex, 'case', caseId) : [];
+            const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, 3) : '';
 
             // Flatpack fields for case (now controlled by visibility)
             let flatpackHtml = '';
@@ -2241,6 +2478,7 @@
                   ${daysBadge}
                 </div>
                 ${notesHtml}
+                ${contextualNotesHtml}
               </div>
             `;
           }).join('');
@@ -2280,7 +2518,7 @@
       }
 
       // Specialized renderer for Applications
-      function renderApplicationsSection(items) {
+      function renderApplicationsSection(items, noteIndex) {
         if (!items || items.length === 0) return '';
 
         const statusColors = {
@@ -2305,8 +2543,13 @@
 
           let notesHtml = '';
           if (isFieldVisible('applications', 'notes') && notes && notes.trim()) {
-            notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
+            notesHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View inline notes</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(notes)}</pre></details>`;
           }
+
+          // Contextual notes from note index (linked note records)
+          const appId = app.id;
+          const linkedNotes = appId && noteIndex ? getNotesForEntity(noteIndex, 'application', appId) : [];
+          const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, 3) : '';
 
           // Build detail fields using ordered visibility
           const detailFieldRenderers = {
@@ -2331,6 +2574,7 @@
                 </div>
               </div>
               ${notesHtml}
+              ${contextualNotesHtml}
             </div>
           `;
         }).join('');
@@ -2456,7 +2700,7 @@
         `;
       }
 
-      const applicationsHtml = renderApplicationsSection(applications);
+      const applicationsHtml = renderApplicationsSection(applications, noteIndex);
       // Combine hearings and events into a single Events section
       const allCalendarEvents = [...(hearings || []), ...(events || [])];
       const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-600');
@@ -2580,6 +2824,7 @@
       }
 
       const notesHtml = renderNotesSection(notes);
+      const compactNotesTableHtml = renderCompactNotesTable(notes);
 
       // Build the two-column layout for xl screens
       const hasLeftColumn = casesHtml || applicationsHtml;
@@ -2615,6 +2860,7 @@
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
           ${clientHtml}
+          ${compactNotesTableHtml}
           ${mainContent}
           ${notesHtml}
         </div>
