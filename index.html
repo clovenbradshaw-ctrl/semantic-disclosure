@@ -176,6 +176,18 @@
         { key: 'meetLink', label: 'Video Link', views: { structured: true, brief: false, detailed: true, timeline: true } },
         { key: 'description', label: 'Description', views: { structured: false, brief: false, detailed: true, timeline: false } },
         { key: 'attendees', label: 'Attendees', views: { structured: false, brief: false, detailed: true, timeline: false } },
+      ],
+      notes: [
+        { key: 'activity', label: 'Activity', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'type', label: 'Type', views: { structured: true, brief: true, detailed: true, timeline: false } },
+        { key: 'date', label: 'Date', views: { structured: true, brief: true, detailed: true, timeline: true } },
+        { key: 'description', label: 'Description', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'contact', label: 'Contact', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'createdBy', label: 'Created By', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'dueDate', label: 'Due Date', views: { structured: true, brief: false, detailed: true, timeline: true } },
+        { key: 'matter', label: 'Matter', views: { structured: true, brief: false, detailed: true, timeline: false } },
+        { key: 'source', label: 'Source', views: { structured: false, brief: false, detailed: true, timeline: false } },
+        { key: 'tags', label: 'Tags', views: { structured: false, brief: false, detailed: true, timeline: false } },
       ]
     };
 
@@ -201,7 +213,13 @@
       'hearings': 'events',
       'hearing': 'events',
       'deadlines': 'events',
-      'deadlines 2.0': 'events'
+      'deadlines 2.0': 'events',
+      'case & event notes': 'notes',
+      'case and event notes': 'notes',
+      'caseeventnotes': 'notes',
+      'notes': 'notes',
+      'case notes': 'notes',
+      'event notes': 'notes'
     };
 
     // Helper to find category from table name (uses partial matching as fallback)
@@ -213,6 +231,8 @@
       }
       // Partial matching fallback
       if (normalized.includes('client')) return 'client';
+      // Check for notes before cases since "case notes" should go to notes, not cases
+      if (normalized.includes('note') && (normalized.includes('case') || normalized.includes('event'))) return 'notes';
       if (normalized.includes('case') || normalized.includes('matter')) return 'cases';
       if (normalized.includes('application')) return 'applications';
       if (normalized.includes('event') || normalized.includes('hearing') || normalized.includes('calendar') || normalized.includes('deadline')) return 'events';
@@ -230,7 +250,8 @@
       client: new Set(['dob', 'entryDate', 'createdTime']),
       cases: new Set(['hearingDate', 'oyd', 'createdTime', 'filingDate']),
       applications: new Set(['filedDate', 'createdTime', 'decisionDate', 'expirationDate']),
-      events: new Set(['dateTime', 'startDateTime', 'endDateTime', 'createdTime'])
+      events: new Set(['dateTime', 'startDateTime', 'endDateTime', 'createdTime']),
+      notes: new Set(['date', 'dueDate', 'createdTime', 'Modified', 'Updated'])
     };
 
     // Helper to check if a field is a date field
@@ -316,6 +337,26 @@
         'Details': 'description',
         'Attendees': 'attendees',
         'Guests': 'attendees'
+      },
+      notes: {
+        'Activity': 'activity',
+        'Type': 'type',
+        'Date': 'date',
+        'Description': 'description',
+        'Contact': 'contact',
+        'Created_By': 'createdBy',
+        'Created By': 'createdBy',
+        'Due_Date': 'dueDate',
+        'Due Date': 'dueDate',
+        'Matter': 'matter',
+        'matter': 'matter',
+        'source': 'source',
+        'Source': 'source',
+        'tags': 'tags',
+        'Tags': 'tags',
+        'Last_Update_By': 'lastUpdateBy',
+        'Modified': 'modified',
+        'Updated': 'updated'
       }
     };
 
@@ -329,14 +370,15 @@
         console.log('Schema loaded:', schema);
 
         // Build registry from schema
-        const newRegistry = { client: [], cases: [], applications: [], events: [] };
+        const newRegistry = { client: [], cases: [], applications: [], events: [], notes: [] };
 
         // Track which internal keys we've already added per category
         const addedKeys = {
           client: new Set(),
           cases: new Set(),
           applications: new Set(),
-          events: new Set()
+          events: new Set(),
+          notes: new Set()
         };
 
         // First, add all the default fields to preserve ordering and special handling
@@ -602,6 +644,11 @@
           label: 'Event & Hearing Fields',
           sublabel: 'Card elements (multiple records)',
           icon: '📅'
+        },
+        notes: {
+          label: 'Notes Fields',
+          sublabel: 'Case & event notes (multiple records)',
+          icon: '📋'
         }
       };
 
@@ -610,7 +657,8 @@
         client: 'Date fields from client record',
         cases: 'Date fields from case records',
         applications: 'Date fields from applications',
-        events: 'Date fields from events/hearings'
+        events: 'Date fields from events/hearings',
+        notes: 'Date fields from notes'
       };
 
       const viewLabels = {
@@ -1271,7 +1319,7 @@
     // BRIEF NARRATIVE - Executive summary style
     // ═══════════════════════════════════════════════════════════════
     function generateBriefNarrative(data) {
-      const { client, cases, applications, events, hearings } = data;
+      const { client, cases, applications, events, hearings, notes } = data;
       const lines = [];
 
       if (!client) {
@@ -1425,6 +1473,25 @@
         }
       }
 
+      // Notes summary
+      if (notes && notes.length > 0) {
+        const notesByType = {};
+        notes.forEach(note => {
+          const type = note.Type || 'General';
+          if (!notesByType[type]) notesByType[type] = [];
+          notesByType[type].push(note);
+        });
+
+        if (isFieldVisible('notes', 'type')) {
+          const typeSummary = Object.entries(notesByType)
+            .map(([type, arr]) => `<span class="text-teal-600">${escapeHtml(type)}</span> (${arr.length})`)
+            .join(', ');
+          lines.push(`<span class="text-teal-600 font-medium">${notes.length} ${pluralize(notes.length, 'note')}</span>: ${typeSummary}`);
+        } else {
+          lines.push(`<span class="text-teal-600 font-medium">${notes.length} ${pluralize(notes.length, 'note')}</span> on file.`);
+        }
+      }
+
       return lines;
     }
 
@@ -1432,7 +1499,7 @@
     // DETAILED NARRATIVE - Full prose disclosure
     // ═══════════════════════════════════════════════════════════════
     function generateDetailedNarrative(data) {
-      const { client, cases, applications, events, hearings } = data;
+      const { client, cases, applications, events, hearings, notes } = data;
       const sections = [];
 
       if (!client) {
@@ -1816,6 +1883,81 @@
         }
       }
 
+      // ─── Notes ───
+      if (notes && notes.length > 0) {
+        sections.push(`<br><span class="text-teal-600 font-semibold">Notes (${notes.length})</span>`);
+
+        // Group notes by type
+        const notesByType = {};
+        notes.forEach(note => {
+          const type = note.Type || 'General';
+          if (!notesByType[type]) notesByType[type] = [];
+          notesByType[type].push(note);
+        });
+
+        // Sort notes by date (most recent first)
+        const sortedNotes = [...notes].sort((a, b) => {
+          const dateA = a.Date ? new Date(a.Date) : new Date(0);
+          const dateB = b.Date ? new Date(b.Date) : new Date(0);
+          return dateB - dateA;
+        });
+
+        sortedNotes.forEach(note => {
+          const activity = note.Activity || 'Note';
+          const type = note.Type || '';
+          const noteDate = note.Date;
+          const description = note.Description || '';
+          const contact = note.Contact || '';
+          const createdBy = note.Created_By || '';
+          const dueDate = note.Due_Date;
+          const matter = note.Matter || note.matter || '';
+
+          let noteLine = '';
+
+          // Type badge
+          if (isFieldVisible('notes', 'type') && type) {
+            noteLine += `<span class="text-xs px-1.5 py-0.5 bg-teal-100/50 text-teal-600 rounded mr-1">${escapeHtml(type)}</span>`;
+          }
+
+          // Activity (title)
+          if (isFieldVisible('notes', 'activity')) {
+            noteLine += `<span class="text-gray-800">${escapeHtml(activity)}</span>`;
+          }
+
+          // Date
+          if (isFieldVisible('notes', 'date') && noteDate) {
+            noteLine += ` <span class="text-gray-500">(${formatDate(noteDate)})</span>`;
+          }
+
+          // Due date
+          if (isFieldVisible('notes', 'dueDate') && dueDate) {
+            noteLine += ` <span class="text-amber-600 text-sm">Due: ${formatDate(dueDate)}</span>`;
+          }
+
+          // Contact
+          if (isFieldVisible('notes', 'contact') && contact) {
+            noteLine += ` — Contact: <span class="text-gray-600">${escapeHtml(contact)}</span>`;
+          }
+
+          // Created by
+          if (isFieldVisible('notes', 'createdBy') && createdBy) {
+            noteLine += ` <span class="text-gray-400 text-xs">(by ${escapeHtml(createdBy)})</span>`;
+          }
+
+          // Matter
+          if (isFieldVisible('notes', 'matter') && matter) {
+            noteLine += ` <span class="text-gray-400 text-xs">[${escapeHtml(matter)}]</span>`;
+          }
+
+          sections.push(noteLine);
+
+          // Description
+          if (isFieldVisible('notes', 'description') && description && description.trim()) {
+            sections.push(`<details class="ml-4 my-1"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View description</summary><pre class="mt-2 p-3 bg-white/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-48 overflow-y-auto">${escapeHtml(description)}</pre></details>`);
+          }
+        });
+      }
+
       return sections;
     }
 
@@ -1829,7 +1971,8 @@
       const entityCounts = [
         { label: 'case', count: Array.isArray(data.cases) ? data.cases.length : 0 },
         { label: 'application', count: Array.isArray(data.applications) ? data.applications.length : 0 },
-        { label: 'event', count: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0) }
+        { label: 'event', count: (Array.isArray(data.hearings) ? data.hearings.length : 0) + (Array.isArray(data.events) ? data.events.length : 0) },
+        { label: 'note', count: Array.isArray(data.notes) ? data.notes.length : 0 }
       ];
       const countBadges = entityCounts
         .filter(({ count }) => count > 0)
@@ -1930,7 +2073,7 @@
     }
 
     function renderStructuredView(data) {
-      const { client, cases, applications, hearings, events } = data;
+      const { client, cases, applications, hearings, events, notes } = data;
 
       const casesByType = {};
       if (cases && cases.length > 0) {
@@ -2318,6 +2461,126 @@
       const allCalendarEvents = [...(hearings || []), ...(events || [])];
       const eventsHtml = renderCalendarSection('Events', allCalendarEvents, 'events', 'bg-amber-500/20', 'text-amber-600');
 
+      // Notes section renderer
+      function renderNotesSection(items) {
+        if (!items || items.length === 0) return '';
+
+        // Group notes by type if available
+        const notesByType = {};
+        items.forEach(note => {
+          const type = note.Type || 'General';
+          if (!notesByType[type]) notesByType[type] = [];
+          notesByType[type].push(note);
+        });
+
+        const typeColors = {
+          'Call': 'bg-blue-500/20 text-blue-600',
+          'Email': 'bg-green-500/20 text-green-600',
+          'Meeting': 'bg-purple-500/20 text-purple-600',
+          'Task': 'bg-amber-500/20 text-amber-600',
+          'Note': 'bg-gray-500/20 text-gray-600',
+          'General': 'bg-gray-500/20 text-gray-600'
+        };
+
+        const itemsHtml = items.map(note => {
+          const activity = note.Activity || '';
+          const type = note.Type || '';
+          const noteDate = note.Date;
+          const description = note.Description || '';
+          const contact = note.Contact || '';
+          const createdBy = note.Created_By || '';
+          const dueDate = note.Due_Date;
+          const matter = note.Matter || note.matter || '';
+          const source = note.source || '';
+          const tags = note.tags || [];
+          const typeClass = typeColors[type] || typeColors['General'];
+
+          const activityHtml = isFieldVisible('notes', 'activity') && activity
+            ? `<span class="text-gray-800 font-medium text-sm">${escapeHtml(activity)}</span>`
+            : '';
+
+          const typeBadge = isFieldVisible('notes', 'type') && type
+            ? `<span class="px-2 py-0.5 rounded text-xs ${typeClass}">${escapeHtml(type)}</span>`
+            : '';
+
+          const dateHtml = isFieldVisible('notes', 'date') && noteDate
+            ? `<span class="text-gray-500 text-xs">${formatDate(noteDate)}</span>`
+            : '';
+
+          const dueDateHtml = isFieldVisible('notes', 'dueDate') && dueDate
+            ? `<span class="text-amber-600 text-xs">Due: ${formatDate(dueDate)}</span>`
+            : '';
+
+          const matterHtml = isFieldVisible('notes', 'matter') && matter
+            ? `<span class="text-gray-400 text-xs">Matter: ${escapeHtml(matter)}</span>`
+            : '';
+
+          const contactHtml = isFieldVisible('notes', 'contact') && contact
+            ? `<span class="text-gray-500 text-xs">Contact: ${escapeHtml(contact)}</span>`
+            : '';
+
+          const createdByHtml = isFieldVisible('notes', 'createdBy') && createdBy
+            ? `<span class="text-gray-400 text-xs">By: ${escapeHtml(createdBy)}</span>`
+            : '';
+
+          const sourceHtml = isFieldVisible('notes', 'source') && source
+            ? `<span class="text-gray-400 text-xs italic">${escapeHtml(source)}</span>`
+            : '';
+
+          const tagsHtml = isFieldVisible('notes', 'tags') && tags.length > 0
+            ? `<div class="flex flex-wrap gap-1 mt-1">${tags.map(tag =>
+                `<span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">${escapeHtml(tag)}</span>`
+              ).join('')}</div>`
+            : '';
+
+          let descHtml = '';
+          if (isFieldVisible('notes', 'description') && description && description.trim()) {
+            descHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View description</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
+          }
+
+          // Build metadata line
+          const metadataItems = [dateHtml, dueDateHtml, matterHtml, contactHtml, createdByHtml, sourceHtml].filter(Boolean);
+
+          return `
+            <div class="px-4 py-3 hover:bg-gray-100/10 border-b border-gray-200/20 last:border-b-0">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    ${activityHtml}
+                    ${typeBadge}
+                  </div>
+                  ${metadataItems.length > 0 ? `<div class="flex flex-wrap gap-x-3 gap-y-1 text-xs">${metadataItems.join('')}</div>` : ''}
+                  ${tagsHtml}
+                </div>
+              </div>
+              ${descHtml}
+            </div>
+          `;
+        }).join('');
+
+        const notesSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab-notes');
+        return `
+          <div id="section-notes" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
+            <button onclick="toggleSection('notes')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors touch-manipulation">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-sm font-medium flex-shrink-0">${items.length}</span>
+                <div class="text-left min-w-0">
+                  <h2 class="font-medium text-gray-900">Notes</h2>
+                  <p class="text-gray-500 text-sm">${items.length} ${pluralize(items.length, 'note')}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                ${renderExternalLinkIcon(notesSoftrUrl, 'Open Notes in Softr')}
+                <span id="arrow-notes" class="text-gray-400 transition-transform p-1" style="transform: rotate(180deg)">▼</span>
+              </div>
+            </button>
+            <div id="content-notes" class="border-t border-gray-200/50">${itemsHtml}</div>
+          </div>
+        `;
+      }
+
+      const notesHtml = renderNotesSection(notes);
+
       // Build the two-column layout for xl screens
       const hasLeftColumn = casesHtml || applicationsHtml;
       const hasRightColumn = eventsHtml;
@@ -2353,6 +2616,7 @@
           ${renderHeader(data)}
           ${clientHtml}
           ${mainContent}
+          ${notesHtml}
         </div>
       `;
     }
@@ -2362,7 +2626,7 @@
     // ═══════════════════════════════════════════════════════════════
 
     function extractTimelineEvents(data) {
-      const { client, cases, applications, hearings, events } = data;
+      const { client, cases, applications, hearings, events, notes } = data;
       const timelineItems = [];
       const now = new Date();
       const multipleCases = cases && cases.length > 1;
@@ -2522,6 +2786,55 @@
               icon: '📅',
               color: 'amber'
             });
+          }
+        });
+      }
+
+      // ─── NOTES DATES ───
+      if (notes && notes.length > 0) {
+        notes.forEach(note => {
+          const noteDate = note.Date;
+          const dueDate = note.Due_Date;
+          const activity = note.Activity || 'Note';
+          const noteType = note.Type || '';
+          const noteRecordId = note.id || note.RecordId || note.pp_note_id;
+
+          // Add note date
+          if (isValidDate(noteDate)) {
+            let statement = activity;
+            if (noteType) statement = `${noteType}: ${activity}`;
+
+            timelineItems.push({
+              date: new Date(noteDate),
+              statement: statement,
+              detail: note.Contact ? `Contact: ${note.Contact}` : null,
+              source: 'Notes',
+              recordName: activity,
+              recordId: noteRecordId,
+              sectionId: 'notes',
+              icon: '📋',
+              color: 'teal'
+            });
+          }
+
+          // Add due date if present and different from note date
+          if (isValidDate(dueDate)) {
+            const dueDateObj = new Date(dueDate);
+            const noteDateObj = noteDate ? new Date(noteDate) : null;
+            // Only add due date if it's different from the note date
+            if (!noteDateObj || dueDateObj.getTime() !== noteDateObj.getTime()) {
+              timelineItems.push({
+                date: dueDateObj,
+                statement: `Due: ${activity}`,
+                detail: noteType || null,
+                source: 'Notes',
+                recordName: activity,
+                recordId: noteRecordId,
+                sectionId: 'notes',
+                icon: '⏰',
+                color: 'teal'
+              });
+            }
           }
         });
       }
