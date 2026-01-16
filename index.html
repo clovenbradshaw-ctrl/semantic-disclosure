@@ -1253,26 +1253,26 @@
     }
 
     /**
-     * Process applications array to handle both flat and nested formats.
+     * Normalize an array of records to handle both flat and nested formats.
      * Supports: flat records, { records: [...] } format, and Airtable export { fields: {...} } format.
-     * @param {Array} applications - Raw applications array
-     * @returns {Array} Normalized flat array of application records
+     * @param {Array} records - Raw records array
+     * @returns {Array} Normalized flat array of records with fields at top level
      */
-    function normalizeApplications(applications) {
-      if (!applications || !Array.isArray(applications)) return [];
+    function normalizeRecordArray(records) {
+      if (!records || !Array.isArray(records)) return [];
 
       const normalized = [];
 
-      applications.forEach(appOrGroup => {
+      records.forEach(recordOrGroup => {
         // Handle nested { records: [...] } structure
-        if (appOrGroup.records && Array.isArray(appOrGroup.records)) {
-          appOrGroup.records.forEach(app => {
-            normalized.push(flattenAirtableRecord(app));
+        if (recordOrGroup.records && Array.isArray(recordOrGroup.records)) {
+          recordOrGroup.records.forEach(record => {
+            normalized.push(flattenAirtableRecord(record));
           });
         }
         // Handle single record (flat or with fields wrapper)
         else {
-          normalized.push(flattenAirtableRecord(appOrGroup));
+          normalized.push(flattenAirtableRecord(recordOrGroup));
         }
       });
 
@@ -1280,10 +1280,21 @@
     }
 
     function processDataWithFlatpack(data) {
-      // Normalize applications to handle Airtable export format with fields wrapper
-      if (data.applications && Array.isArray(data.applications)) {
-        data.applications = normalizeApplications(data.applications);
+      // Normalize all record arrays to handle Airtable export format with fields wrapper
+      // This handles the { id, createdTime, fields: {...} } structure from Airtable webhooks
+
+      // Normalize client (single record, not array)
+      if (data.client) {
+        data.client = flattenAirtableRecord(data.client);
       }
+
+      // Normalize all array collections
+      const arrayCollections = ['cases', 'applications', 'events', 'hearings', 'notes', 'caseNotes', 'caseEvents', 'calendarEvents'];
+      arrayCollections.forEach(key => {
+        if (data[key] && Array.isArray(data[key])) {
+          data[key] = normalizeRecordArray(data[key]);
+        }
+      });
 
       // Process client flatpack fields
       if (data.client) {
