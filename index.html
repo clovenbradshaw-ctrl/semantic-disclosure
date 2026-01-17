@@ -2636,6 +2636,52 @@
       `;
     }
 
+    function renderClientInfoBar(data) {
+      const client = data.client;
+      if (!client) return '';
+
+      const clientName = client['Client Name'] || client['Full_Name_Normal_Pretty'] || 'Unknown';
+      const aNumber = client['A#'] || '';
+      const dob = client.DOB;
+      const age = getAge(dob);
+      const country = client.Country || '';
+      const phone = formatPhone(client['Phone Number']) || '';
+
+      // Build info items array
+      const infoItems = [];
+
+      // Client name (always shown)
+      infoItems.push(`<span class="font-semibold text-gray-900">${escapeHtml(clientName)}</span>`);
+
+      // A# if available
+      if (aNumber) {
+        infoItems.push(`<span class="text-gray-500">A#:</span> <span class="font-mono text-gray-700">${escapeHtml(aNumber)}</span>`);
+      }
+
+      // DOB/Age if available
+      if (dob) {
+        const dobStr = formatDate(dob);
+        const ageStr = age ? ` (${age}yo)` : '';
+        infoItems.push(`<span class="text-gray-700">${dobStr}${ageStr}</span>`);
+      }
+
+      // Country if available
+      if (country) {
+        infoItems.push(`<span class="text-gray-700">${escapeHtml(country)}</span>`);
+      }
+
+      // Phone if available
+      if (phone) {
+        infoItems.push(`<span class="font-mono text-gray-700">${escapeHtml(phone)}</span>`);
+      }
+
+      return `
+        <div class="bg-emerald-50/50 rounded-lg px-4 py-3 border border-emerald-200/50 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          ${infoItems.map((item, i) => i === 0 ? item : `<span class="text-gray-300">|</span> ${item}`).join(' ')}
+        </div>
+      `;
+    }
+
     function renderNarrativeView(data, detailed = false) {
       const paragraphs = detailed ? generateDetailedNarrative(data) : generateBriefNarrative(data);
 
@@ -2644,6 +2690,7 @@
       return `
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
+          ${renderClientInfoBar(data)}
           <div class="bg-white rounded-lg border border-gray-200/50 p-6">
             <div class="${contentClass} text-gray-700 leading-relaxed">
               ${paragraphs.map(p => `<p>${p}</p>`).join('')}
@@ -3396,6 +3443,7 @@
       return `
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
+          ${renderClientInfoBar(data)}
           ${clientHtml}
           ${mainContent}
           ${notesHtml}
@@ -3679,6 +3727,7 @@
         return `
           <div class="max-w-6xl mx-auto space-y-4">
             ${renderHeader(data)}
+            ${renderClientInfoBar(data)}
             ${filterBar}
             <div class="bg-white rounded-lg border border-gray-200/50 p-8 text-center">
               <p class="text-gray-500">No events match the current filters.</p>
@@ -3691,6 +3740,7 @@
         return `
           <div class="max-w-6xl mx-auto space-y-4">
             ${renderHeader(data)}
+            ${renderClientInfoBar(data)}
             <div class="bg-white rounded-lg border border-gray-200/50 p-8 text-center">
               <p class="text-gray-500">No dated events found in the record.</p>
             </div>
@@ -3826,6 +3876,7 @@
       return `
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
+          ${renderClientInfoBar(data)}
           ${filterBar}
           ${futureHtml}
           ${past.length > 0 && future.length > 0 ? nowIndicator : ''}
