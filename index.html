@@ -1508,10 +1508,11 @@
      * Render compact notes table for front page (collapsed by default)
      */
     function renderCompactNotesTable(notes) {
-      if (!notes || notes.length === 0) return '';
+      const safeNotes = notes || [];
+      const isEmpty = safeNotes.length === 0;
 
       // Sort by date descending (most recent first)
-      const sortedNotes = [...notes].sort((a, b) => {
+      const sortedNotes = [...safeNotes].sort((a, b) => {
         const dateA = a.Date || 0;
         const dateB = b.Date || 0;
         return dateB - dateA;
@@ -1519,11 +1520,19 @@
 
       const rows = sortedNotes.map(renderCompactNoteRow).join('');
 
+      const emptyStateHtml = isEmpty ? `
+        <tr>
+          <td colspan="8" class="py-8 px-4 text-center">
+            <div class="text-gray-400 text-sm">No case notes recorded</div>
+          </td>
+        </tr>
+      ` : '';
+
       return `
         <div id="section-notes-compact" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden">
           <button onclick="toggleSection('notes-compact')" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
             <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs font-medium">${notes.length}</span>
+              <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs font-medium">${safeNotes.length}</span>
               <span class="text-sm font-medium text-gray-700">Recent Notes</span>
               <span class="text-xs text-gray-400">(chronological)</span>
             </div>
@@ -1544,10 +1553,10 @@
                     <th class="py-2 px-3 font-medium">Due</th>
                   </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody>${isEmpty ? emptyStateHtml : rows}</tbody>
               </table>
             </div>
-            ${notes.length > 10 ? `<div class="p-2 text-center border-t border-gray-100"><span class="text-xs text-gray-400">Showing all ${notes.length} notes • See "Notes" section for full details</span></div>` : ''}
+            ${safeNotes.length > 10 ? `<div class="p-2 text-center border-t border-gray-100"><span class="text-xs text-gray-400">Showing all ${safeNotes.length} notes • See "Notes" section for full details</span></div>` : ''}
           </div>
         </div>
       `;
@@ -2814,11 +2823,12 @@
 
       // Notes section renderer
       function renderNotesSection(items) {
-        if (!items || items.length === 0) return '';
+        const safeItems = items || [];
+        const isEmpty = safeItems.length === 0;
 
         // Group notes by type if available
         const notesByType = {};
-        items.forEach(note => {
+        safeItems.forEach(note => {
           const type = note.Type || 'General';
           if (!notesByType[type]) notesByType[type] = [];
           notesByType[type].push(note);
@@ -2833,7 +2843,7 @@
           'General': 'bg-gray-500/20 text-gray-600'
         };
 
-        const itemsHtml = items.map(note => {
+        const itemsHtml = safeItems.map(note => {
           // Extract all schema fields
           const id = note.id || '';
           const activity = note.Activity || '';
@@ -2992,14 +3002,20 @@
         }).join('');
 
         const notesSoftrUrl = getSoftrClientUrl(getRecordId(), 'tab-notes');
+        const emptyStateHtml = `
+          <div class="px-4 py-8 text-center">
+            <div class="text-gray-400 text-sm">No case notes recorded</div>
+          </div>
+        `;
+
         return `
           <div id="section-notes" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
             <button onclick="toggleSection('notes')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors touch-manipulation">
               <div class="flex items-center gap-3 min-w-0">
-                <span class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-sm font-medium flex-shrink-0">${items.length}</span>
+                <span class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-sm font-medium flex-shrink-0">${safeItems.length}</span>
                 <div class="text-left min-w-0">
                   <h2 class="font-medium text-gray-900">Notes</h2>
-                  <p class="text-gray-500 text-sm">${items.length} ${pluralize(items.length, 'note')}</p>
+                  <p class="text-gray-500 text-sm">${safeItems.length} ${pluralize(safeItems.length, 'note')}</p>
                 </div>
               </div>
               <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -3007,7 +3023,7 @@
                 <span id="arrow-notes" class="text-gray-400 transition-transform p-1" style="transform: rotate(180deg)">▼</span>
               </div>
             </button>
-            <div id="content-notes" class="border-t border-gray-200/50">${itemsHtml}</div>
+            <div id="content-notes" class="border-t border-gray-200/50">${isEmpty ? emptyStateHtml : itemsHtml}</div>
           </div>
         `;
       }
