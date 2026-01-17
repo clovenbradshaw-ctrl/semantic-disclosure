@@ -4,7 +4,7 @@ This document describes the data structure returned by the n8n "Client Summary" 
 
 ## Overview
 
-The webhook fetches data from **5 sources** and returns a pre-grouped master record with separate buckets for each data type.
+The webhook fetches data from **6 sources** and returns a pre-grouped master record with separate buckets for each data type.
 
 ## Data Sources
 
@@ -15,6 +15,7 @@ The webhook fetches data from **5 sources** and returns a pre-grouped master rec
 | **Applications** | Airtable | `tbl6XtHs9g5iwd7qi` | `applications` |
 | **Hearings-Interviews** | Google Calendar | `c_2117d3d5...` | `hearings` |
 | **RK Lacy Law Events** | Google Calendar | `c_ae631b21...` | `events` |
+| **Case & Event Notes** | Xano API | HTTP Request | `caseNotes` |
 
 ## Data Flow
 
@@ -52,9 +53,9 @@ Webhook Request (with record ID)
                          Master Record Response
 ```
 
-## Response Format (5-Bucket Master Record)
+## Response Format (6-Bucket Master Record)
 
-The webhook returns a **single master record** with data pre-grouped into 5 buckets:
+The webhook returns a **single master record** with data pre-grouped into 6 buckets:
 
 ```json
 {
@@ -66,6 +67,7 @@ The webhook returns a **single master record** with data pre-grouped into 5 buck
       "applications": 2,
       "hearings": 2,
       "events": 3,
+      "caseNotes": 5,
       "unknown": 0
     }
   },
@@ -73,7 +75,8 @@ The webhook returns a **single master record** with data pre-grouped into 5 buck
   "cases": [ ... ],
   "applications": [ ... ],
   "hearings": [ ... ],
-  "events": [ ... ]
+  "events": [ ... ],
+  "caseNotes": [ ... ]
 }
 ```
 
@@ -87,6 +90,7 @@ The webhook returns a **single master record** with data pre-grouped into 5 buck
 | `applications` | Array | Application records with `_parentCaseId` links |
 | `hearings` | Array | Normalized calendar events from Hearings-Interviews |
 | `events` | Array | Normalized calendar events from RK Lacy Law Events |
+| `caseNotes` | Array | Case and event notes from Xano API |
 
 ## Client Bucket
 
@@ -269,6 +273,74 @@ All-day events have `isAllDay: true` and date-only strings in startDateTime/endD
   "isAllDay": true
 }
 ```
+
+## Case Notes Bucket
+
+Array of case and event notes from Xano API:
+
+```json
+{
+  "id": 12345,
+  "Activity": "Phone Call",
+  "Type": "Call",
+  "Date": "2025-01-15T14:30:00.000Z",
+  "Description": "Discussed case status with client",
+  "Contact": "Maria Rodriguez",
+  "Client_PP_ID": "PP-12345",
+  "Matter": "SIJ - Davidson County",
+  "RecordId": "rec123456",
+  "Created_By": "Sarah Johnson",
+  "Softr_Link_to_clients": "https://app.softr.io/...",
+  "Updated": "2025-01-15T14:35:00.000Z",
+  "Modified": "2025-01-15T14:35:00.000Z",
+  "Due_Date": null,
+  "Last_Update_By": "Sarah Johnson",
+  "unix_timestamp": "1736952600",
+  "time_raw": "14:30",
+  "tags": ["follow-up", "client-communication"],
+  "pp_note_id": "note-001",
+  "matter": "SIJ - Davidson County",
+  "matter_id": "recCASE001",
+  "source": "xano",
+  "client_airtable_id": "recCLIENT123",
+  "eventId": null
+}
+```
+
+### Case Notes Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Integer | Unique note identifier |
+| `Activity` | String | Activity title/summary |
+| `Type` | String (enum) | Note type (Call, Email, Meeting, Task, Case Note, Note) |
+| `Date` | String (timestamp) | Date/time of activity |
+| `Description` | String | Detailed note content |
+| `Contact` | String | Contact person name |
+| `Client_PP_ID` | String | Client PP identifier |
+| `Matter` | String | Matter/case name |
+| `RecordId` | String | Record identifier |
+| `Created_By` | String | User who created the note |
+| `Softr_Link_to_clients` | String (URL) | Link to Softr client record |
+| `Updated` | String (timestamp) | Last update timestamp |
+| `Modified` | String (timestamp) | Last modified timestamp |
+| `Due_Date` | String (timestamp) | Due date for tasks |
+| `Last_Update_By` | String | User who last updated |
+| `unix_timestamp` | String | Unix timestamp of activity |
+| `time_raw` | String | Raw time value |
+| `tags` | Array[String] | Associated tags |
+| `pp_note_id` | String | PP note identifier |
+| `matter_id` | String | Matter/case record ID (links to cases) |
+| `source` | String | Data source identifier |
+| `client_airtable_id` | String | Client Airtable record ID |
+| `eventId` | String | Linked event ID (links to events) |
+
+### Note Linking
+
+Notes are linked to related entities via:
+- `matter_id` - Links to cases in the `cases` bucket
+- `eventId` - Links to events in the `events` or `hearings` buckets
+- `client_airtable_id` - Links to the client record
 
 ## Field Filtering
 
