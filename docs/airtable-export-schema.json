@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Airtable Export – Client Summary Webhook Response",
-  "description": "Schema for the n8n Client Summary webhook response containing Client Info, Case Master View, Applications, Hearings, and Events records in nested 5-bucket format",
+  "description": "Schema for the n8n Client Summary webhook response containing Client Info, Case Master View, Applications, Hearings, Events, and Case Notes records in nested 6-bucket format",
   "type": "array",
   "items": {
     "$ref": "#/definitions/clientSummaryBundle"
@@ -116,7 +116,8 @@
             "cases": { "type": "integer" },
             "applications": { "type": "integer" },
             "hearings": { "type": "integer" },
-            "events": { "type": "integer" }
+            "events": { "type": "integer" },
+            "caseNotes": { "type": "integer" }
           },
           "additionalProperties": true
         }
@@ -146,9 +147,13 @@
         "events": {
           "type": "array",
           "items": { "$ref": "#/definitions/calendarEventRecord" }
+        },
+        "caseNotes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/caseNoteRecord" }
         }
       },
-      "required": ["_meta", "client", "cases", "applications", "hearings", "events"],
+      "required": ["_meta", "client", "cases", "applications", "hearings", "events", "caseNotes"],
       "additionalProperties": false
     },
 
@@ -892,6 +897,118 @@
         "updated": { "type": ["string", "null"], "format": "date-time" }
       },
       "required": ["_recordType", "_calendarType"],
+      "additionalProperties": true
+    },
+
+    "caseNoteRecord": {
+      "description": "Case and event note record from Xano API. Notes are stored in a caseNotes array within the root object, alongside other buckets like cases, applications, hearings, and events.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Unique numeric identifier for the note"
+        },
+        "Activity": {
+          "type": ["string", "null"],
+          "description": "Activity title/summary (e.g., 'Consult Walk In', 'Phone Call')"
+        },
+        "Type": {
+          "type": ["string", "null"],
+          "description": "Note type classification",
+          "enum": ["Case Note", "Call", "Email", "Meeting", "Task", "Note", null]
+        },
+        "Date": {
+          "type": ["integer", "string", "null"],
+          "description": "Date/time of activity - can be epoch milliseconds (integer) or ISO string"
+        },
+        "Description": {
+          "type": ["string", "null"],
+          "description": "Detailed note content (free-form text)"
+        },
+        "Contact": {
+          "type": ["string", "null"],
+          "description": "Contact person name"
+        },
+        "Client_PP_ID": {
+          "type": ["string", "null"],
+          "description": "Client PracticePanther identifier"
+        },
+        "Matter": {
+          "type": ["string", "null"],
+          "description": "Matter/case name"
+        },
+        "RecordId": {
+          "type": ["string", "null"],
+          "description": "Record identifier"
+        },
+        "Created_By": {
+          "type": ["string", "null"],
+          "description": "User who created the note"
+        },
+        "Softr_Link_to_clients": {
+          "type": ["string", "null"],
+          "format": "uri",
+          "description": "Link to Softr client record"
+        },
+        "Created": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "Updated": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "Modified": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Last modified timestamp"
+        },
+        "Due_Date": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Due date for tasks"
+        },
+        "Last_Update_By": {
+          "type": ["string", "null"],
+          "description": "User who last updated the note"
+        },
+        "Unix_timestamp": {
+          "type": ["string", "integer", "null"],
+          "description": "Unix timestamp of activity"
+        },
+        "time_raw": {
+          "type": ["string", "null"],
+          "description": "Raw time value"
+        },
+        "tags": {
+          "type": ["array", "null"],
+          "items": { "type": "string" },
+          "description": "Associated tags"
+        },
+        "pp_note_id": {
+          "type": ["string", "null"],
+          "description": "PracticePanther note identifier"
+        },
+        "matter_id": {
+          "type": ["string", "null"],
+          "description": "Matter/case record ID - links to cases bucket"
+        },
+        "source": {
+          "type": ["string", "null"],
+          "description": "Data source identifier (e.g., 'xano')"
+        },
+        "client_airtable_id": {
+          "type": ["string", "null"],
+          "description": "Client Airtable record ID - links to client record"
+        },
+        "eventId": {
+          "type": ["string", "null"],
+          "description": "Linked event ID - links to events or hearings buckets"
+        }
+      },
+      "required": ["id"],
       "additionalProperties": true
     }
   }
