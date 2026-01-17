@@ -127,7 +127,7 @@
 
     function renderExternalLinkIcon(url, title = 'Open in Softr') {
       return `
-        <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
+        <a href="${escapeHtml(url)}" title="${escapeHtml(title)}"
            class="p-2.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
            onclick="event.stopPropagation()">
           <svg class="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +139,7 @@
 
     function renderCalendarLinkIcon(url, title = 'Open in Google Calendar') {
       return `
-        <a href="${escapeHtml(url)}" target="_blank" title="${escapeHtml(title)}"
+        <a href="${escapeHtml(url)}" title="${escapeHtml(title)}"
            class="inline-flex items-center gap-1.5 px-3 py-2 sm:px-2 sm:py-1 text-sm sm:text-xs text-gray-500 hover:text-amber-600 hover:bg-gray-100 rounded transition-colors touch-manipulation"
            onclick="event.stopPropagation()">
           <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1039,7 +1039,7 @@
 
         let valueHtml = '';
         if (field.type === 'link' && field.value) {
-          valueHtml = `<a href="${escapeHtml(field.value)}" target="_blank" class="text-blue-600 hover:underline break-all">${escapeHtml(field.linkLabel || field.value)}</a>`;
+          valueHtml = `<a href="${escapeHtml(field.value)}" class="text-blue-600 hover:underline break-all">${escapeHtml(field.linkLabel || field.value)}</a>`;
         } else if (field.type === 'badge') {
           valueHtml = `<span class="px-2 py-1 rounded text-xs ${field.badgeClass || 'bg-gray-100 text-gray-600'}">${escapeHtml(String(field.value))}</span>`;
         } else if (field.type === 'date') {
@@ -1067,7 +1067,7 @@
       }).filter(Boolean).join('');
 
       const externalLinkHtml = externalUrl ? `
-        <a href="${escapeHtml(externalUrl)}" target="_blank" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline">
+        <a href="${escapeHtml(externalUrl)}" class="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
@@ -2505,7 +2505,7 @@
 
             // Meet link
             if (isFieldVisible('events', 'meetLink') && meetLink) {
-              eventLine += ` <a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600 hover:underline text-sm">[Video Link]</a>`;
+              eventLine += ` <a href="${escapeHtml(meetLink)}" class="text-blue-600 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
@@ -2549,7 +2549,7 @@
 
             // Meet link
             if (isFieldVisible('events', 'meetLink') && meetLink) {
-              eventLine += ` <a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600/70 hover:underline text-sm">[Video Link]</a>`;
+              eventLine += ` <a href="${escapeHtml(meetLink)}" class="text-blue-600/70 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
@@ -3129,7 +3129,7 @@
           const eventDetailRenderers = {
             dateTime: () => `<div><span class="text-gray-400">When:</span> <span class="text-amber-600">${dateDisplay}</span></div>`,
             location: () => location ? `<div><span class="text-gray-400">Where:</span> <span class="text-gray-700">${escapeHtml(location)}</span></div>` : null,
-            meetLink: () => meetLink ? `<div><a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600 hover:underline">Video Link</a></div>` : null
+            meetLink: () => meetLink ? `<div><a href="${escapeHtml(meetLink)}" class="text-blue-600 hover:underline">Video Link</a></div>` : null
           };
 
           const orderedEventFields = getVisibleFields('events').filter(key => ['dateTime', 'location', 'meetLink'].includes(key));
@@ -3323,7 +3323,7 @@
 
           // Link field
           const softrLinkHtml = isFieldVisible('notes', 'softrLink') && softrLink
-            ? `<a href="${escapeHtml(softrLink)}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-600 text-xs underline">View in Softr</a>`
+            ? `<a href="${escapeHtml(softrLink)}" class="text-blue-500 hover:text-blue-600 text-xs underline">View in Softr</a>`
             : '';
 
           // Technical fields (usually hidden)
@@ -3784,7 +3784,7 @@
 
         let meetLinkLine = '';
         if (item.meetLink && !isPast) {
-          meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600 hover:underline text-xs">Join Video</a>`;
+          meetLinkLine = `<a href="${escapeHtml(item.meetLink)}" class="text-blue-600 hover:underline text-xs">Join Video</a>`;
         }
 
         // Add Google Calendar link for Events source
