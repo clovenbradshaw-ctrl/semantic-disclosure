@@ -2711,6 +2711,7 @@
       const age = getAge(dob);
       const country = client.Country || '';
       const phone = formatPhone(client['Phone Number']) || '';
+      const bahr = client['Bahr'] || '';
 
       // Build info items array
       const infoItems = [];
@@ -2738,6 +2739,11 @@
       // Phone if available
       if (phone) {
         infoItems.push(`<span class="font-mono text-gray-700">${escapeHtml(phone)}</span>`);
+      }
+
+      // Bahr if available (important signifier)
+      if (bahr) {
+        infoItems.push(`<span class="text-amber-600 font-medium">${escapeHtml(bahr)}</span>`);
       }
 
       return `
