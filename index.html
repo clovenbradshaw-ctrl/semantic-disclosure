@@ -150,6 +150,74 @@
       `;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // LUMO AI SUMMARY - Copy JSON with prompt for attorney summary
+    // ═══════════════════════════════════════════════════════════════
+    const LUMO_PROMPT = `For attorney client summaries, clarity and scannability are paramount—lawyers are typically reviewing these under time pressure. Here's what works:
+
+STRUCTURE
+Start with a header block containing the essentials: client name, matter number/case name, date prepared, and your name. Then organize the body in this general order:
+
+1. One-sentence matter summary — What is this about at the highest level?
+2. Key facts — Chronological or thematic, depending on complexity. Stick to facts, not conclusions.
+3. Relevant documents/evidence — What exists and where it lives
+4. Open questions or risks — What's unresolved, what could go sideways
+5. Next steps or action items — If applicable
+
+FORMATTING PRINCIPLES
+- Use short paragraphs (3-4 sentences max)
+- Bold names, dates, and dollar figures on first reference so they pop during a skim
+- Keep it to one page if possible; two max unless the matter is genuinely complex
+- Use headers to break sections, but don't over-nest with sub-sub-headers
+- Dates in consistent format throughout (Month DD, YYYY for readability)
+
+TONE
+Neutral and precise. Avoid editorializing—let the facts speak. If something is an inference versus a confirmed fact, flag it explicitly.
+
+Please generate an attorney-client summary based on the following client data:
+
+`;
+
+    function copyForLumoAI() {
+      if (!window.currentData) {
+        alert('No client data available to copy.');
+        return;
+      }
+
+      // Prepare clean JSON data
+      const dataToExport = {
+        client: window.currentData.client || null,
+        cases: window.currentData.cases || [],
+        applications: window.currentData.applications || [],
+        events: window.currentData.events || [],
+        hearings: window.currentData.hearings || [],
+        notes: window.currentData.notes || []
+      };
+
+      const jsonString = JSON.stringify(dataToExport, null, 2);
+      const fullPrompt = LUMO_PROMPT + jsonString;
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(fullPrompt).then(() => {
+        // Show success feedback
+        const btn = document.getElementById('lumo-copy-btn');
+        if (btn) {
+          const originalTitle = btn.title;
+          btn.title = 'Copied! Opening Lumo...';
+          btn.classList.add('text-green-600', 'bg-green-50');
+          setTimeout(() => {
+            btn.title = originalTitle;
+            btn.classList.remove('text-green-600', 'bg-green-50');
+          }, 2000);
+        }
+        // Open Lumo in new tab
+        window.open('https://lumo.proton.me/', '_blank');
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard. Please try again.');
+      });
+    }
+
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
     let currentView = 'structured';
 
@@ -2685,6 +2753,9 @@
             <h1 class="text-lg font-semibold text-gray-900">Client Record</h1>
             <div class="flex items-center gap-2 sm:gap-3">
               <div class="flex gap-0.5 sm:gap-1 bg-gray-100/30 p-1 rounded-lg flex-1 sm:flex-none overflow-x-auto">${viewButtons}</div>
+              <button id="lumo-copy-btn" onclick="copyForLumoAI()" class="p-3 sm:p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors touch-manipulation flex-shrink-0" title="Copy for Lumo AI Summary">
+                <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/proton-lumo.png" alt="Lumo" class="w-5 h-5" />
+              </button>
               <button onclick="openSettingsModal()" class="p-3 sm:p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation flex-shrink-0" title="Field Settings">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -2696,6 +2767,9 @@
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/30">
             <p class="text-gray-400 text-xs">Last updated: ${formatDate(_meta.generatedAt) || 'Unknown'} <span id="refresh-countdown" class="text-gray-500 ml-1"></span></p>
             <div class="flex gap-1.5 sm:gap-2 flex-wrap justify-end">${countBadges}</div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-200/50 bg-amber-50/30 -mx-4 -mb-4 px-4 pb-3 rounded-b-lg">
+            <p class="text-amber-700 text-xs font-medium">WARNING: This data contains confidential attorney-client information. Do NOT share with any AI service except encrypted Proton Lumo (lumo.proton.me).</p>
           </div>
         </div>
       `;
