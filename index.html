@@ -131,6 +131,15 @@
     // Notes sort order: 'asc' (oldest to newest) or 'desc' (newest to oldest)
     let notesSortOrder = 'asc';
 
+    // Timeline filter: which sources to show (all true by default)
+    let timelineFilters = {
+      Client: true,
+      Cases: true,
+      Applications: true,
+      Events: true,
+      Notes: true
+    };
+
     // Available views
     const VIEWS = ['structured', 'brief', 'detailed', 'timeline'];
 
@@ -1621,6 +1630,15 @@
     function toggleNotesSortOrder() {
       notesSortOrder = notesSortOrder === 'asc' ? 'desc' : 'asc';
       // Re-render the current view to apply new sort order
+      if (window._lastLoadedData) {
+        const data = transformData(window._lastLoadedData);
+        renderView(data);
+      }
+    }
+
+    function toggleTimelineFilter(source) {
+      timelineFilters[source] = !timelineFilters[source];
+      // Re-render the current view to apply new filter
       if (window._lastLoadedData) {
         const data = transformData(window._lastLoadedData);
         renderView(data);
@@ -3608,10 +3626,68 @@
     }
 
     function renderTimelineView(data) {
-      const timelineItems = extractTimelineEvents(data);
+      const allTimelineItems = extractTimelineEvents(data);
       const now = new Date();
 
-      if (timelineItems.length === 0) {
+      // Count items per source (for filter buttons)
+      const sourceCounts = {};
+      allTimelineItems.forEach(item => {
+        sourceCounts[item.source] = (sourceCounts[item.source] || 0) + 1;
+      });
+
+      // Apply filters
+      const timelineItems = allTimelineItems.filter(item => timelineFilters[item.source]);
+
+      // Build filter bar
+      const filterSources = ['Client', 'Cases', 'Applications', 'Events', 'Notes'];
+      const filterIcons = { Client: '👤', Cases: '⚖️', Applications: '📝', Events: '📅', Notes: '📋' };
+      const filterColors = {
+        Client: { active: 'bg-emerald-500/20 text-emerald-700 border-emerald-500/40', inactive: 'bg-gray-100/50 text-gray-400 border-gray-200/50' },
+        Cases: { active: 'bg-amber-500/20 text-amber-700 border-amber-500/40', inactive: 'bg-gray-100/50 text-gray-400 border-gray-200/50' },
+        Applications: { active: 'bg-purple-500/20 text-purple-700 border-purple-500/40', inactive: 'bg-gray-100/50 text-gray-400 border-gray-200/50' },
+        Events: { active: 'bg-amber-500/20 text-amber-700 border-amber-500/40', inactive: 'bg-gray-100/50 text-gray-400 border-gray-200/50' },
+        Notes: { active: 'bg-teal-500/20 text-teal-700 border-teal-500/40', inactive: 'bg-gray-100/50 text-gray-400 border-gray-200/50' }
+      };
+
+      const filterButtons = filterSources
+        .filter(source => sourceCounts[source] > 0)
+        .map(source => {
+          const isActive = timelineFilters[source];
+          const colors = isActive ? filterColors[source].active : filterColors[source].inactive;
+          const count = sourceCounts[source];
+          return `
+            <button onclick="toggleTimelineFilter('${source}')"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${colors} ${!isActive ? 'opacity-60' : ''}"
+              title="${isActive ? 'Hide' : 'Show'} ${source.toLowerCase()}">
+              <span>${filterIcons[source]}</span>
+              <span class="hidden sm:inline">${source}</span>
+              <span class="text-[10px] opacity-70">${count}</span>
+            </button>
+          `;
+        }).join('');
+
+      const filterBar = filterButtons ? `
+        <div class="bg-white rounded-lg border border-gray-200/50 px-4 py-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-gray-500 font-medium mr-1">Filter:</span>
+            ${filterButtons}
+          </div>
+        </div>
+      ` : '';
+
+      if (timelineItems.length === 0 && allTimelineItems.length > 0) {
+        return `
+          <div class="max-w-6xl mx-auto space-y-4">
+            ${renderHeader(data)}
+            ${filterBar}
+            <div class="bg-white rounded-lg border border-gray-200/50 p-8 text-center">
+              <p class="text-gray-500">No events match the current filters.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (allTimelineItems.length === 0) {
         return `
           <div class="max-w-6xl mx-auto space-y-4">
             ${renderHeader(data)}
@@ -3750,6 +3826,7 @@
       return `
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
+          ${filterBar}
           ${futureHtml}
           ${past.length > 0 && future.length > 0 ? nowIndicator : ''}
           ${pastHtml}
