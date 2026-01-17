@@ -128,6 +128,9 @@
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
     let currentView = 'structured';
 
+    // Notes sort order: 'asc' (oldest to newest) or 'desc' (newest to oldest)
+    let notesSortOrder = 'asc';
+
     // Available views
     const VIEWS = ['structured', 'brief', 'detailed', 'timeline'];
 
@@ -1562,6 +1565,15 @@
       }
     }
 
+    function toggleNotesSortOrder() {
+      notesSortOrder = notesSortOrder === 'asc' ? 'desc' : 'asc';
+      // Re-render the current view to apply new sort order
+      if (window._lastLoadedData) {
+        const data = transformData(window._lastLoadedData);
+        renderView(data);
+      }
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // NOTES LINKING & INDEXING UTILITIES
     // ═══════════════════════════════════════════════════════════════
@@ -1756,8 +1768,12 @@
     function renderContextualNoteCards(notes, maxShow = 3) {
       if (!notes || notes.length === 0) return '';
 
-      // Sort by date descending
-      const sortedNotes = [...notes].sort((a, b) => (b.Date || 0) - (a.Date || 0));
+      // Sort based on notesSortOrder
+      const sortedNotes = [...notes].sort((a, b) => {
+        const dateA = a.Date ? new Date(a.Date).getTime() : 0;
+        const dateB = b.Date ? new Date(b.Date).getTime() : 0;
+        return notesSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      });
       const displayNotes = sortedNotes.slice(0, maxShow);
       const remaining = sortedNotes.length - maxShow;
 
@@ -2418,7 +2434,8 @@
 
       // ─── Notes ───
       if (notes && notes.length > 0) {
-        sections.push(`<br><span class="text-teal-600 font-semibold">Notes (${notes.length})</span>`);
+        const sortLabel = notesSortOrder === 'asc' ? 'oldest first' : 'newest first';
+        sections.push(`<br><span class="text-teal-600 font-semibold">Notes (${notes.length})</span> <span class="text-xs text-gray-400">(${sortLabel})</span>`);
 
         // Group notes by type
         const notesByType = {};
@@ -2428,11 +2445,11 @@
           notesByType[type].push(note);
         });
 
-        // Sort notes by date (most recent first)
+        // Sort notes by date based on notesSortOrder
         const sortedNotes = [...notes].sort((a, b) => {
-          const dateA = a.Date ? new Date(a.Date) : new Date(0);
-          const dateB = b.Date ? new Date(b.Date) : new Date(0);
-          return dateB - dateA;
+          const dateA = a.Date ? new Date(a.Date).getTime() : 0;
+          const dateB = b.Date ? new Date(b.Date).getTime() : 0;
+          return notesSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
         });
 
         sortedNotes.forEach(note => {
@@ -3034,9 +3051,16 @@
         const safeItems = items || [];
         const isEmpty = safeItems.length === 0;
 
+        // Sort notes by date based on notesSortOrder
+        const sortedItems = [...safeItems].sort((a, b) => {
+          const dateA = a.Date ? new Date(a.Date).getTime() : 0;
+          const dateB = b.Date ? new Date(b.Date).getTime() : 0;
+          return notesSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+
         // Group notes by type if available
         const notesByType = {};
-        safeItems.forEach(note => {
+        sortedItems.forEach(note => {
           const type = note.Type || 'General';
           if (!notesByType[type]) notesByType[type] = [];
           notesByType[type].push(note);
@@ -3051,7 +3075,7 @@
           'General': 'bg-gray-500/20 text-gray-600'
         };
 
-        const itemsHtml = safeItems.map(note => {
+        const itemsHtml = sortedItems.map(note => {
           // Extract all schema fields
           const id = note.id || '';
           const activity = note.Activity || '';
@@ -3216,28 +3240,37 @@
           </div>
         `;
 
+        // Sort toggle button
+        const sortLabel = notesSortOrder === 'asc' ? 'Oldest first' : 'Newest first';
+        const sortIcon = notesSortOrder === 'asc'
+          ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>'
+          : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>';
+
         return `
           <div id="section-notes" class="bg-white rounded-lg border border-gray-200/50 overflow-hidden transition-all">
-            <button onclick="toggleSection('notes')" class="w-full flex items-center justify-between p-4 hover:bg-gray-100/30 transition-colors touch-manipulation">
-              <div class="flex items-center gap-3 min-w-0">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200/30">
+              <button onclick="toggleSection('notes')" class="flex items-center gap-3 min-w-0 hover:bg-gray-100/30 transition-colors touch-manipulation rounded-lg -m-2 p-2">
                 <span class="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-sm font-medium flex-shrink-0">${safeItems.length}</span>
                 <div class="text-left min-w-0">
                   <h2 class="font-medium text-gray-900">Notes</h2>
                   <p class="text-gray-500 text-sm">${safeItems.length} ${pluralize(safeItems.length, 'note')}</p>
                 </div>
-              </div>
-              <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                ${renderExternalLinkIcon(notesSoftrUrl, 'Open Notes in Softr')}
                 <span id="arrow-notes" class="text-gray-400 transition-transform p-1" style="transform: rotate(180deg)">▼</span>
+              </button>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="event.stopPropagation(); toggleNotesSortOrder();" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Toggle sort order">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${sortIcon}</svg>
+                  <span class="hidden sm:inline">${sortLabel}</span>
+                </button>
+                ${renderExternalLinkIcon(notesSoftrUrl, 'Open Notes in Softr')}
               </div>
-            </button>
+            </div>
             <div id="content-notes" class="border-t border-gray-200/50">${isEmpty ? emptyStateHtml : itemsHtml}</div>
           </div>
         `;
       }
 
       const notesHtml = renderNotesSection(notes);
-      const compactNotesTableHtml = renderCompactNotesTable(notes);
 
       // Build the two-column layout for xl screens
       const hasLeftColumn = casesHtml || applicationsHtml;
@@ -3273,7 +3306,6 @@
         <div class="max-w-6xl mx-auto space-y-4">
           ${renderHeader(data)}
           ${clientHtml}
-          ${compactNotesTableHtml}
           ${mainContent}
           ${notesHtml}
         </div>
