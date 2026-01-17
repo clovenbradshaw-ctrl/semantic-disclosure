@@ -1845,11 +1845,11 @@
       const safeNotes = notes || [];
       const isEmpty = safeNotes.length === 0;
 
-      // Sort by date descending (most recent first)
+      // Sort by date based on notesSortOrder
       const sortedNotes = [...safeNotes].sort((a, b) => {
-        const dateA = a.Date || 0;
-        const dateB = b.Date || 0;
-        return dateB - dateA;
+        const dateA = a.Date ? new Date(a.Date).getTime() : 0;
+        const dateB = b.Date ? new Date(b.Date).getTime() : 0;
+        return notesSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
       });
 
       const rows = sortedNotes.map(renderCompactNoteRow).join('');
@@ -1868,7 +1868,7 @@
             <div class="flex items-center gap-2">
               <span class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs font-medium">${safeNotes.length}</span>
               <span class="text-sm font-medium text-gray-700">Recent Notes</span>
-              <span class="text-xs text-gray-400">(chronological)</span>
+              <span class="text-xs text-gray-400">(${notesSortOrder === 'asc' ? 'oldest first' : 'newest first'})</span>
             </div>
             <span id="arrow-notes-compact" class="text-gray-400 transition-transform text-xs" style="transform: rotate(0deg)">▼</span>
           </button>
