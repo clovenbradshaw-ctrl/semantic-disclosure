@@ -1500,6 +1500,45 @@
         }
       });
 
+      // ═══════════════════════════════════════════════════════════════
+      // NORMALIZE NOTES: Handle both 'notes' and 'caseNotes' from webhook
+      // The app expects 'notes', but webhooks may send 'caseNotes' or both
+      // ═══════════════════════════════════════════════════════════════
+
+      // Extract arrays (handle nested structures from Xano: {items:[...]}, {data:[...]}, etc.)
+      const extractArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (val.items && Array.isArray(val.items)) return val.items;
+        if (val.data && Array.isArray(val.data)) return val.data;
+        if (val.records && Array.isArray(val.records)) return val.records;
+        return [];
+      };
+
+      const notesFromNotes = extractArray(data.notes);
+      const notesFromCaseNotes = extractArray(data.caseNotes);
+
+      // Merge both sources, avoiding duplicates by id
+      const seenIds = new Set();
+      const mergedNotes = [];
+
+      [...notesFromNotes, ...notesFromCaseNotes].forEach(note => {
+        const noteId = note.id || note._id || note.RecordId || JSON.stringify(note);
+        if (!seenIds.has(noteId)) {
+          seenIds.add(noteId);
+          mergedNotes.push(note);
+        }
+      });
+
+      // Set both keys so the app works regardless of which one it uses
+      data.notes = mergedNotes;
+      data.caseNotes = mergedNotes;
+
+      // Log for debugging (remove in production)
+      if (mergedNotes.length > 0) {
+        console.log(`📝 Notes loaded: ${mergedNotes.length} (from notes: ${notesFromNotes.length}, from caseNotes: ${notesFromCaseNotes.length})`);
+      }
+
       // Process client flatpack fields
       if (data.client) {
         // Extract Matter_Flatpack from client (from Case Master View // Activities)
