@@ -58,6 +58,31 @@
       word-break: break-word;
     }
 
+    /* Line clamp for note descriptions - limit to 3 visual rows */
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Note description details toggle behavior */
+    .note-desc-details summary > pre {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .note-desc-details[open] summary > pre {
+      display: none;
+    }
+    .note-desc-details[open] .read-more-toggle {
+      display: none;
+    }
+    .note-desc-details:not([open]) > pre {
+      display: none;
+    }
+
     /* Safe area insets for notched devices */
     @supports (padding: max(0px)) {
       #app {
@@ -3317,25 +3342,19 @@
               ).join('')}</div>`
             : '';
 
-          // Description - show first 3 lines with "Read more" for longer content
+          // Description - show first 3 visual rows with "Read more" for longer content
           let descHtml = '';
           if (isFieldVisible('notes', 'description') && description && description.trim()) {
-            const lines = description.split('\n');
-            const previewLines = lines.slice(0, 3).join('\n');
-            const hasMore = lines.length > 3;
-
-            if (hasMore) {
-              descHtml = `
-                <div class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500">
-                  <pre class="whitespace-pre-wrap">${escapeHtml(previewLines)}</pre>
-                  <details class="mt-1">
-                    <summary class="text-xs text-blue-500 cursor-pointer hover:text-blue-600 font-medium">Read more</summary>
-                    <pre class="mt-2 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(lines.slice(3).join('\n'))}</pre>
-                  </details>
-                </div>`;
-            } else {
-              descHtml = `<div class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500"><pre class="whitespace-pre-wrap">${escapeHtml(description)}</pre></div>`;
-            }
+            descHtml = `
+              <div class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500">
+                <details class="note-desc-details">
+                  <summary class="list-none cursor-pointer">
+                    <pre class="whitespace-pre-wrap line-clamp-3">${escapeHtml(description)}</pre>
+                    <span class="text-xs text-blue-500 hover:text-blue-600 font-medium read-more-toggle">Read more</span>
+                  </summary>
+                  <pre class="mt-2 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre>
+                </details>
+              </div>`;
           }
 
           // Build metadata lines - grouped logically
