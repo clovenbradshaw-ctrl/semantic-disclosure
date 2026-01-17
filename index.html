@@ -178,11 +178,42 @@ Please generate an attorney-client summary based on the following client data:
 
 `;
 
+    // Fallback clipboard copy for embedded contexts (iframes)
+    function copyToClipboardFallback(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      let success = false;
+      try {
+        success = document.execCommand('copy');
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+
+      document.body.removeChild(textarea);
+      return success;
+    }
+
     function copyForLumoAI() {
       if (!window.currentData) {
         alert('No client data available to copy.');
         return;
       }
+
+      // Show warning first
+      const proceed = confirm(
+        'WARNING: This data contains confidential attorney-client information.\n\n' +
+        'Do NOT paste this into any AI service EXCEPT encrypted Proton Lumo (lumo.proton.me).\n\n' +
+        'Click OK to copy data and open Lumo.'
+      );
+
+      if (!proceed) return;
 
       // Prepare clean JSON data
       const dataToExport = {
@@ -197,9 +228,8 @@ Please generate an attorney-client summary based on the following client data:
       const jsonString = JSON.stringify(dataToExport, null, 2);
       const fullPrompt = LUMO_PROMPT + jsonString;
 
-      // Copy to clipboard
-      navigator.clipboard.writeText(fullPrompt).then(() => {
-        // Show success feedback
+      // Try modern clipboard API first, fallback for embedded contexts
+      const copySuccess = (callback) => {
         const btn = document.getElementById('lumo-copy-btn');
         if (btn) {
           const originalTitle = btn.title;
@@ -212,10 +242,32 @@ Please generate an attorney-client summary based on the following client data:
         }
         // Open Lumo in new tab
         window.open('https://lumo.proton.me/', '_blank');
-      }).catch(err => {
-        console.error('Failed to copy:', err);
-        alert('Failed to copy to clipboard. Please try again.');
-      });
+      };
+
+      const copyFailed = () => {
+        alert('Failed to copy to clipboard. Please try again or check browser permissions.');
+      };
+
+      // Try navigator.clipboard first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullPrompt)
+          .then(copySuccess)
+          .catch(() => {
+            // Fallback for embedded/iframe contexts
+            if (copyToClipboardFallback(fullPrompt)) {
+              copySuccess();
+            } else {
+              copyFailed();
+            }
+          });
+      } else {
+        // Direct fallback if clipboard API not available
+        if (copyToClipboardFallback(fullPrompt)) {
+          copySuccess();
+        } else {
+          copyFailed();
+        }
+      }
     }
 
     // View mode: 'structured', 'brief', 'detailed', or 'timeline'
@@ -2767,9 +2819,6 @@ Please generate an attorney-client summary based on the following client data:
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/30">
             <p class="text-gray-400 text-xs">Last updated: ${formatDate(_meta.generatedAt) || 'Unknown'} <span id="refresh-countdown" class="text-gray-500 ml-1"></span></p>
             <div class="flex gap-1.5 sm:gap-2 flex-wrap justify-end">${countBadges}</div>
-          </div>
-          <div class="mt-2 pt-2 border-t border-amber-200/50 bg-amber-50/30 -mx-4 -mb-4 px-4 pb-3 rounded-b-lg">
-            <p class="text-amber-700 text-xs font-medium">WARNING: This data contains confidential attorney-client information. Do NOT share with any AI service except encrypted Proton Lumo (lumo.proton.me).</p>
           </div>
         </div>
       `;
