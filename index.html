@@ -1142,14 +1142,28 @@
         { label: 'Google Calendar', value: calendarUrl, type: 'link', linkLabel: 'Open in Google Calendar' }
       ];
 
-      const isPast = startDate ? new Date(startDate) < new Date() : false;
+      const now = new Date();
+      const isPast = startDate ? new Date(startDate) < now : false;
+      const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const isUpcoming = startDate && !isPast && new Date(startDate) <= fourteenDaysFromNow;
+
+      // Determine badge text and style
+      let badge = event._calendarType || null;
+      let badgeClass = 'bg-amber-500/20 text-amber-600';
+      if (isPast) {
+        badge = 'Past';
+        badgeClass = 'bg-gray-200 text-gray-500';
+      } else if (isUpcoming) {
+        badge = 'Upcoming';
+        badgeClass = 'bg-amber-100 text-amber-700';
+      }
 
       showDetailModal({
         id: 'event-detail-modal',
         title: event.title || event.summary || 'Event',
         subtitle: startDate ? (event.isAllDay ? formatDate(startDate) : `${formatDate(startDate)} at ${new Date(startDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`) : null,
-        badge: isPast ? 'Past' : (event._calendarType || null),
-        badgeClass: isPast ? 'bg-gray-200 text-gray-500' : 'bg-amber-500/20 text-amber-600',
+        badge: badge,
+        badgeClass: badgeClass,
         fields: fields
       });
     }
@@ -2997,9 +3011,13 @@
           // Date display
           let dateDisplay = '—';
           let isPast = false;
+          let isUpcoming = false;
           if (startDate) {
             const startDateObj = new Date(startDate);
             isPast = startDateObj < now;
+            // Check if event is within 14 days
+            const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            isUpcoming = !isPast && startDateObj <= fourteenDaysFromNow;
             if (isAllDay) {
               dateDisplay = formatDate(startDate);
             } else {
@@ -3049,6 +3067,7 @@
                     ${titleHtml}
                     ${calTypeBadge}
                     ${isPast ? '<span class="text-xs text-gray-400">(past)</span>' : ''}
+                    ${isUpcoming ? '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">Upcoming</span>' : ''}
                     <span class="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity text-xs">Click for details</span>
                   </div>
                   ${detailFields.length > 0 ? `<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">${detailFields.join('')}</div>` : ''}
