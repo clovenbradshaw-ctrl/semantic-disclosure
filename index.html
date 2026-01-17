@@ -1139,13 +1139,13 @@
       const calendarUrl = getGoogleCalendarEventUrl(event);
 
       const fields = [
-        { label: 'Event Title', value: event.title || event.summary },
+        { label: 'Event Title', value: getEventTitle(event) },
         { label: 'Calendar', value: event._calendarType, type: 'badge', badgeClass: 'bg-gray-100 text-gray-600' },
         { label: 'Status', value: event.status },
-        { label: 'Start', value: startDate, type: event.isAllDay ? 'date' : 'datetime' },
-        { label: 'End', value: endDate, type: event.isAllDay ? 'date' : 'datetime' },
+        { label: 'Start', value: startDate, type: getEventIsAllDay(event) ? 'date' : 'datetime' },
+        { label: 'End', value: endDate, type: getEventIsAllDay(event) ? 'date' : 'datetime' },
         { label: 'Location', value: event.location },
-        { label: 'Video Link', value: event.meetLink, type: 'link', linkLabel: 'Join Meeting' },
+        { label: 'Video Link', value: getEventMeetLink(event), type: 'link', linkLabel: 'Join Meeting' },
         { label: 'Attendees', value: event.attendees?.map(a => a.email || a.displayName || a), type: 'list' },
         { label: 'Description', value: event.description, type: 'pre' },
         { label: 'Google Calendar', value: calendarUrl, type: 'link', linkLabel: 'Open in Google Calendar' }
@@ -1169,8 +1169,8 @@
 
       showDetailModal({
         id: 'event-detail-modal',
-        title: event.title || event.summary || 'Event',
-        subtitle: startDate ? (event.isAllDay ? formatDate(startDate) : `${formatDate(startDate)} at ${new Date(startDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`) : null,
+        title: getEventTitle(event),
+        subtitle: startDate ? (getEventIsAllDay(event) ? formatDate(startDate) : `${formatDate(startDate)} at ${new Date(startDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`) : null,
         badge: badge,
         badgeClass: badgeClass,
         fields: fields
@@ -1309,13 +1309,51 @@
     }
 
     // Helper to get event start date with fallbacks for different field names
+    // Supports both normalized format (startDateTime) and raw Google Calendar API format (start.dateTime/start.date)
     function getEventStartDate(event) {
-      return event.startDateTime || event.dateTime || event.Date || event.Start || event['Start Time'] || null;
+      return event.startDateTime ||
+             event.start?.dateTime ||
+             event.start?.date ||
+             event.dateTime ||
+             event.Date ||
+             event.Start ||
+             event['Start Time'] ||
+             null;
     }
 
     // Helper to get event end date with fallbacks for different field names
+    // Supports both normalized format (endDateTime) and raw Google Calendar API format (end.dateTime/end.date)
     function getEventEndDate(event) {
-      return event.endDateTime || event.End || event['End Time'] || null;
+      return event.endDateTime ||
+             event.end?.dateTime ||
+             event.end?.date ||
+             event.End ||
+             event['End Time'] ||
+             null;
+    }
+
+    // Helper to check if event is all-day
+    // Supports both normalized format (isAllDay) and raw Google Calendar API format (start.date without start.dateTime)
+    function getEventIsAllDay(event) {
+      if (typeof event.isAllDay === 'boolean') return event.isAllDay;
+      // Raw gcal format: all-day events have start.date but not start.dateTime
+      if (event.start && event.start.date && !event.start.dateTime) return true;
+      return false;
+    }
+
+    // Helper to get event meet/video link
+    // Supports both normalized format (meetLink) and raw Google Calendar API format (hangoutLink, conferenceData)
+    function getEventMeetLink(event) {
+      return event.meetLink ||
+             event.hangoutLink ||
+             event.conferenceData?.entryPoints?.find(e => e.entryPointType === 'video')?.uri ||
+             null;
+    }
+
+    // Helper to get event title
+    // Supports both normalized format (title) and raw Google Calendar API format (summary)
+    function getEventTitle(event) {
+      return event.title || event.summary || 'Event';
     }
 
     function getAge(dob) {
@@ -2420,8 +2458,9 @@
           sections.push(`<span class="text-amber-600 font-medium">Upcoming (${upcomingItems.length})</span>`);
 
           upcomingItems.forEach(item => {
-            const eventTitle = item.title || item.summary || 'Event';
+            const eventTitle = getEventTitle(item);
             const dateStr = formatDateLong(getEventStartDate(item));
+            const meetLink = getEventMeetLink(item);
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
               ? ` at <span class="text-gray-700">${escapeHtml(item.location)}</span>`
@@ -2440,8 +2479,8 @@
             eventLine += locationStr;
 
             // Meet link
-            if (isFieldVisible('events', 'meetLink') && item.meetLink) {
-              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600 hover:underline text-sm">[Video Link]</a>`;
+            if (isFieldVisible('events', 'meetLink') && meetLink) {
+              eventLine += ` <a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
@@ -2463,8 +2502,9 @@
           sections.push(`<br><span class="text-gray-500 font-medium">Past Events (${pastItems.length})</span>`);
 
           pastItems.forEach(item => {
-            const eventTitle = item.title || item.summary || 'Event';
+            const eventTitle = getEventTitle(item);
             const dateStr = formatDateLong(getEventStartDate(item));
+            const meetLink = getEventMeetLink(item);
 
             const locationStr = (isFieldVisible('events', 'location') && item.location)
               ? ` at <span class="text-gray-500">${escapeHtml(item.location)}</span>`
@@ -2483,8 +2523,8 @@
             eventLine += locationStr;
 
             // Meet link
-            if (isFieldVisible('events', 'meetLink') && item.meetLink) {
-              eventLine += ` <a href="${escapeHtml(item.meetLink)}" target="_blank" class="text-blue-600/70 hover:underline text-sm">[Video Link]</a>`;
+            if (isFieldVisible('events', 'meetLink') && meetLink) {
+              eventLine += ` <a href="${escapeHtml(meetLink)}" target="_blank" class="text-blue-600/70 hover:underline text-sm">[Video Link]</a>`;
             }
 
             sections.push(eventLine);
@@ -3015,15 +3055,15 @@
         const now = new Date();
 
         const itemsHtml = items.map((event, index) => {
-          const eventTitle = event.title || event.summary || 'Event';
+          const eventTitle = getEventTitle(event);
           const startDate = getEventStartDate(event);
           const endDate = getEventEndDate(event);
           const location = event.location;
           const description = event.description;
-          const meetLink = event.meetLink;
+          const meetLink = getEventMeetLink(event);
           const attendees = event.attendees || [];
           const calType = event._calendarType;
-          const isAllDay = event.isAllDay;
+          const isAllDay = getEventIsAllDay(event);
           const status = event.status;
 
           // Date display
@@ -3552,7 +3592,7 @@
         allCalendarEvents.forEach(event => {
           const eventStartDate = getEventStartDate(event);
           if (isValidDate(eventStartDate)) {
-            const eventTitle = event.title || event.summary || 'Event';
+            const eventTitle = getEventTitle(event);
             const eventRecordId = event.id || event.eventId;
 
             timelineItems.push({
@@ -3563,7 +3603,7 @@
               recordName: eventTitle,
               recordId: eventRecordId,
               sectionId: 'events',
-              meetLink: event.meetLink,
+              meetLink: getEventMeetLink(event),
               calendarUrl: getGoogleCalendarEventUrl(event),
               icon: '📅',
               color: 'amber'
