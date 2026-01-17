@@ -69,7 +69,7 @@
     /* Note description details toggle behavior */
     .note-desc-details summary > pre {
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: var(--note-lines, 3);
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -82,6 +82,47 @@
     .note-desc-details:not([open]) > pre {
       display: none;
     }
+
+    /* Dynamic line clamp */
+    .line-clamp-dynamic {
+      display: -webkit-box;
+      -webkit-line-clamp: var(--note-lines, 3);
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Text size presets */
+    .text-size-compact {
+      --base-text: 0.75rem;
+      --heading-text: 0.875rem;
+      --card-padding: 0.5rem;
+    }
+    .text-size-compact .card-text { font-size: 0.75rem; line-height: 1.25; }
+    .text-size-compact .card-heading { font-size: 0.875rem; }
+    .text-size-compact .note-text { font-size: 0.6875rem; }
+
+    .text-size-normal {
+      --base-text: 0.875rem;
+      --heading-text: 1rem;
+      --card-padding: 0.75rem;
+    }
+    .text-size-normal .card-text { font-size: 0.875rem; }
+    .text-size-normal .card-heading { font-size: 1rem; }
+    .text-size-normal .note-text { font-size: 0.75rem; }
+
+    .text-size-large {
+      --base-text: 1rem;
+      --heading-text: 1.125rem;
+      --card-padding: 1rem;
+    }
+    .text-size-large .card-text { font-size: 1rem; line-height: 1.5; }
+    .text-size-large .card-heading { font-size: 1.125rem; }
+    .text-size-large .note-text { font-size: 0.875rem; }
+
+    /* Card spacing presets */
+    .spacing-compact .card-item { padding: 0.5rem; margin-bottom: 0.25rem; }
+    .spacing-normal .card-item { padding: 0.75rem; margin-bottom: 0.5rem; }
+    .spacing-relaxed .card-item { padding: 1rem; margin-bottom: 0.75rem; }
 
     /* Safe area insets for notched devices */
     @supports (padding: max(0px)) {
@@ -108,6 +149,178 @@
     const SCHEMA_URL = 'https://n8n.intelechia.com/webhook/843d64c9-d353-41cf-911f-2f184e211296';
     const SOFTR_BASE_URL = 'https://rklacylaw.softr.app/client-info';
     const STORAGE_KEY = 'semantic-disclosure-field-prefs-v3';
+    const DISPLAY_SETTINGS_KEY = 'semantic-disclosure-display-settings-v1';
+    const PROFILES_KEY = 'semantic-disclosure-profiles-v1';
+
+    // ═══════════════════════════════════════════════════════════════
+    // DISPLAY SETTINGS - General display preferences
+    // ═══════════════════════════════════════════════════════════════
+    const DEFAULT_DISPLAY_SETTINGS = {
+      // Text sizing
+      textSize: 'normal', // 'compact', 'normal', 'large'
+
+      // Note-specific settings
+      notesTruncateLength: 80, // characters before truncation in table view
+      notesDescriptionLines: 3, // visual line clamp for descriptions
+      notesMaxContextual: 3, // max notes shown under cases/events
+
+      // Date formatting
+      dateFormat: 'short', // 'short' (Mar 22, 2025), 'long' (March 22, 2025), 'iso' (2025-03-22)
+
+      // Card display
+      cardSpacing: 'normal', // 'compact', 'normal', 'relaxed'
+    };
+
+    let displaySettings = { ...DEFAULT_DISPLAY_SETTINGS };
+
+    function loadDisplaySettings() {
+      try {
+        const stored = localStorage.getItem(DISPLAY_SETTINGS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          displaySettings = { ...DEFAULT_DISPLAY_SETTINGS, ...parsed };
+        }
+      } catch (e) {
+        console.warn('Failed to load display settings:', e);
+      }
+      return displaySettings;
+    }
+
+    function saveDisplaySettings(settings) {
+      displaySettings = { ...DEFAULT_DISPLAY_SETTINGS, ...settings };
+      try {
+        localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(displaySettings));
+      } catch (e) {
+        console.warn('Failed to save display settings:', e);
+      }
+    }
+
+    function resetDisplaySettings() {
+      displaySettings = { ...DEFAULT_DISPLAY_SETTINGS };
+      saveDisplaySettings(displaySettings);
+      return displaySettings;
+    }
+
+    function applyDisplaySettings() {
+      const app = document.getElementById('app');
+      if (!app) return;
+
+      // Remove existing classes
+      app.classList.remove('text-size-compact', 'text-size-normal', 'text-size-large');
+      app.classList.remove('spacing-compact', 'spacing-normal', 'spacing-relaxed');
+
+      // Apply text size class
+      app.classList.add(`text-size-${displaySettings.textSize}`);
+
+      // Apply spacing class
+      app.classList.add(`spacing-${displaySettings.cardSpacing}`);
+
+      // Apply CSS variable for line clamp
+      app.style.setProperty('--note-lines', displaySettings.notesDescriptionLines);
+    }
+
+    // Initialize display settings on load
+    loadDisplaySettings();
+
+    // ═══════════════════════════════════════════════════════════════
+    // DISPLAY PROFILES - Save and load named configurations
+    // ═══════════════════════════════════════════════════════════════
+    let profiles = {};
+    let activeProfileName = null;
+
+    function loadProfiles() {
+      try {
+        const stored = localStorage.getItem(PROFILES_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          profiles = parsed.profiles || {};
+          activeProfileName = parsed.activeProfile || null;
+        }
+      } catch (e) {
+        console.warn('Failed to load profiles:', e);
+      }
+      return { profiles, activeProfileName };
+    }
+
+    function saveProfiles() {
+      try {
+        localStorage.setItem(PROFILES_KEY, JSON.stringify({
+          profiles,
+          activeProfile: activeProfileName
+        }));
+      } catch (e) {
+        console.warn('Failed to save profiles:', e);
+      }
+    }
+
+    function createProfile(name) {
+      if (!name || name.trim() === '') return false;
+      const trimmedName = name.trim();
+
+      // Capture current state
+      profiles[trimmedName] = {
+        name: trimmedName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fieldPrefs: loadFieldPrefs(),
+        displaySettings: { ...displaySettings }
+      };
+
+      activeProfileName = trimmedName;
+      saveProfiles();
+      return true;
+    }
+
+    function updateProfile(name) {
+      if (!profiles[name]) return false;
+
+      profiles[name] = {
+        ...profiles[name],
+        updatedAt: new Date().toISOString(),
+        fieldPrefs: loadFieldPrefs(),
+        displaySettings: { ...displaySettings }
+      };
+
+      saveProfiles();
+      return true;
+    }
+
+    function loadProfile(name) {
+      const profile = profiles[name];
+      if (!profile) return false;
+
+      // Apply field preferences
+      if (profile.fieldPrefs) {
+        saveFieldPrefs(profile.fieldPrefs);
+      }
+
+      // Apply display settings
+      if (profile.displaySettings) {
+        saveDisplaySettings(profile.displaySettings);
+      }
+
+      activeProfileName = name;
+      saveProfiles();
+      return true;
+    }
+
+    function deleteProfile(name) {
+      if (!profiles[name]) return false;
+
+      delete profiles[name];
+      if (activeProfileName === name) {
+        activeProfileName = null;
+      }
+      saveProfiles();
+      return true;
+    }
+
+    function getProfileNames() {
+      return Object.keys(profiles).sort();
+    }
+
+    // Initialize profiles on load
+    loadProfiles();
 
     // ═══════════════════════════════════════════════════════════════
     // EXTERNAL LINK HELPERS - Generate URLs for Softr and Google Calendar
@@ -742,10 +955,17 @@ Please generate an attorney-client summary based on the following client data:
     // SETTINGS MODAL - Per-view field configuration with reordering
     // ═══════════════════════════════════════════════════════════════
     let settingsCurrentView = 'structured';
+    let settingsMainTab = 'fields'; // 'fields', 'display', 'profiles'
 
-    function openSettingsModal() {
+    function openSettingsModal(tab = 'fields') {
       settingsCurrentView = currentView;
+      settingsMainTab = tab;
       document.body.style.overflow = 'hidden';
+      renderSettingsModal();
+    }
+
+    function switchSettingsMainTab(tab) {
+      settingsMainTab = tab;
       renderSettingsModal();
     }
 
@@ -754,36 +974,83 @@ Please generate an attorney-client summary based on the following client data:
       const existingModal = document.getElementById('settings-modal');
       if (existingModal) existingModal.remove();
 
+      // Main tab labels
+      const mainTabs = [
+        { id: 'fields', label: 'Fields', icon: '📋' },
+        { id: 'display', label: 'Display', icon: '🎨' },
+        { id: 'profiles', label: 'Profiles', icon: '💾' }
+      ];
+
+      const mainTabsHtml = mainTabs.map(tab => {
+        const active = settingsMainTab === tab.id;
+        return `
+          <button onclick="switchSettingsMainTab('${tab.id}')"
+                  class="flex items-center gap-2 px-4 py-3 sm:px-3 sm:py-2 text-sm font-medium transition-colors touch-manipulation ${active
+                    ? 'text-blue-600 border-b-2 border-blue-500 bg-blue-50/50'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}">
+            <span>${tab.icon}</span>
+            <span>${tab.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      let contentHtml = '';
+      let footerHtml = '';
+
+      if (settingsMainTab === 'fields') {
+        const fieldsContent = renderFieldsSettingsContent();
+        contentHtml = fieldsContent.content;
+        footerHtml = fieldsContent.footer;
+      } else if (settingsMainTab === 'display') {
+        const displayContent = renderDisplaySettingsContent();
+        contentHtml = displayContent.content;
+        footerHtml = displayContent.footer;
+      } else if (settingsMainTab === 'profiles') {
+        const profilesContent = renderProfilesSettingsContent();
+        contentHtml = profilesContent.content;
+        footerHtml = profilesContent.footer;
+      }
+
+      const modalHtml = `
+        <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-xl w-full sm:max-w-xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Settings</h2>
+                <p class="text-gray-400 text-sm sm:text-xs mt-0.5">${activeProfileName ? `Profile: ${activeProfileName}` : 'Customize your view'}</p>
+              </div>
+              <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-800 p-2.5 sm:p-1.5 -mr-1 touch-manipulation">
+                <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="border-b border-gray-200 bg-white/80 flex-shrink-0 overflow-x-auto">
+              <div class="flex gap-0 px-2 min-w-max">${mainTabsHtml}</div>
+            </div>
+
+            ${contentHtml}
+
+            ${footerHtml}
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      attachSettingsListeners();
+    }
+
+    function renderFieldsSettingsContent() {
       // Category labels with context about single vs multiple records
       const categoryLabels = {
-        client: {
-          label: 'Client Fields',
-          sublabel: 'Single record per client',
-          icon: '👤'
-        },
-        cases: {
-          label: 'Case Fields',
-          sublabel: 'Card elements (multiple records)',
-          icon: '⚖️'
-        },
-        applications: {
-          label: 'Application Fields',
-          sublabel: 'Card elements (multiple records)',
-          icon: '📝'
-        },
-        events: {
-          label: 'Event & Hearing Fields',
-          sublabel: 'Card elements (multiple records)',
-          icon: '📅'
-        },
-        notes: {
-          label: 'Notes Fields',
-          sublabel: 'Case & event notes (multiple records)',
-          icon: '📋'
-        }
+        client: { label: 'Client Fields', sublabel: 'Single record per client', icon: '👤' },
+        cases: { label: 'Case Fields', sublabel: 'Card elements (multiple records)', icon: '⚖️' },
+        applications: { label: 'Application Fields', sublabel: 'Card elements (multiple records)', icon: '📝' },
+        events: { label: 'Event & Hearing Fields', sublabel: 'Card elements (multiple records)', icon: '📅' },
+        notes: { label: 'Notes Fields', sublabel: 'Case & event notes (multiple records)', icon: '📋' }
       };
 
-      // Timeline-specific sublabels
       const timelineSublabels = {
         client: 'Date fields from client record',
         cases: 'Date fields from case records',
@@ -792,14 +1059,8 @@ Please generate an attorney-client summary based on the following client data:
         notes: 'Date fields from notes'
       };
 
-      const viewLabels = {
-        structured: 'Structured',
-        brief: 'Brief',
-        detailed: 'Detailed',
-        timeline: 'Timeline'
-      };
+      const viewLabels = { structured: 'Structured', brief: 'Brief', detailed: 'Detailed', timeline: 'Timeline' };
 
-      // View tabs
       const viewTabsHtml = VIEWS.map(view => {
         const active = settingsCurrentView === view;
         return `
@@ -812,47 +1073,34 @@ Please generate an attorney-client summary based on the following client data:
         `;
       }).join('');
 
-      // Build categories for the selected view
       const isTimelineView = settingsCurrentView === 'timeline';
 
       const categoriesHtml = Object.entries(FIELD_REGISTRY).map(([category, registryFields]) => {
         let fields = getFieldsInOrder(category, settingsCurrentView);
-
-        // For timeline view, only show date fields
         if (isTimelineView) {
           fields = fields.filter(f => isDateField(category, f.key));
         }
-
-        // Skip category if no fields to show
-        if (fields.length === 0) {
-          return '';
-        }
+        if (fields.length === 0) return '';
 
         const fieldsHtml = fields.map((f, idx) => {
           const isFirst = idx === 0;
           const isLast = idx === fields.length - 1;
-
-          const position = idx + 1; // 1-indexed for display
+          const position = idx + 1;
           return `
             <div class="flex items-center gap-3 sm:gap-2 py-3 sm:py-2 px-3 sm:px-2 rounded hover:bg-gray-100/50 group" data-field-key="${f.key}">
-              <input type="number"
-                     value="${position}"
-                     min="1"
-                     max="${fields.length}"
+              <input type="number" value="${position}" min="1" max="${fields.length}"
                      onchange="handlePositionChange('${category}', '${f.key}', this.value, event)"
                      class="w-12 sm:w-10 h-10 sm:h-7 text-sm sm:text-xs text-center bg-gray-100 border border-gray-300 rounded text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                      title="Type a position number to move this field">
               <div class="flex flex-col gap-1 sm:gap-0.5 opacity-70 sm:opacity-50 group-hover:opacity-100">
                 <button onclick="handleMoveField('${category}', '${f.key}', 'up', event)"
-                        class="p-2 sm:p-1 hover:bg-gray-200 rounded touch-manipulation ${isFirst ? 'invisible' : ''}"
-                        title="Move up">
+                        class="p-2 sm:p-1 hover:bg-gray-200 rounded touch-manipulation ${isFirst ? 'invisible' : ''}" title="Move up">
                   <svg class="w-4 h-4 sm:w-3 sm:h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
                   </svg>
                 </button>
                 <button onclick="handleMoveField('${category}', '${f.key}', 'down', event)"
-                        class="p-2 sm:p-1 hover:bg-gray-200 rounded touch-manipulation ${isLast ? 'invisible' : ''}"
-                        title="Move down">
+                        class="p-2 sm:p-1 hover:bg-gray-200 rounded touch-manipulation ${isLast ? 'invisible' : ''}" title="Move down">
                   <svg class="w-4 h-4 sm:w-3 sm:h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                   </svg>
@@ -860,9 +1108,7 @@ Please generate an attorney-client summary based on the following client data:
               </div>
               <label class="flex items-center gap-3 sm:gap-2 flex-1 cursor-pointer min-w-0">
                 <input type="checkbox" ${f.visible ? 'checked' : ''}
-                       data-category="${category}"
-                       data-key="${f.key}"
-                       data-view="${settingsCurrentView}"
+                       data-category="${category}" data-key="${f.key}" data-view="${settingsCurrentView}"
                        class="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 bg-gray-100 text-blue-500 focus:ring-blue-500 focus:ring-offset-white flex-shrink-0">
                 <div class="flex flex-col min-w-0">
                   <span class="text-base sm:text-sm text-gray-700 truncate">${f.label}</span>
@@ -894,9 +1140,7 @@ Please generate an attorney-client summary based on the following client data:
         `;
       }).join('');
 
-      // Build category jump links
       const categoryJumpLinks = Object.entries(categoryLabels).map(([cat, info]) => {
-        // For timeline, only show categories with date fields
         if (isTimelineView) {
           const dateFields = getFieldsInOrder(cat, settingsCurrentView).filter(f => isDateField(cat, f.key));
           if (dateFields.length === 0) return '';
@@ -908,57 +1152,328 @@ Please generate an attorney-client summary based on the following client data:
                 </button>`;
       }).filter(Boolean).join('');
 
-      const modalHtml = `
-        <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" onclick="if(event.target.id === 'settings-modal') closeSettingsModal()">
-          <div class="bg-white rounded-xl border border-gray-200 shadow-xl w-full sm:max-w-xl lg:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-              <div>
-                <h2 class="text-lg font-semibold text-gray-900">Field Settings</h2>
-                <p class="text-gray-400 text-sm sm:text-xs mt-0.5">Customize fields for each view</p>
-              </div>
-              <button onclick="closeSettingsModal()" class="text-gray-500 hover:text-gray-800 p-2.5 sm:p-1.5 -mr-1 touch-manipulation">
-                <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
+      const content = `
+        <div class="border-b border-gray-200 bg-white/80 flex-shrink-0 overflow-x-auto">
+          <div class="flex gap-1 px-4 pt-2 min-w-max">${viewTabsHtml}</div>
+        </div>
+        <div class="px-4 pt-3 pb-2 border-b border-gray-200/50 bg-white flex-shrink-0">
+          <p class="text-gray-500 text-sm mb-2">
+            Configure which fields appear in the <span class="text-blue-600 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
+          </p>
+          <div class="flex flex-wrap gap-2 sm:gap-1.5">${categoryJumpLinks}</div>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1 min-h-0">${categoriesHtml}</div>
+      `;
 
-            <div class="border-b border-gray-200 bg-white/80 flex-shrink-0 overflow-x-auto">
-              <div class="flex gap-1 px-4 pt-2 min-w-max">${viewTabsHtml}</div>
-            </div>
+      const footer = `
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 p-4 border-t border-gray-200 bg-white/50 flex-shrink-0">
+          <div class="flex gap-2 order-2 sm:order-1">
+            <button onclick="resetViewAndRefresh()" class="flex-1 sm:flex-none text-sm text-gray-500 hover:text-gray-800 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded hover:bg-gray-100 transition-colors touch-manipulation">
+              Reset View
+            </button>
+            <button onclick="resetAllAndRefresh()" class="flex-1 sm:flex-none text-sm text-red-600/70 hover:text-red-600 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded hover:bg-red-100 transition-colors touch-manipulation">
+              Reset All
+            </button>
+          </div>
+          <button onclick="closeSettingsModal()" class="order-1 sm:order-2 text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg sm:rounded transition-colors touch-manipulation font-medium">
+            Done
+          </button>
+        </div>
+      `;
 
-            <div class="px-4 pt-3 pb-2 border-b border-gray-200/50 bg-white flex-shrink-0">
-              <p class="text-gray-500 text-sm mb-2">
-                Configure which fields appear in the <span class="text-blue-600 font-medium">${viewLabels[settingsCurrentView]}</span> view${isTimelineView ? ' (date fields only)' : ''}.
-              </p>
-              <div class="flex flex-wrap gap-2 sm:gap-1.5">
-                ${categoryJumpLinks}
-              </div>
-            </div>
+      return { content, footer };
+    }
 
-            <div class="p-4 overflow-y-auto flex-1 min-h-0">
-              ${categoriesHtml}
-            </div>
+    function renderDisplaySettingsContent() {
+      const textSizeOptions = [
+        { value: 'compact', label: 'Compact', desc: 'Smaller text, fits more content' },
+        { value: 'normal', label: 'Normal', desc: 'Default text size' },
+        { value: 'large', label: 'Large', desc: 'Larger, easier to read' }
+      ];
 
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 p-4 border-t border-gray-200 bg-white/50 flex-shrink-0">
-              <div class="flex gap-2 order-2 sm:order-1">
-                <button onclick="resetViewAndRefresh()" class="flex-1 sm:flex-none text-sm text-gray-500 hover:text-gray-800 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded hover:bg-gray-100 transition-colors touch-manipulation">
-                  Reset View
+      const spacingOptions = [
+        { value: 'compact', label: 'Compact', desc: 'Minimal spacing' },
+        { value: 'normal', label: 'Normal', desc: 'Default spacing' },
+        { value: 'relaxed', label: 'Relaxed', desc: 'More breathing room' }
+      ];
+
+      const dateFormatOptions = [
+        { value: 'short', label: 'Short', example: 'Mar 22, 2025' },
+        { value: 'long', label: 'Long', example: 'March 22, 2025' },
+        { value: 'iso', label: 'ISO', example: '2025-03-22' }
+      ];
+
+      const content = `
+        <div class="p-4 overflow-y-auto flex-1 min-h-0 space-y-6">
+          <!-- Text Size -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Text Size</h3>
+            <p class="text-xs text-gray-400 mb-3">Adjust the overall text size for better readability</p>
+            <div class="grid grid-cols-3 gap-2">
+              ${textSizeOptions.map(opt => `
+                <button onclick="handleDisplaySettingChange('textSize', '${opt.value}')"
+                        class="p-3 rounded-lg border-2 transition-all text-center ${displaySettings.textSize === opt.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'}">
+                  <div class="font-medium text-sm">${opt.label}</div>
+                  <div class="text-xs text-gray-400 mt-1">${opt.desc}</div>
                 </button>
-                <button onclick="resetAllAndRefresh()" class="flex-1 sm:flex-none text-sm text-red-600/70 hover:text-red-600 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded hover:bg-red-100 transition-colors touch-manipulation">
-                  Reset All
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Card Spacing -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Card Spacing</h3>
+            <p class="text-xs text-gray-400 mb-3">Adjust spacing between cards and sections</p>
+            <div class="grid grid-cols-3 gap-2">
+              ${spacingOptions.map(opt => `
+                <button onclick="handleDisplaySettingChange('cardSpacing', '${opt.value}')"
+                        class="p-3 rounded-lg border-2 transition-all text-center ${displaySettings.cardSpacing === opt.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'}">
+                  <div class="font-medium text-sm">${opt.label}</div>
+                  <div class="text-xs text-gray-400 mt-1">${opt.desc}</div>
                 </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Notes Settings -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Notes Display</h3>
+            <p class="text-xs text-gray-400 mb-3">Configure how notes are displayed</p>
+
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm text-gray-700">Description lines</label>
+                  <p class="text-xs text-gray-400">Lines shown before "Read more"</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="handleDisplaySettingChange('notesDescriptionLines', Math.max(1, displaySettings.notesDescriptionLines - 1))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">-</button>
+                  <span class="w-8 text-center font-mono text-gray-700">${displaySettings.notesDescriptionLines}</span>
+                  <button onclick="handleDisplaySettingChange('notesDescriptionLines', Math.min(10, displaySettings.notesDescriptionLines + 1))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">+</button>
+                </div>
               </div>
-              <button onclick="closeSettingsModal()" class="order-1 sm:order-2 text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg sm:rounded transition-colors touch-manipulation font-medium">
-                Done
-              </button>
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm text-gray-700">Truncate length</label>
+                  <p class="text-xs text-gray-400">Characters in table view</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="handleDisplaySettingChange('notesTruncateLength', Math.max(40, displaySettings.notesTruncateLength - 20))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">-</button>
+                  <span class="w-12 text-center font-mono text-gray-700">${displaySettings.notesTruncateLength}</span>
+                  <button onclick="handleDisplaySettingChange('notesTruncateLength', Math.min(200, displaySettings.notesTruncateLength + 20))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">+</button>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="text-sm text-gray-700">Contextual notes max</label>
+                  <p class="text-xs text-gray-400">Max notes under cases/events</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="handleDisplaySettingChange('notesMaxContextual', Math.max(1, displaySettings.notesMaxContextual - 1))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">-</button>
+                  <span class="w-8 text-center font-mono text-gray-700">${displaySettings.notesMaxContextual}</span>
+                  <button onclick="handleDisplaySettingChange('notesMaxContextual', Math.min(10, displaySettings.notesMaxContextual + 1))"
+                          class="w-8 h-8 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date Format -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Date Format</h3>
+            <p class="text-xs text-gray-400 mb-3">How dates are displayed throughout the app</p>
+            <div class="grid grid-cols-3 gap-2">
+              ${dateFormatOptions.map(opt => `
+                <button onclick="handleDisplaySettingChange('dateFormat', '${opt.value}')"
+                        class="p-3 rounded-lg border-2 transition-all text-center ${displaySettings.dateFormat === opt.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'}">
+                  <div class="font-medium text-sm">${opt.label}</div>
+                  <div class="text-xs font-mono text-gray-400 mt-1">${opt.example}</div>
+                </button>
+              `).join('')}
             </div>
           </div>
         </div>
       `;
 
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-      attachSettingsListeners();
+      const footer = `
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 p-4 border-t border-gray-200 bg-white/50 flex-shrink-0">
+          <button onclick="resetDisplaySettingsAndRefresh()" class="text-sm text-gray-500 hover:text-gray-800 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded hover:bg-gray-100 transition-colors touch-manipulation">
+            Reset to Defaults
+          </button>
+          <button onclick="closeSettingsModal()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg sm:rounded transition-colors touch-manipulation font-medium">
+            Done
+          </button>
+        </div>
+      `;
+
+      return { content, footer };
+    }
+
+    function renderProfilesSettingsContent() {
+      const profileNames = getProfileNames();
+
+      const profileListHtml = profileNames.length === 0
+        ? '<p class="text-gray-400 text-sm text-center py-8">No saved profiles yet. Save your current settings as a profile to get started.</p>'
+        : profileNames.map(name => {
+            const profile = profiles[name];
+            const isActive = activeProfileName === name;
+            const updatedAt = profile.updatedAt ? new Date(profile.updatedAt).toLocaleDateString() : 'Unknown';
+            return `
+              <div class="flex items-center justify-between p-3 rounded-lg border ${isActive ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 bg-white/50'} group">
+                <div class="flex items-center gap-3">
+                  ${isActive ? '<span class="w-2 h-2 rounded-full bg-blue-500"></span>' : '<span class="w-2 h-2 rounded-full bg-gray-300"></span>'}
+                  <div>
+                    <div class="font-medium text-gray-800">${escapeHtml(name)}</div>
+                    <div class="text-xs text-gray-400">Updated: ${updatedAt}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${!isActive ? `
+                    <button onclick="handleLoadProfile('${escapeHtml(name)}')"
+                            class="text-sm px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
+                      Load
+                    </button>
+                  ` : `
+                    <button onclick="handleUpdateProfile('${escapeHtml(name)}')"
+                            class="text-sm px-3 py-1.5 rounded bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors">
+                      Update
+                    </button>
+                  `}
+                  <button onclick="handleDeleteProfile('${escapeHtml(name)}')"
+                          class="text-sm px-2 py-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+      const content = `
+        <div class="p-4 overflow-y-auto flex-1 min-h-0 space-y-4">
+          <!-- Create New Profile -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Save Current Settings</h3>
+            <p class="text-xs text-gray-400 mb-3">Save your current field and display settings as a named profile</p>
+            <div class="flex gap-2">
+              <input type="text" id="new-profile-name" placeholder="Profile name..."
+                     class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                     onkeypress="if(event.key==='Enter') handleCreateProfile()">
+              <button onclick="handleCreateProfile()"
+                      class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors">
+                Save Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Saved Profiles -->
+          <div class="bg-white/50 rounded-lg p-4 border border-gray-200/50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Saved Profiles</h3>
+            <p class="text-xs text-gray-400 mb-3">Load or manage your saved display profiles</p>
+            <div class="space-y-2">
+              ${profileListHtml}
+            </div>
+          </div>
+
+          <!-- Info Box -->
+          <div class="bg-amber-50/50 rounded-lg p-4 border border-amber-200/50">
+            <div class="flex items-start gap-2">
+              <span class="text-amber-500 mt-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </span>
+              <div>
+                <p class="text-xs text-amber-700">Profiles are saved locally in your browser. Webhook sync for cross-device profiles coming soon.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const footer = `
+        <div class="flex items-center justify-end gap-2 p-4 border-t border-gray-200 bg-white/50 flex-shrink-0">
+          <button onclick="closeSettingsModal()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg sm:rounded transition-colors touch-manipulation font-medium">
+            Done
+          </button>
+        </div>
+      `;
+
+      return { content, footer };
+    }
+
+    function handleDisplaySettingChange(key, value) {
+      displaySettings[key] = value;
+      saveDisplaySettings(displaySettings);
+      applyDisplaySettings();
+      renderSettingsModal();
+      if (window.currentData) {
+        renderData(window.currentData);
+      }
+    }
+
+    function resetDisplaySettingsAndRefresh() {
+      resetDisplaySettings();
+      applyDisplaySettings();
+      renderSettingsModal();
+      if (window.currentData) {
+        renderData(window.currentData);
+      }
+    }
+
+    function handleCreateProfile() {
+      const input = document.getElementById('new-profile-name');
+      if (!input) return;
+
+      const name = input.value.trim();
+      if (!name) {
+        input.focus();
+        return;
+      }
+
+      if (profiles[name]) {
+        if (!confirm(`Profile "${name}" already exists. Overwrite?`)) return;
+      }
+
+      createProfile(name);
+      renderSettingsModal();
+    }
+
+    function handleLoadProfile(name) {
+      if (loadProfile(name)) {
+        applyDisplaySettings();
+        renderSettingsModal();
+        if (window.currentData) {
+          renderData(window.currentData);
+        }
+      }
+    }
+
+    function handleUpdateProfile(name) {
+      if (updateProfile(name)) {
+        renderSettingsModal();
+      }
+    }
+
+    function handleDeleteProfile(name) {
+      if (confirm(`Delete profile "${name}"?`)) {
+        deleteProfile(name);
+        renderSettingsModal();
+      }
     }
 
     function attachSettingsListeners() {
@@ -1380,6 +1895,15 @@ Please generate an attorney-client summary based on the following client data:
     function formatDate(dateStr) {
       if (!dateStr) return null;
       const date = new Date(dateStr);
+
+      // Use display settings for date format
+      const format = displaySettings.dateFormat || 'short';
+      if (format === 'iso') {
+        return date.toISOString().split('T')[0];
+      } else if (format === 'long') {
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      }
+      // Default: short
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
@@ -1873,8 +2397,9 @@ Please generate an attorney-client summary based on the following client data:
       const type = note.Type || '';
       const date = note.Date ? formatDate(note.Date) : '';
       const createdBy = note.Created_By || '';
-      const description = (note.Description || '').substring(0, 80);
-      const hasMore = (note.Description || '').length > 80;
+      const truncateLen = displaySettings.notesTruncateLength || 80;
+      const description = (note.Description || '').substring(0, truncateLen);
+      const hasMore = (note.Description || '').length > truncateLen;
       const matter = note.Matter || note.matter || '';
       const contact = note.Contact || '';
       const dueDate = note.Due_Date ? formatDate(note.Due_Date) : '';
@@ -1967,7 +2492,7 @@ Please generate an attorney-client summary based on the following client data:
     /**
      * Render contextual note cards for embedding under entities
      */
-    function renderContextualNoteCards(notes, maxShow = 3) {
+    function renderContextualNoteCards(notes, maxShow = displaySettings.notesMaxContextual || 3) {
       if (!notes || notes.length === 0) return '';
 
       // Sort based on notesSortOrder
@@ -3028,7 +3553,7 @@ Please generate an attorney-client summary based on the following client data:
             // Contextual notes from note index (linked note records)
             const caseId = c.id || c['Case Master View Record ID'];
             const linkedNotes = caseId ? getNotesForEntity(noteIndex, 'case', caseId) : [];
-            const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, 3) : '';
+            const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, displaySettings.notesMaxContextual) : '';
 
             // Flatpack fields for case (now controlled by visibility)
             let flatpackHtml = '';
@@ -3139,7 +3664,7 @@ Please generate an attorney-client summary based on the following client data:
           // Contextual notes from note index (linked note records)
           const appId = app.id;
           const linkedNotes = appId && noteIndex ? getNotesForEntity(noteIndex, 'application', appId) : [];
-          const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, 3) : '';
+          const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, displaySettings.notesMaxContextual) : '';
 
           // Build detail fields using ordered visibility
           const detailFieldRenderers = {
@@ -4067,6 +4592,9 @@ Please generate an attorney-client summary based on the following client data:
       } else {
         document.getElementById('app').innerHTML = renderStructuredView(data);
       }
+
+      // Apply display settings (text size, spacing, etc.)
+      applyDisplaySettings();
     }
 
     // ═══════════════════════════════════════════════════════════════
