@@ -3240,10 +3240,25 @@
               ).join('')}</div>`
             : '';
 
-          // Description
+          // Description - show first 3 lines with "Read more" for longer content
           let descHtml = '';
           if (isFieldVisible('notes', 'description') && description && description.trim()) {
-            descHtml = `<details class="mt-2"><summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-500">View description</summary><pre class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(description)}</pre></details>`;
+            const lines = description.split('\n');
+            const previewLines = lines.slice(0, 3).join('\n');
+            const hasMore = lines.length > 3;
+
+            if (hasMore) {
+              descHtml = `
+                <div class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500">
+                  <pre class="whitespace-pre-wrap">${escapeHtml(previewLines)}</pre>
+                  <details class="mt-1">
+                    <summary class="text-xs text-blue-500 cursor-pointer hover:text-blue-600 font-medium">Read more</summary>
+                    <pre class="mt-2 whitespace-pre-wrap max-h-40 overflow-y-auto">${escapeHtml(lines.slice(3).join('\n'))}</pre>
+                  </details>
+                </div>`;
+            } else {
+              descHtml = `<div class="mt-2 p-2 bg-gray-50/50 rounded text-xs text-gray-500"><pre class="whitespace-pre-wrap">${escapeHtml(description)}</pre></div>`;
+            }
           }
 
           // Build metadata lines - grouped logically
@@ -3297,7 +3312,7 @@
                 <span id="arrow-notes" class="text-gray-400 transition-transform p-1" style="transform: rotate(180deg)">▼</span>
               </button>
               <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="event.stopPropagation(); toggleNotesSortOrder();" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Toggle sort order">
+                <button type="button" onclick="toggleNotesSortOrder(); return false;" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Toggle sort order">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${sortIcon}</svg>
                   <span class="hidden sm:inline">${sortLabel}</span>
                 </button>
