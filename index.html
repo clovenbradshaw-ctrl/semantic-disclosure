@@ -1094,6 +1094,18 @@
       return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
+    function formatPhone(phone) {
+      if (!phone) return null;
+      const digits = String(phone).replace(/\D/g, '');
+      if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+      if (digits.length === 11 && digits[0] === '1') {
+        return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+      }
+      return phone;
+    }
+
     // Helper to get event start date with fallbacks for different field names
     function getEventStartDate(event) {
       return event.startDateTime || event.dateTime || event.Date || event.Start || event['Start Time'] || null;
@@ -1888,7 +1900,7 @@
       if (showPhone || showAddr) {
         let contact = '';
         if (showPhone) {
-          contact += `They can be contacted at <span class="font-mono text-emerald-600">${escapeHtml(phone)}</span>`;
+          contact += `They can be contacted at <span class="font-mono text-emerald-600">${escapeHtml(formatPhone(phone))}</span>`;
         }
         if (showAddr) {
           const fullAddr = [addr, city, state, zip].filter(Boolean).join(', ');
@@ -2470,7 +2482,7 @@
           phone: () => `
             <div>
               <p class="text-gray-400 text-xs uppercase tracking-wide">Phone</p>
-              <p class="text-gray-800 font-mono text-sm">${escapeHtml(client['Phone Number']) || '—'}</p>
+              <p class="text-gray-800 font-mono text-sm">${escapeHtml(formatPhone(client['Phone Number'])) || '—'}</p>
             </div>
           `,
           address: () => `
