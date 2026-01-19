@@ -3600,8 +3600,10 @@ Please generate an attorney-client summary based on the following client data:
             }
 
             // Contextual notes from note index (linked note records)
+            // Filter out notes that have eventId since those belong to events, not cases
             const caseId = c.id || c['Case Master View Record ID'];
-            const linkedNotes = caseId ? getNotesForEntity(noteIndex, 'case', caseId) : [];
+            const allLinkedNotes = caseId ? getNotesForEntity(noteIndex, 'case', caseId) : [];
+            const linkedNotes = allLinkedNotes.filter(note => !note.eventId);
             const contextualNotesHtml = linkedNotes.length > 0 ? renderContextualNoteCards(linkedNotes, displaySettings.notesMaxContextual) : '';
 
             // Flatpack fields for case (now controlled by visibility)
