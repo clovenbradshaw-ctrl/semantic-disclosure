@@ -2048,8 +2048,23 @@ Please generate an attorney-client summary based on the following client data:
     }
 
     function list(v) {
-      if (Array.isArray(v)) return v.join(', ');
+      if (Array.isArray(v)) return [...new Set(v)].join(', ');
       return v;
+    }
+
+    // Get court value from a case record, preferring non-array fields over lookup fields
+    // which may contain event venue data
+    function getCaseCourtValue(c) {
+      // Prefer 'Court' field if it exists and is not an array (direct value from case record)
+      if (c['Court'] && !Array.isArray(c['Court'])) return c['Court'];
+      // Then try 'Office' if not an array
+      if (c['Office'] && !Array.isArray(c['Office'])) return c['Office'];
+      // Fall back to Court/Office, using list() to dedupe if it's an array
+      if (c['Court/Office']) return list(c['Court/Office']);
+      // Finally try array versions
+      if (c['Court']) return list(c['Court']);
+      if (c['Office']) return list(c['Office']);
+      return null;
     }
 
     function formatFlatpackValue(value) {
@@ -2736,7 +2751,7 @@ Please generate an attorney-client summary based on the following client data:
             if (hearingDate) urgentLine += ` (${hearingDate})`;
             urgentLine += ` for ${escapeHtml(caseType)}`;
 
-            const court = val(next['Court/Office']);
+            const court = getCaseCourtValue(next);
             if (isFieldVisible('cases', 'court') && court) urgentLine += ` at ${escapeHtml(court)}`;
 
             if (urgent.length > 1) {
@@ -2952,7 +2967,7 @@ Please generate an attorney-client summary based on the following client data:
           }
 
           typeCases.forEach((c, idx) => {
-            const court = val(c['Court/Office']);
+            const court = getCaseCourtValue(c);
             const judge = c['Judge text'];
             const hearing = val(c['Hearing Date/Time']);
             const days = c['Days to Next Hearing'];
@@ -3574,7 +3589,10 @@ Please generate an attorney-client summary based on the following client data:
           const caseItemsHtml = typeCases.map(c => {
             // Build case fields using ordered visibility
             const caseFieldRenderers = {
-              court: () => c['Court/Office'] ? `<span class="text-gray-500">${escapeHtml(list(c['Court/Office']))}</span>` : null,
+              court: () => {
+                const court = getCaseCourtValue(c);
+                return court ? `<span class="text-gray-500">${escapeHtml(court)}</span>` : null;
+              },
               judge: () => c['Judge text'] ? `<span class="text-gray-500">Judge ${escapeHtml(c['Judge text'])}</span>` : null,
               hearingDate: () => c['Hearing Date/Time'] ? `<span class="text-gray-500">${formatDate(val(c['Hearing Date/Time']))}</span>` : null,
               oyd: () => {
@@ -4190,7 +4208,7 @@ Please generate an attorney-client summary based on the following client data:
       function getCaseLabel(c, idx) {
         if (c.Description) return c.Description;
         if (c['SIJ County']) return `SIJ (${c['SIJ County']})`;
-        const court = val(c['Court/Office']);
+        const court = getCaseCourtValue(c);
         if (court) return court;
         return `Case ${idx + 1}`;
       }
@@ -4245,7 +4263,7 @@ Please generate an attorney-client summary based on the following client data:
       if (cases && cases.length > 0) {
         cases.forEach((c, idx) => {
           const caseLabel = getCaseLabel(c, idx);
-          const court = val(c['Court/Office']);
+          const court = getCaseCourtValue(c);
           const judge = c['Judge text'];
           const caseRecordId = c.id || c.recordId;
 
